@@ -4,6 +4,7 @@
 declare(strict_types=1);
 
 define('SPARK_BASE', __DIR__);
+define('SPARK_VERSION', '0.1.0');
 
 require_once __DIR__ . '/core/Bootstrap.php';
 
@@ -24,6 +25,7 @@ try {
 
         // ── Server ────────────────────────────────────────────────────────────
         $command === 'serve' => sparkServe($rest),
+        $command === 'about' || $command === 'doctor' => sparkAbout(),
 
         // ── Benchmarks ────────────────────────────────────────────────────────
         $command === 'benchmark' || $command === 'bench' => sparkBenchmark($rest),
@@ -87,6 +89,69 @@ function sparkServe(array $args): void
     out(color("     Press Ctrl+C to stop.", 'dim'));
     echo "\n";
     passthru("php -S {$host}:{$port} " . SPARK_BASE . '/public/index.php');
+}
+
+function sparkAbout(): void
+{
+    sparkBootDatabaseCore();
+
+    $dbInfo = sparkAboutDatabaseInfo();
+    $migrationInfo = sparkAboutMigrationInfo($dbInfo['connected']);
+    $storageChecks = sparkAboutStorageChecks();
+
+    echo "\n";
+    out(color('  ⚡ SparkPHP', 'cyan') . color(' environment report', 'dim') . color('  v' . SPARK_VERSION, 'white'));
+    echo "\n";
+
+    sparkAboutSection('Application', [
+        ['Version', SPARK_VERSION],
+        ['Base Path', SPARK_BASE],
+        ['Environment', $_ENV['APP_ENV'] ?? 'dev'],
+        ['URL', $_ENV['APP_URL'] ?? 'http://localhost:8000'],
+        ['Timezone', $_ENV['APP_TIMEZONE'] ?? date_default_timezone_get()],
+    ]);
+
+    sparkAboutSection('Runtime', [
+        ['PHP', PHP_VERSION],
+        ['SAPI', PHP_SAPI],
+        ['OS', php_uname('s') . ' ' . php_uname('r')],
+        ['Host', php_uname('n')],
+        ['Composer vendor', is_dir(SPARK_BASE . '/vendor') ? 'present' : 'missing'],
+        ['Extensions', sparkAboutExtensions()],
+    ]);
+
+    sparkAboutSection('System', [
+        ['CPU Cores', sparkAboutCpuCores()],
+        ['System Memory', sparkAboutSystemMemory()],
+        ['PHP Memory Limit', sparkAboutPhpMemoryLimit()],
+        ['Memory Peak', sparkFormatBytes(memory_get_peak_usage(true))],
+        ['Disk Free', sparkFormatBytes((int) disk_free_space(SPARK_BASE))],
+        ['Disk Total', sparkFormatBytes((int) disk_total_space(SPARK_BASE))],
+        ['Load Average', sparkAboutLoadAverage()],
+        ['Uptime', sparkAboutUptime()],
+    ]);
+
+    sparkAboutSection('Database', [
+        ['Driver', $dbInfo['driver']],
+        ['Target', $dbInfo['target']],
+        ['Connection', sparkStatusLabel($dbInfo['connected'], $dbInfo['connected'] ? 'connected' : $dbInfo['error'])],
+        ['Server Version', $dbInfo['server_version']],
+        ['Migrations', $migrationInfo['summary']],
+        ['Pending', $migrationInfo['pending']],
+        ['Repository', $migrationInfo['repository']],
+        ['Latest Batch', $migrationInfo['latest_batch']],
+    ]);
+
+    sparkAboutSection('Project Health', [
+        ['Storage', sparkStatusLabel($storageChecks['storage'], $storageChecks['storage'] ? 'writable' : 'not writable')],
+        ['Cache Dir', sparkStatusLabel($storageChecks['cache'], $storageChecks['cache'] ? 'writable' : 'not writable')],
+        ['Logs Dir', sparkStatusLabel($storageChecks['logs'], $storageChecks['logs'] ? 'writable' : 'not writable')],
+        ['Sessions Dir', sparkStatusLabel($storageChecks['sessions'], $storageChecks['sessions'] ? 'writable' : 'not writable')],
+        ['Seeders', is_dir(SPARK_BASE . '/database/seeds') ? 'ready' : 'missing'],
+        ['Routes', sparkAboutRouteCount()],
+    ]);
+
+    echo "\n";
 }
 
 function sparkBenchmark(array $args): void
@@ -676,6 +741,211 @@ function sparkDbWipe(): void
     success('All tables dropped successfully.');
 }
 
+function sparkAboutDatabaseInfo(): array
+{
+    $driver = $_ENV['DB'] ?? 'mysql';
+    $target = $driver === 'sqlite'
+        ? ($_ENV['DB_NAME'] ?? 'sqlite::memory:')
+        : sprintf(
+            '%s:%s/%s',
+            $_ENV['DB_HOST'] ?? 'localhost',
+            $_ENV['DB_PORT'] ?? 'default',
+            $_ENV['DB_NAME'] ?? 'unknown'
+        );
+
+    try {
+        $pdo = db()->pdo();
+        $serverVersion = $pdo->getAttribute(PDO::ATTR_SERVER_VERSION);
+
+        return [
+            'driver' => $driver,
+            'target' => $target,
+            'connected' => true,
+            'server_version' => (string) $serverVersion,
+            'error' => 'ok',
+        ];
+    } catch (Throwable $e) {
+        return [
+            'driver' => $driver,
+            'target' => $target,
+            'connected' => false,
+            'server_version' => 'unavailable',
+            'error' => $e->getMessage(),
+        ];
+    }
+}
+
+function sparkAboutMigrationInfo(bool $dbConnected): array
+{
+    $files = sparkMigrationFiles();
+
+    if (!$dbConnected) {
+        return [
+            'summary' => count($files) . ' file(s)',
+            'pending' => 'unknown',
+            'repository' => 'unreachable',
+            'latest_batch' => '—',
+        ];
+    }
+
+    $repositoryExists = sparkMigrationRepositoryExists();
+    $records = $repositoryExists ? sparkMigrationRecords() : [];
+    $applied = count($records);
+    $pending = max(0, count($files) - $applied);
+    $latestBatch = $records === [] ? '—' : (string) sparkMigrationBatchMax();
+
+    return [
+        'summary' => $applied . ' applied / ' . count($files) . ' files',
+        'pending' => (string) $pending,
+        'repository' => $repositoryExists ? 'present' : 'missing',
+        'latest_batch' => $latestBatch,
+    ];
+}
+
+function sparkAboutStorageChecks(): array
+{
+    return [
+        'storage' => sparkIsWritablePath(SPARK_BASE . '/storage'),
+        'cache' => sparkIsWritablePath(SPARK_BASE . '/storage/cache'),
+        'logs' => sparkIsWritablePath(SPARK_BASE . '/storage/logs'),
+        'sessions' => sparkIsWritablePath(SPARK_BASE . '/storage/sessions'),
+    ];
+}
+
+function sparkAboutSection(string $title, array $rows): void
+{
+    out('  ' . color($title, 'yellow'));
+    foreach ($rows as [$label, $value]) {
+        out('    ' . color(str_pad($label, 16) . ' ', 'green') . color((string) $value, 'dim'));
+    }
+    echo "\n";
+}
+
+function sparkAboutExtensions(): string
+{
+    $extensions = ['pdo', 'mbstring', 'openssl', 'json'];
+    $driver = $_ENV['DB'] ?? 'mysql';
+    $extensions[] = match ($driver) {
+        'sqlite' => 'pdo_sqlite',
+        'pgsql' => 'pdo_pgsql',
+        default => 'pdo_mysql',
+    };
+
+    $statuses = [];
+    foreach ($extensions as $extension) {
+        $statuses[] = extension_loaded($extension) ? $extension : $extension . ' (missing)';
+    }
+
+    return implode(', ', $statuses);
+}
+
+function sparkAboutCpuCores(): string
+{
+    $cores = trim((string) @shell_exec('nproc 2>/dev/null'));
+    if ($cores === '') {
+        $cores = trim((string) @shell_exec('sysctl -n hw.ncpu 2>/dev/null'));
+    }
+
+    if ($cores === '' && getenv('NUMBER_OF_PROCESSORS')) {
+        $cores = (string) getenv('NUMBER_OF_PROCESSORS');
+    }
+
+    return $cores !== '' ? $cores : 'unknown';
+}
+
+function sparkAboutSystemMemory(): string
+{
+    if (is_readable('/proc/meminfo')) {
+        $contents = (string) file_get_contents('/proc/meminfo');
+        if (preg_match('/MemTotal:\s+(\d+)\s+kB/i', $contents, $matches)) {
+            return sparkFormatBytes((int) $matches[1] * 1024);
+        }
+    }
+
+    $macBytes = trim((string) @shell_exec('sysctl -n hw.memsize 2>/dev/null'));
+    if ($macBytes !== '' && ctype_digit($macBytes)) {
+        return sparkFormatBytes((int) $macBytes);
+    }
+
+    return 'unknown';
+}
+
+function sparkAboutLoadAverage(): string
+{
+    if (!function_exists('sys_getloadavg')) {
+        return 'n/a';
+    }
+
+    $load = sys_getloadavg();
+    if (!is_array($load) || $load === []) {
+        return 'n/a';
+    }
+
+    return implode(', ', array_map(fn($value) => number_format((float) $value, 2), array_slice($load, 0, 3)));
+}
+
+function sparkAboutUptime(): string
+{
+    if (is_readable('/proc/uptime')) {
+        $contents = trim((string) file_get_contents('/proc/uptime'));
+        $seconds = (int) (float) strtok($contents, ' ');
+        return sparkFormatDuration($seconds);
+    }
+
+    $uptime = trim((string) @shell_exec('uptime -p 2>/dev/null'));
+    return $uptime !== '' ? $uptime : 'unknown';
+}
+
+function sparkAboutPhpMemoryLimit(): string
+{
+    $limit = trim((string) ini_get('memory_limit'));
+    if ($limit === '' || $limit === false) {
+        return 'unknown';
+    }
+
+    if ($limit === '-1') {
+        return 'unlimited';
+    }
+
+    $unit = strtolower(substr($limit, -1));
+    $value = (int) $limit;
+    $multiplier = match ($unit) {
+        'g' => 1024 ** 3,
+        'm' => 1024 ** 2,
+        'k' => 1024,
+        default => 1,
+    };
+
+    return sparkFormatBytes($value * $multiplier);
+}
+
+function sparkAboutRouteCount(): string
+{
+    $routesPath = SPARK_BASE . '/app/routes';
+    if (!is_dir($routesPath)) {
+        return '0 files';
+    }
+
+    $count = 0;
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($routesPath, FilesystemIterator::SKIP_DOTS)) as $file) {
+        if ($file->getExtension() === 'php') {
+            $count++;
+        }
+    }
+
+    return $count . ' file(s)';
+}
+
+function sparkIsWritablePath(string $path): bool
+{
+    return is_dir($path) && is_writable($path);
+}
+
+function sparkStatusLabel(bool $ok, string $message): string
+{
+    return ($ok ? '[ok] ' : '[warn] ') . $message;
+}
+
 function sparkNormalizeSeederClass(?string $seeder): string
 {
     if ($seeder === null || $seeder === '') {
@@ -1011,9 +1281,48 @@ function sparkWrapIdentifier(string $driver, string $value): string
     };
 }
 
+function sparkFormatBytes(int $bytes): string
+{
+    if ($bytes <= 0) {
+        return '0 B';
+    }
+
+    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    $power = min((int) floor(log($bytes, 1024)), count($units) - 1);
+    $value = $bytes / (1024 ** $power);
+
+    return number_format($value, $power === 0 ? 0 : 2) . ' ' . $units[$power];
+}
+
+function sparkFormatDuration(int $seconds): string
+{
+    if ($seconds <= 0) {
+        return '0m';
+    }
+
+    $days = intdiv($seconds, 86400);
+    $seconds %= 86400;
+    $hours = intdiv($seconds, 3600);
+    $seconds %= 3600;
+    $minutes = intdiv($seconds, 60);
+
+    $parts = [];
+    if ($days > 0) {
+        $parts[] = $days . 'd';
+    }
+    if ($hours > 0) {
+        $parts[] = $hours . 'h';
+    }
+    if ($minutes > 0) {
+        $parts[] = $minutes . 'm';
+    }
+
+    return $parts !== [] ? implode(' ', $parts) : '0m';
+}
+
 function sparkHelp(): void
 {
-    $v = '0.1.0';
+    $v = SPARK_VERSION;
 
     $logo = <<<'ASCII'
 
@@ -1037,6 +1346,8 @@ ASCII;
         ['Server', [
             ['init', '[--force] [--quiet]', 'Prepare a fresh project skeleton'],
             ['serve', '--port=8000', 'Start development server'],
+            ['about', '', 'Show environment, system and database diagnostics'],
+            ['doctor', '', 'Alias for about'],
         ]],
         ['Benchmark', [
             ['benchmark', '--iterations= --warmup= --json', 'Run comparative core benchmarks'],

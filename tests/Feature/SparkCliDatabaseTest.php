@@ -193,6 +193,43 @@ PHP
         $this->assertStringContainsString('Legacy migration format detected', $result['output']);
     }
 
+    public function testAboutCommandShowsEnvironmentAndDatabaseDiagnostics(): void
+    {
+        file_put_contents($this->basePath . '/database/migrations/20260327040404_create_users_table.php', <<<'PHP'
+<?php
+
+class CreateUsersTable extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('users', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('users');
+    }
+}
+PHP
+        );
+
+        $this->runSpark(['migrate']);
+        $result = $this->runSpark(['about']);
+
+        $this->assertSame(0, $result['exit_code'], $result['output']);
+        $this->assertStringContainsString('SparkPHP', $result['output']);
+        $this->assertStringContainsString('environment report', $result['output']);
+        $this->assertStringContainsString('Application', $result['output']);
+        $this->assertStringContainsString('Database', $result['output']);
+        $this->assertStringContainsString('sqlite', $result['output']);
+        $this->assertStringContainsString('connected', $result['output']);
+        $this->assertStringContainsString('Pending', $result['output']);
+    }
+
     /**
      * @dataProvider externalDriverProvider
      */
