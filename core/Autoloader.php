@@ -36,43 +36,47 @@ class Autoloader
 
     public function buildMap(): array
     {
-        $appPath = $this->basePath . '/app';
-        if (!is_dir($appPath)) {
-            return [];
-        }
-
         $map      = [];
-        $skip     = ['routes'];
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($appPath, \FilesystemIterator::SKIP_DOTS)
-        );
+        $roots = [
+            ['path' => $this->basePath . '/app', 'skip' => ['routes']],
+            ['path' => $this->basePath . '/database/seeds', 'skip' => []],
+        ];
 
-        foreach ($iterator as $file) {
-            if ($file->getExtension() !== 'php') {
+        foreach ($roots as $root) {
+            if (!is_dir($root['path'])) {
                 continue;
             }
 
-            // Skip routes directory
-            $relative = str_replace($appPath . DIRECTORY_SEPARATOR, '', $file->getPathname());
-            $parts    = explode(DIRECTORY_SEPARATOR, $relative);
-            if (in_array($parts[0], $skip, true)) {
-                continue;
-            }
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($root['path'], \FilesystemIterator::SKIP_DOTS)
+            );
 
-            $className = $this->extractClassName($file->getPathname());
-            if (!$className) {
-                continue;
-            }
+            foreach ($iterator as $file) {
+                if ($file->getExtension() !== 'php') {
+                    continue;
+                }
 
-            if (isset($map[$className])) {
-                trigger_error(
-                    "Autoloader conflict: class '{$className}' found in both:\n" .
-                    "  {$map[$className]}\n  {$file->getPathname()}",
-                    E_USER_ERROR
-                );
-            }
+                $relative = str_replace($root['path'] . DIRECTORY_SEPARATOR, '', $file->getPathname());
+                $parts    = explode(DIRECTORY_SEPARATOR, $relative);
+                if (in_array($parts[0], $root['skip'], true)) {
+                    continue;
+                }
 
-            $map[$className] = $file->getPathname();
+                $className = $this->extractClassName($file->getPathname());
+                if (!$className) {
+                    continue;
+                }
+
+                if (isset($map[$className])) {
+                    trigger_error(
+                        "Autoloader conflict: class '{$className}' found in both:\n" .
+                        "  {$map[$className]}\n  {$file->getPathname()}",
+                        E_USER_ERROR
+                    );
+                }
+
+                $map[$className] = $file->getPathname();
+            }
         }
 
         $this->saveCache($map);

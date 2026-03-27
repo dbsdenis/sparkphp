@@ -17,47 +17,52 @@ $args    = array_slice($argv, 1);
 $command = $args[0] ?? 'help';
 $rest    = array_slice($args, 1);
 
-match (true) {
-    // ── Project bootstrap ─────────────────────────────────────────────────────
-    $command === 'init' => sparkInit($rest),
+try {
+    match (true) {
+        // ── Project bootstrap ─────────────────────────────────────────────────
+        $command === 'init' => sparkInit($rest),
 
-    // ── Server ────────────────────────────────────────────────────────────────
-    $command === 'serve' => sparkServe($rest),
+        // ── Server ────────────────────────────────────────────────────────────
+        $command === 'serve' => sparkServe($rest),
 
-    // ── Benchmarks ────────────────────────────────────────────────────────────
-    $command === 'benchmark' || $command === 'bench' => sparkBenchmark($rest),
+        // ── Benchmarks ────────────────────────────────────────────────────────
+        $command === 'benchmark' || $command === 'bench' => sparkBenchmark($rest),
 
-    // ── Migrations ────────────────────────────────────────────────────────────
-    $command === 'migrate'               => sparkMigrate(),
-    $command === 'migrate:rollback'      => sparkMigrateRollback((int)($rest[0] ?? 1)),
-    $command === 'migrate:fresh'         => sparkMigrateFresh(),
-    $command === 'migrate:status'        => sparkMigrateStatus(),
+        // ── Migrations ────────────────────────────────────────────────────────
+        $command === 'migrate'               => sparkMigrate($rest),
+        $command === 'migrate:rollback'      => sparkMigrateRollback((int)($rest[0] ?? 1)),
+        $command === 'migrate:fresh' || $command === 'db:fresh' => sparkDbFresh($rest),
+        $command === 'migrate:status'        => sparkMigrateStatus(),
 
-    // ── Seeds ─────────────────────────────────────────────────────────────────
-    $command === 'seed'  => sparkSeed($rest[0] ?? null),
+        // ── Seeds ─────────────────────────────────────────────────────────────
+        $command === 'seed'  => sparkSeed($rest[0] ?? null),
 
-    // ── Queue ─────────────────────────────────────────────────────────────────
-    $command === 'queue:work'   => sparkQueueWork($rest),
-    $command === 'queue:clear'  => sparkQueueClear($rest[0] ?? 'default'),
-    $command === 'queue:list'   => sparkQueueList(),
+        // ── Queue ─────────────────────────────────────────────────────────────
+        $command === 'queue:work'   => sparkQueueWork($rest),
+        $command === 'queue:clear'  => sparkQueueClear($rest[0] ?? 'default'),
+        $command === 'queue:list'   => sparkQueueList(),
 
-    // ── Cache ─────────────────────────────────────────────────────────────────
-    $command === 'cache:clear'     => sparkCacheClear(),
-    $command === 'views:cache'     => sparkViewsCache(),
-    $command === 'views:clear'     => sparkViewsClear(),
-    $command === 'routes:cache'    => sparkRoutesCache(),
-    $command === 'routes:clear'    => sparkRoutesClear(),
-    $command === 'routes:list'     => sparkRoutesList(),
-    $command === 'inspector:clear' => sparkInspectorClear(),
-    $command === 'inspector:status' => sparkInspectorStatus(),
-    $command === 'optimize'        => sparkOptimize(),
+        // ── Cache ─────────────────────────────────────────────────────────────
+        $command === 'cache:clear'     => sparkCacheClear(),
+        $command === 'views:cache'     => sparkViewsCache(),
+        $command === 'views:clear'     => sparkViewsClear(),
+        $command === 'routes:cache'    => sparkRoutesCache(),
+        $command === 'routes:clear'    => sparkRoutesClear(),
+        $command === 'routes:list'     => sparkRoutesList(),
+        $command === 'inspector:clear' => sparkInspectorClear(),
+        $command === 'inspector:status' => sparkInspectorStatus(),
+        $command === 'optimize'        => sparkOptimize(),
 
-    // ── Make ──────────────────────────────────────────────────────────────────
-    str_starts_with($command, 'make:') => sparkMake($command, $rest),
+        // ── Make ──────────────────────────────────────────────────────────────
+        str_starts_with($command, 'make:') => sparkMake($command, $rest),
 
-    // ── Help ──────────────────────────────────────────────────────────────────
-    default => sparkHelp(),
-};
+        // ── Help ──────────────────────────────────────────────────────────────
+        default => sparkHelp(),
+    };
+} catch (Throwable $e) {
+    error($e->getMessage());
+    exit(1);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Commands
@@ -143,168 +148,366 @@ function sparkInit(array $args): void
     success('Project is ready.');
 }
 
-// ─── Migration state ─────────────────────────────────────────────────────────
-// Tracked in storage/migrations.json as:
-// [{"batch": 1, "file": "001_create_users.php", "ran_at": "..."}]
-//
-// Migration files define up() and down() functions via capture vars:
-//   up(fn() => db()->statement("CREATE TABLE ..."));
-//   down(fn() => db()->statement("DROP TABLE ..."));
+// ─── Database CLI v2 ────────────────────────────────────────────────────────
 
-function sparkMigrationStatePath(): string
+function sparkBootDatabaseCore(): void
 {
-    return SPARK_BASE . '/storage/migrations.json';
+    require_once SPARK_BASE . '/core/Database.php';
+    require_once SPARK_BASE . '/core/Schema.php';
+    require_once SPARK_BASE . '/core/Migration.php';
+    require_once SPARK_BASE . '/core/Seeder.php';
 }
 
-function sparkMigrationState(): array
+function sparkMigrationTable(): string
 {
-    $file = sparkMigrationStatePath();
-    return file_exists($file) ? (json_decode((string)file_get_contents($file), true) ?? []) : [];
+    return 'spark_migrations';
 }
 
-function sparkMigrationSave(array $state): void
+function sparkMigrationFiles(): array
 {
-    $dir = dirname(sparkMigrationStatePath());
-    if (!is_dir($dir)) mkdir($dir, 0755, true);
-    file_put_contents(sparkMigrationStatePath(), json_encode($state, JSON_PRETTY_PRINT));
+    $dir = SPARK_BASE . '/database/migrations';
+    if (!is_dir($dir)) {
+        return [];
+    }
+
+    $files = glob($dir . '/*.php') ?: [];
+    sort($files);
+    return $files;
+}
+
+function sparkMigrationRepositoryExists(): bool
+{
+    sparkBootDatabaseCore();
+    $db = db();
+    $table = sparkMigrationTable();
+
+    return match ($db->driver()) {
+        'mysql' => (int) (($db->raw(
+            "SELECT COUNT(*) AS cnt FROM information_schema.tables WHERE table_schema = ? AND table_name = ?",
+            [$_ENV['DB_NAME'] ?? '', $table]
+        )[0]->cnt ?? 0)) > 0,
+        'pgsql' => (int) (($db->raw(
+            "SELECT COUNT(*) AS cnt FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = ?",
+            [$table]
+        )[0]->cnt ?? 0)) > 0,
+        'sqlite' => (int) (($db->raw(
+            "SELECT COUNT(*) AS cnt FROM sqlite_master WHERE type = 'table' AND name = ?",
+            [$table]
+        )[0]->cnt ?? 0)) > 0,
+        default => false,
+    };
+}
+
+function sparkEnsureMigrationRepository(): void
+{
+    if (sparkMigrationRepositoryExists()) {
+        return;
+    }
+
+    Schema::create(sparkMigrationTable(), function (Blueprint $table) {
+        $table->id();
+        $table->string('migration')->unique();
+        $table->integer('batch');
+        $table->datetime('ran_at');
+    });
+}
+
+function sparkMigrationRecords(): array
+{
+    sparkBootDatabaseCore();
+
+    if (!sparkMigrationRepositoryExists()) {
+        return [];
+    }
+
+    $rows = db()->raw(
+        'SELECT migration, batch, ran_at FROM ' . sparkMigrationTable() . ' ORDER BY batch ASC, migration ASC'
+    );
+
+    return array_map(fn(object $row) => (array) $row, $rows);
+}
+
+function sparkInsertMigrationRecord(string $migration, int $batch): void
+{
+    db()->statement(
+        'INSERT INTO ' . sparkMigrationTable() . ' (migration, batch, ran_at) VALUES (?, ?, ?)',
+        [$migration, $batch, date('Y-m-d H:i:s')]
+    );
+}
+
+function sparkDeleteMigrationRecord(string $migration): void
+{
+    db()->statement(
+        'DELETE FROM ' . sparkMigrationTable() . ' WHERE migration = ?',
+        [$migration]
+    );
+}
+
+function sparkMigrationBatchMax(): int
+{
+    $records = sparkMigrationRecords();
+    if ($records === []) {
+        return 0;
+    }
+
+    return (int) max(array_column($records, 'batch'));
+}
+
+function sparkResolveMigrationClassName(string $file): string
+{
+    $contents = (string) file_get_contents($file);
+    if (!preg_match('/class\s+([A-Za-z_][A-Za-z0-9_]*)\s+extends\s+Migration\b/', $contents, $matches)) {
+        throw new RuntimeException(
+            'Legacy migration format detected in ' . basename($file) . '. Use a class that extends Migration with up()/down().'
+        );
+    }
+
+    return $matches[1];
+}
+
+function sparkMigrationClassLabel(string $file): string
+{
+    $contents = (string) file_get_contents($file);
+    if (!preg_match('/class\s+([A-Za-z_][A-Za-z0-9_]*)\s+extends\s+Migration\b/', $contents, $matches)) {
+        return 'legacy-format';
+    }
+
+    return $matches[1];
+}
+
+function sparkInstantiateMigration(string $file): Migration
+{
+    sparkBootDatabaseCore();
+
+    $class = sparkResolveMigrationClassName($file);
+    require_once $file;
+
+    if (!class_exists($class)) {
+        throw new RuntimeException("Migration class [{$class}] not found in " . basename($file));
+    }
+
+    $migration = new $class();
+    if (!$migration instanceof Migration) {
+        throw new RuntimeException("Migration class [{$class}] must extend Migration.");
+    }
+
+    return $migration;
 }
 
 function sparkRunMigrationFile(string $file, string $direction = 'up'): void
 {
-    // Provide up()/down() capture functions
-    $captured = [];
-    $up   = function (callable $fn) use (&$captured) { $captured['up']   = $fn; };
-    $down = function (callable $fn) use (&$captured) { $captured['down'] = $fn; };
-
-    (static function () use ($file, $up, $down) { require $file; })();
-
-    if (!isset($captured[$direction])) {
-        // Legacy migration: just required the file (runs on include). Already done above.
-        return;
-    }
-    ($captured[$direction])();
+    $migration = sparkInstantiateMigration($file);
+    $method = $direction === 'down' ? 'down' : 'up';
+    $migration->{$method}();
 }
 
-function sparkMigrate(): void
+function sparkMigrate(array $args = []): void
 {
-    $dir = SPARK_BASE . '/database/migrations';
-    if (!is_dir($dir)) {
-        out(color('  No migrations directory found.', 'yellow'));
+    $shouldSeed = in_array('--seed', $args, true);
+    $files = sparkMigrationFiles();
+
+    sparkBootDatabaseCore();
+    sparkEnsureMigrationRepository();
+
+    if ($files === []) {
+        out(color('  No migrations found.', 'yellow'));
+        if ($shouldSeed) {
+            sparkSeed();
+        }
         return;
     }
 
-    $files = glob($dir . '/*.php');
-    sort($files);
+    $ran = array_column(sparkMigrationRecords(), null, 'migration');
+    $pending = array_values(array_filter($files, fn(string $file) => !isset($ran[basename($file)])));
 
-    $state   = sparkMigrationState();
-    $ran     = array_column($state, 'file');
-    $batch   = $state ? (max(array_column($state, 'batch')) + 1) : 1;
-    $pending = array_filter($files, fn($f) => !in_array(basename($f), $ran, true));
-
-    if (empty($pending)) {
+    if ($pending === []) {
         out(color('  Nothing to migrate.', 'dim'));
+        if ($shouldSeed) {
+            sparkSeed();
+        }
         return;
     }
 
-    require_once SPARK_BASE . '/core/Database.php';
+    $batch = sparkMigrationBatchMax() + 1;
 
     foreach ($pending as $file) {
         $name = basename($file);
         out('  ' . color('Migrating ', 'dim') . color($name, 'cyan'));
         sparkRunMigrationFile($file, 'up');
-        $state[] = ['batch' => $batch, 'file' => $name, 'ran_at' => date('Y-m-d H:i:s')];
+        sparkInsertMigrationRecord($name, $batch);
     }
 
-    sparkMigrationSave($state);
-    success("Batch {$batch} — " . count($pending) . " migration(s) complete.");
+    success("Batch {$batch} — " . count($pending) . ' migration(s) complete.');
+
+    if ($shouldSeed) {
+        sparkSeed();
+    }
 }
 
 function sparkMigrateRollback(int $batches = 1): void
 {
-    $dir   = SPARK_BASE . '/database/migrations';
-    $state = sparkMigrationState();
+    sparkBootDatabaseCore();
 
-    if (empty($state)) {
+    $records = sparkMigrationRecords();
+    if ($records === []) {
         out(color('  Nothing to rollback.', 'dim'));
         return;
     }
 
-    require_once SPARK_BASE . '/core/Database.php';
+    $maxBatch = sparkMigrationBatchMax();
+    $minBatch = max(1, $maxBatch - max(1, $batches) + 1);
+    $toRollback = array_values(array_filter($records, fn(array $record) => (int) $record['batch'] >= $minBatch));
+    usort($toRollback, function (array $a, array $b): int {
+        if ((int) $a['batch'] === (int) $b['batch']) {
+            return strcmp((string) $b['migration'], (string) $a['migration']);
+        }
 
-    $maxBatch  = max(array_column($state, 'batch'));
-    $minBatch  = max(1, $maxBatch - $batches + 1);
-    $toRollback = array_filter($state, fn($r) => $r['batch'] >= $minBatch);
-    $toRollback = array_reverse(array_values($toRollback));
+        return (int) $b['batch'] <=> (int) $a['batch'];
+    });
 
     foreach ($toRollback as $record) {
-        $file = $dir . '/' . $record['file'];
-        out('  ' . color('Rolling back ', 'dim') . color($record['file'], 'yellow'));
-        if (file_exists($file)) {
-            sparkRunMigrationFile($file, 'down');
-        } else {
-            out('  ' . color('Warning: file not found, skipping.', 'red'));
+        $file = SPARK_BASE . '/database/migrations/' . $record['migration'];
+        if (!file_exists($file)) {
+            throw new RuntimeException("Migration file not found for rollback: {$record['migration']}");
         }
+
+        out('  ' . color('Rolling back ', 'dim') . color($record['migration'], 'yellow'));
+        sparkRunMigrationFile($file, 'down');
+        sparkDeleteMigrationRecord((string) $record['migration']);
     }
 
-    $remaining = array_filter($state, fn($r) => $r['batch'] < $minBatch);
-    sparkMigrationSave(array_values($remaining));
     success('Rolled back ' . count($toRollback) . ' migration(s).');
 }
 
-function sparkMigrateFresh(): void
+function sparkDropAllTables(): void
 {
-    out(color('  Rolling back all migrations...', 'yellow'));
-    $state = sparkMigrationState();
-    if (!empty($state)) {
-        $batches = max(array_column($state, 'batch'));
-        sparkMigrateRollback($batches);
+    sparkBootDatabaseCore();
+
+    $db = db();
+    $pdo = $db->pdo();
+    $driver = $db->driver();
+
+    if ($driver === 'mysql') {
+        $databaseName = $_ENV['DB_NAME'] ?? '';
+        $rows = $db->raw(
+            "SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_type = 'BASE TABLE'",
+            [$databaseName]
+        );
+
+        $pdo->exec('SET FOREIGN_KEY_CHECKS=0');
+        foreach ($rows as $row) {
+            $pdo->exec('DROP TABLE IF EXISTS ' . sparkWrapIdentifier($driver, $row->table_name));
+        }
+        $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
+        return;
     }
+
+    if ($driver === 'pgsql') {
+        $rows = $db->raw("SELECT tablename FROM pg_tables WHERE schemaname = current_schema()");
+
+        foreach ($rows as $row) {
+            $pdo->exec('DROP TABLE IF EXISTS ' . sparkWrapIdentifier($driver, $row->tablename) . ' CASCADE');
+        }
+        return;
+    }
+
+    if ($driver === 'sqlite') {
+        $rows = $db->raw(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"
+        );
+
+        $pdo->exec('PRAGMA foreign_keys = OFF');
+        foreach ($rows as $row) {
+            $pdo->exec('DROP TABLE IF EXISTS ' . sparkWrapIdentifier($driver, $row->name));
+        }
+        $pdo->exec('PRAGMA foreign_keys = ON');
+    }
+}
+
+function sparkDbFresh(array $args = []): void
+{
+    $shouldSeed = in_array('--seed', $args, true);
+
+    sparkBootDatabaseCore();
+
+    out(color('  Dropping all tables...', 'yellow'));
+    sparkDropAllTables();
+
     out(color('  Re-running all migrations...', 'cyan'));
-    sparkMigrate();
+    sparkMigrate($shouldSeed ? ['--seed'] : []);
 }
 
 function sparkMigrateStatus(): void
 {
-    $state = sparkMigrationState();
-    $dir   = SPARK_BASE . '/database/migrations';
-    $files = is_dir($dir) ? glob($dir . '/*.php') : [];
-    sort($files);
-    $ran   = array_column($state, null, 'file');
+    $files = sparkMigrationFiles();
+    $ran = array_column(sparkMigrationRecords(), null, 'migration');
 
     echo "\n";
-    out('  ' . color(str_pad('Status', 14), 'yellow') . color(str_pad('Batch', 8), 'yellow') . color(str_pad('File', 50), 'yellow') . color('Ran At', 'yellow'));
-    out('  ' . color(str_repeat('─', 88), 'dim'));
+    out('  ' . color(str_pad('Status', 14), 'yellow')
+        . color(str_pad('Batch', 8), 'yellow')
+        . color(str_pad('File', 40), 'yellow')
+        . color(str_pad('Class', 28), 'yellow')
+        . color('Ran At', 'yellow'));
+    out('  ' . color(str_repeat('─', 112), 'dim'));
 
     foreach ($files as $file) {
-        $name   = basename($file);
+        $name = basename($file);
         $record = $ran[$name] ?? null;
         $status = $record ? color(str_pad('Ran', 14), 'green') : color(str_pad('Pending', 14), 'yellow');
-        $batch  = str_pad((string)($record['batch'] ?? '—'), 8);
-        $ranAt  = $record['ran_at'] ?? '—';
-        out('  ' . $status . color($batch, 'dim') . str_pad($name, 50) . color($ranAt, 'dim'));
+        $batch = str_pad((string) ($record['batch'] ?? '—'), 8);
+        $ranAt = $record['ran_at'] ?? '—';
+        $class = sparkMigrationClassLabel($file);
+
+        out('  ' . $status
+            . color($batch, 'dim')
+            . str_pad($name, 40)
+            . str_pad($class, 28)
+            . color($ranAt, 'dim'));
     }
     echo "\n";
 }
 
-function sparkSeed(?string $seeder = null): void
+function sparkNormalizeSeederClass(?string $seeder): string
 {
-    $dir = SPARK_BASE . '/database/seeds';
-    if ($seeder) {
-        $file = $dir . "/{$seeder}.php";
-        if (!file_exists($file)) {
-            error("Seeder not found: {$seeder}");
-            return;
-        }
-        require $file;
-        success("{$seeder} executed.");
-        return;
+    if ($seeder === null || $seeder === '') {
+        return 'DatabaseSeeder';
     }
 
-    foreach (glob($dir . '/*.php') as $file) {
-        out('  ' . color('Seeding ', 'dim') . color(basename($file), 'cyan'));
-        require $file;
+    $candidate = sparkStudly($seeder);
+    if (!str_ends_with($candidate, 'Seeder')) {
+        $candidate .= 'Seeder';
     }
-    success('All seeders executed.');
+
+    return $candidate;
+}
+
+function sparkRunSeederClass(string $class): void
+{
+    sparkBootDatabaseCore();
+
+    $file = SPARK_BASE . '/database/seeds/' . $class . '.php';
+    if (!class_exists($class) && file_exists($file)) {
+        require_once $file;
+    }
+
+    if (!class_exists($class)) {
+        throw new RuntimeException("Seeder not found: {$class}");
+    }
+
+    $seeder = new $class();
+    if (!$seeder instanceof Seeder) {
+        throw new RuntimeException("Seeder must extend Seeder: {$class}");
+    }
+
+    out('  ' . color('Seeding ', 'dim') . color($class, 'cyan'));
+    $seeder->run();
+}
+
+function sparkSeed(?string $seeder = null): void
+{
+    $class = sparkNormalizeSeederClass($seeder);
+    sparkRunSeederClass($class);
+    success("{$class} executed.");
 }
 
 function sparkCacheClear(): void
@@ -438,6 +641,9 @@ function sparkMake(string $command, array $args): void
     }
 
     $type = substr($command, 5); // strip "make:"
+    $migrationName = sparkSnake($name);
+    $migrationClass = sparkStudly($name);
+    $seederClass = sparkNormalizeSeederClass($name);
 
     $templates = [
         'model'     => [
@@ -449,8 +655,12 @@ function sparkMake(string $command, array $args): void
             'content' => "<?php\n\n// Middleware: {$name}\n// Return a Response to block, or nothing to continue.\n",
         ],
         'migration' => [
-            'path'    => "database/migrations/" . sparkNextMigrationPrefix() . "_{$name}.php",
-            'content' => "<?php\n\n// Migration: {$name}\n\nup(function () {\n    db()->statement(\"\n        CREATE TABLE IF NOT EXISTS `table_name` (\n            `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,\n            `created_at` DATETIME,\n            `updated_at` DATETIME\n        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4\n    \");\n});\n\ndown(function () {\n    db()->statement('DROP TABLE IF EXISTS `table_name`');\n});\n",
+            'path'    => 'database/migrations/' . sparkMigrationTimestamp() . "_{$migrationName}.php",
+            'content' => "<?php\n\nclass {$migrationClass} extends Migration\n{\n    public function up(): void\n    {\n        Schema::create('table_name', function (Blueprint \$table) {\n            \$table->id();\n            \$table->timestamps();\n        });\n    }\n\n    public function down(): void\n    {\n        Schema::dropIfExists('table_name');\n    }\n}\n",
+        ],
+        'seeder' => [
+            'path'    => "database/seeds/{$seederClass}.php",
+            'content' => "<?php\n\nclass {$seederClass} extends Seeder\n{\n    public function run(): void\n    {\n        // db('table_name')->insert([]);\n    }\n}\n",
         ],
         'service'   => [
             'path'    => "app/services/{$name}.php",
@@ -551,9 +761,45 @@ function sparkQueueList(): void
 
 function sparkNextMigrationPrefix(): string
 {
-    $dir   = SPARK_BASE . '/database/migrations';
-    $files = is_dir($dir) ? glob($dir . '/*.php') : [];
-    return str_pad((string)(count($files) + 1), 3, '0', STR_PAD_LEFT);
+    return sparkMigrationTimestamp();
+}
+
+function sparkMigrationTimestamp(): string
+{
+    $dir = SPARK_BASE . '/database/migrations';
+    $timestamp = date('YmdHis');
+
+    while (is_dir($dir) && (glob($dir . '/' . $timestamp . '_*.php') ?: []) !== []) {
+        $date = DateTimeImmutable::createFromFormat('YmdHis', $timestamp) ?: new DateTimeImmutable();
+        $timestamp = $date->modify('+1 second')->format('YmdHis');
+    }
+
+    return $timestamp;
+}
+
+function sparkStudly(string $value): string
+{
+    $value = preg_replace('/(?<!^)[A-Z]/', ' $0', $value) ?? $value;
+    $value = preg_replace('/[^A-Za-z0-9]+/', ' ', $value) ?? $value;
+    $value = ucwords(strtolower(trim($value)));
+    return str_replace(' ', '', $value);
+}
+
+function sparkSnake(string $value): string
+{
+    $value = preg_replace('/(?<!^)[A-Z]/', '_$0', $value) ?? $value;
+    $value = preg_replace('/[^A-Za-z0-9]+/', '_', $value) ?? $value;
+    $value = strtolower(trim($value, '_'));
+    return preg_replace('/_+/', '_', $value) ?? $value;
+}
+
+function sparkWrapIdentifier(string $driver, string $value): string
+{
+    return match ($driver) {
+        'mysql' => '`' . str_replace('`', '``', $value) . '`',
+        'pgsql', 'sqlite' => '"' . str_replace('"', '""', $value) . '"',
+        default => $value,
+    };
 }
 
 function sparkHelp(): void
@@ -588,11 +834,11 @@ ASCII;
             ['bench', '--iterations= --warmup= --no-save', 'Alias for benchmark'],
         ]],
         ['Database', [
-            ['migrate', '', 'Run pending migrations'],
+            ['migrate', '[--seed]', 'Run pending migrations'],
             ['migrate:rollback', '[batches]', 'Rollback last N batches'],
-            ['migrate:fresh', '', 'Drop all and re-run migrations'],
+            ['db:fresh', '[--seed]', 'Drop all tables and re-run migrations'],
             ['migrate:status', '', 'Show migration status table'],
-            ['seed', '[SeederName]', 'Run seeders'],
+            ['seed', '[SeederClass]', 'Run the database seeder'],
         ]],
         ['Queue', [
             ['queue:work', '--queue= --sleep= --max-jobs=', 'Start queue worker'],
@@ -614,6 +860,7 @@ ASCII;
             ['make:model', '<Name>', 'Create a new model class'],
             ['make:middleware', '<name>', 'Create a new middleware'],
             ['make:migration', '<name>', 'Create a new migration file'],
+            ['make:seeder', '<name>', 'Create a new seeder class'],
             ['make:service', '<Name>', 'Create a new service class'],
             ['make:job', '<Name>', 'Create a new job class'],
             ['make:event', '<name>', 'Create a new event file'],

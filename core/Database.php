@@ -13,6 +13,11 @@ class Database
         return static::$instance;
     }
 
+    public static function reset(): void
+    {
+        static::$instance = null;
+    }
+
     // ─────────────────────────────────────────────
     // Lazy connection
     // ─────────────────────────────────────────────
@@ -44,6 +49,11 @@ class Database
         ]);
 
         return $this->pdo;
+    }
+
+    public function driver(): string
+    {
+        return $_ENV['DB'] ?? 'mysql';
     }
 
     // ─────────────────────────────────────────────
@@ -99,7 +109,7 @@ class Database
 
     public function getColumns(string $table): array
     {
-        $driver = $_ENV['DB'] ?? 'mysql';
+        $driver = $this->driver();
         return match ($driver) {
             'mysql'  => $this->mysqlColumns($table),
             'sqlite' => $this->sqliteColumns($table),

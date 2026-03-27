@@ -95,7 +95,7 @@ O desenvolvedor não precisa dizer ao framework o que existe. O framework descob
 - **Middlewares:** escaneados de `/app/middleware/` com nome = apelido.
 - **Events:** escaneados de `/app/events/` com nome = gatilho.
 - **Views:** escaneadas de `/app/views/` com path = rota espelho.
-- **Migrations:** escaneadas de `/database/migrations/` com prefixo = ordem.
+- **Migrations:** escaneadas de `/database/migrations/` com prefixo timestamp = ordem.
 
 **Nada é registrado.** Se o arquivo existe, o framework sabe que ele existe.
 
@@ -154,7 +154,7 @@ Todas as convenções do SparkPHP seguem o mesmo padrão mental:
 | `app/views/layouts/main.spark` | Layout padrão |
 | `app/views/partials/header.spark` | Partial chamado com `@partial('header')` |
 | `app/views/errors/404.spark` | Página de erro 404 |
-| `database/migrations/001_create_users.php` | Primeira migration a executar |
+| `database/migrations/20260327000000_create_users_table.php` | Primeira migration a executar |
 
 ### Onde o arquivo está diz como se aplica
 
@@ -174,7 +174,7 @@ Todas as convenções do SparkPHP seguem o mesmo padrão mental:
 | `users.[id].php` | `/users/:id` — `$id` disponível no handler |
 | `orders.[orderId].items.[itemId].php` | `/orders/:orderId/items/:itemId` |
 | `user.created.php` | Evento do model `User`, ação `created` |
-| `001_create_users.php` | Migration na posição 1 |
+| `20260327000000_create_users_table.php` | Migration na posição 1 |
 
 ### O tipo de retorno define a resposta
 

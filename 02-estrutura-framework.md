@@ -96,10 +96,11 @@ Este documento define a estrutura completa de diretórios e arquivos do SparkPHP
 │
 ├── database/
 │   ├── migrations/
-│   │   ├── 001_create_users.php
-│   │   ├── 002_create_products.php
-│   │   └── 003_create_orders.php
+│   │   ├── 20260327000000_create_users_table.php
+│   │   ├── 20260327010000_create_products_table.php
+│   │   └── 20260327020000_create_orders_table.php
 │   └── seeds/
+│       ├── DatabaseSeeder.php
 │       └── UserSeeder.php
 │
 ├── core/                                      → engine do framework (não se mexe)
@@ -293,13 +294,15 @@ if (!session('user')) {
 
 | Arquivo | Ordem |
 |---|---|
-| `database/migrations/001_create_users.php` | Primeira |
-| `database/migrations/002_create_products.php` | Segunda |
-| `database/migrations/003_create_orders.php` | Terceira |
+| `database/migrations/20260327000000_create_users_table.php` | Primeira |
+| `database/migrations/20260327010000_create_products_table.php` | Segunda |
+| `database/migrations/20260327020000_create_orders_table.php` | Terceira |
 
 **Regras:**
 
-- Prefixo numérico define a ordem de execução.
+- Prefixo timestamp ordenável define a ordem de execução.
+- Cada arquivo declara uma classe que estende `Migration`.
+- O estado de execução é salvo na tabela interna `spark_migrations`.
 - Executadas com `php spark migrate`.
 - Rollback com `php spark migrate:rollback`.
 
@@ -360,9 +363,10 @@ env('CUSTOM_VAR', 'default'); // com fallback
 | `php spark serve` | Inicia o servidor de desenvolvimento |
 | `php spark serve --port=3000` | Inicia em porta customizada |
 | `php spark migrate` | Executa migrations pendentes |
+| `php spark migrate --seed` | Executa migrations e roda o `DatabaseSeeder` |
 | `php spark migrate:rollback` | Reverte a última migration |
-| `php spark migrate:fresh` | Apaga tudo e re-executa todas as migrations |
-| `php spark seed` | Executa todos os seeders |
+| `php spark db:fresh --seed` | Apaga tudo, reexecuta migrations e roda seeders |
+| `php spark seed` | Executa o `DatabaseSeeder` |
 | `php spark seed UserSeeder` | Executa um seeder específico |
 | `php spark views:cache` | Pré-compila todas as views `.spark` |
 | `php spark views:clear` | Limpa o cache de views |
@@ -372,7 +376,8 @@ env('CUSTOM_VAR', 'default'); // com fallback
 | `php spark cache:clear` | Limpa todo o cache da aplicação |
 | `php spark make:model User` | Cria um model em `app/models/` |
 | `php spark make:middleware auth` | Cria um middleware em `app/middleware/` |
-| `php spark make:migration create_users` | Cria uma migration numerada |
+| `php spark make:migration create_users_table` | Cria uma migration class-based com timestamp |
+| `php spark make:seeder UserSeeder` | Cria um seeder em `database/seeds/` |
 | `php spark make:service PaymentService` | Cria um service em `app/services/` |
 | `php spark make:job SendReport` | Cria um job em `app/jobs/` |
 | `php spark make:event order.completed` | Cria um evento em `app/events/` |
@@ -398,7 +403,7 @@ env('CUSTOM_VAR', 'default'); // com fallback
 | Event automático | `{model}.{ação}.php` | `user.created.php` → auto-dispara em `User::create()` |
 | Event manual | `emit()` + nome do arquivo | `emit('order.completed', $data)` |
 | Service | type-hint = injeção | `fn(PaymentService $p)` → auto-resolvido |
-| Migration | prefixo numérico = ordem | `001_create_users.php` executa primeiro |
+| Migration | timestamp + classe = ordem | `20260327000000_create_users_table.php` executa primeiro |
 | Erro HTTP | `views/errors/{code}.spark` | `errors/404.spark` renderizado em erro 404 |
 | Configuração | `.env` é o único arquivo | `env('DB_HOST')` acessa o valor |
 

@@ -30,6 +30,10 @@ class ProjectScaffolder
             $messages[] = "{$createdDirs} project directories prepared";
         }
 
+        if ($this->ensureDatabaseSeeder()) {
+            $messages[] = 'DatabaseSeeder scaffolded';
+        }
+
         $removedArtifacts = $this->clearRuntimeArtifacts();
         if ($removedArtifacts > 0) {
             $messages[] = "{$removedArtifacts} runtime artifacts cleared";
@@ -101,6 +105,7 @@ class ProjectScaffolder
             'app/events',
             'app/models',
             'app/services',
+            'database/migrations',
             'database/seeds',
             'public/css',
             'public/images',
@@ -129,6 +134,34 @@ class ProjectScaffolder
         }
 
         return $created;
+    }
+
+    private function ensureDatabaseSeeder(): bool
+    {
+        $file = $this->basePath . '/database/seeds/DatabaseSeeder.php';
+        if (file_exists($file)) {
+            return false;
+        }
+
+        $dir = dirname($file);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        file_put_contents($file, <<<'PHP'
+<?php
+
+class DatabaseSeeder extends Seeder
+{
+    public function run(): void
+    {
+        // $this->call(UserSeeder::class);
+    }
+}
+PHP
+        );
+
+        return true;
     }
 
     private function clearRuntimeArtifacts(): int

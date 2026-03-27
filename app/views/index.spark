@@ -508,7 +508,7 @@
 
             <article class="capability-card">
                 <strong>Migrations sem atrito</strong>
-                <p>Prefixo numérico define ordem, com suporte nativo para migrate, rollback e fresh.</p>
+                <p>Timestamp ordenável define ordem, com classes, schema fluente e suporte nativo para migrate, rollback e fresh.</p>
                 <code>php spark migrate</code>
             </article>
 

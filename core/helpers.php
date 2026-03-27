@@ -269,6 +269,11 @@ function db(string $table = ''): QueryBuilder|Database
     return $database->table($table);
 }
 
+function schema(): Schema
+{
+    return Schema::connection();
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Cache
 // ─────────────────────────────────────────────────────────────────────────────

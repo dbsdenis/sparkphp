@@ -52,8 +52,8 @@ meu-projeto/
 │       └── errors/     ← paginas de erro (404.spark, 500.spark)
 ├── core/               ← engine do framework (nao edite)
 ├── database/
-│   ├── migrations/     ← arquivos de migracao
-│   └── seeds/          ← seeders
+│   ├── migrations/     ← migrations class-based com timestamp
+│   └── seeds/          ← DatabaseSeeder e seeders especificos
 ├── public/             ← document root (index.php, assets)
 ├── storage/
 │   ├── cache/          ← cache de views, rotas, classes
