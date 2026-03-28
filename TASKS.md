@@ -54,7 +54,11 @@ Sempre analise os seguintes documentos (vão criar uma orientação melhor do pr
   - [x] Snippets iniciais para blocos principais
   - [x] Pacote `.vsix` gerado e instalado localmente no VS Code
   - [x] Runtime ativo com autocomplete e hover para `.spark`
-- [ ] Task 3.3 — Documentação pública
+- [x] Task 3.3 — Documentação pública
+  - [x] 13 guias em `docs/` cobrindo todas as funcionalidades
+  - [x] Exemplos práticos e executáveis em cada seção
+  - [x] Referência completa de helpers, CLI, diretivas e regras de validação
+  - [x] README.md com índice, quick start e princípios do framework
 - [x] Task 3.4 — Testes do core
   - [x] Suite inicial PHPUnit configurada
   - [x] Testes de Router (params dinâmicos, 405, rota raiz)

@@ -98,6 +98,88 @@ get(fn(int $id, Request $request) => [
 ]);
 ```
 
+## Path alias (redefinir URL)
+
+O file-based routing usa o caminho do arquivo como URL. Mas e se voce quiser uma URL diferente do nome do arquivo? Use `path()` no topo do arquivo de rota:
+
+```php
+// app/routes/docs/index.php
+// Sem alias: /docs
+// Com alias: /documents
+
+path('/documents');
+
+get(fn() => ['docs' => '...']);
+```
+
+O arquivo continua em `app/routes/docs/index.php`, mas responde em `/documents`.
+
+### Com parametros
+
+Use `:param` ou `{param}` para segmentos dinamicos:
+
+```php
+// app/routes/docs.[slug].php
+// Sem alias: /docs/:slug
+// Com alias: /documents/:slug
+
+path('/documents/:slug');
+
+get(fn(string $slug) => ['slug' => $slug]);
+```
+
+Os nomes dos parametros no `path()` devem coincidir com os do arquivo original.
+
+## Rotas nomeadas
+
+De um nome a qualquer rota com `name()` e gere URLs automaticamente com `route()`:
+
+```php
+// app/routes/docs/index.php
+path('/documents')->name('docs.index');
+
+// app/routes/docs.[slug].php
+path('/documents/:slug')->name('docs.show');
+```
+
+Voce pode usar `name()` sem `path()` (mantendo a URL do arquivo):
+
+```php
+// app/routes/users.[id].php
+name('users.show');
+
+get(fn(int $id) => User::findOrFail($id));
+```
+
+### Gerando URLs com route()
+
+```php
+route('docs.index')
+// → http://localhost:8000/documents
+
+route('docs.show', ['slug' => '02-routing'])
+// → http://localhost:8000/documents/02-routing
+
+route('users.show', ['id' => 42])
+// → http://localhost:8000/users/42
+```
+
+Use em views Spark:
+
+```html
+<a href="{{ route('docs.index') }}">Documentacao</a>
+<a href="{{ route('docs.show', ['slug' => $slug]) }}">{{ $title }}</a>
+```
+
+### Resumo
+
+| Funcao       | O que faz                                  | Exemplo                                  |
+|--------------|--------------------------------------------|------------------------------------------|
+| `path()`     | Redefine a URL do arquivo de rota          | `path('/documents')`                     |
+| `name()`     | Nomeia a rota para uso com `route()`       | `name('docs.index')`                     |
+| `->name()`   | Encadeia nome apos `path()`                | `path('/documents')->name('docs.index')` |
+| `route()`    | Gera URL a partir do nome da rota          | `route('docs.show', ['slug' => 'x'])`   |
+
 ## Guard (middleware inline)
 
 Alem de middlewares por diretorio (veja [Middleware](07-middleware.md)), voce pode aplicar guards diretamente na rota:
@@ -213,10 +295,12 @@ php spark routes:list
 Saida:
 
 ```
-  URL                                     Middlewares                   File
-  ────────────────────────────────────────────────────────────────────────────
-  /api/health                             —                            api/health.php
-  /                                       —                            index.php
+  URL                             Name                Middlewares             File
+  ────────────────────────────────────────────────────────────────────────────────────────────
+  /api/health                     —                   —                       api/health.php
+  /                               —                   —                       index.php
+  /documents                      docs.index          —                       docs/index.php
+  /documents/:slug                docs.show           —                       docs.[slug].php
 ```
 
 ## Proximo passo

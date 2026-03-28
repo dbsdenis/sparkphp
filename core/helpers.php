@@ -23,6 +23,40 @@ final class SparkRouteRegistration
     }
 }
 
+final class SparkRoutePath
+{
+    public function name(string $name): static
+    {
+        Router::$_routeName = $name;
+        return $this;
+    }
+}
+
+/**
+ * Redefine the URL path for this route file.
+ *
+ * Use :param or {param} for dynamic segments.
+ *
+ *   path('/documents');
+ *   path('/documents/:slug');
+ *   path('/documents/{slug}')->name('docs.show');
+ */
+function path(string $url): SparkRoutePath
+{
+    Router::$_path = $url;
+    return new SparkRoutePath();
+}
+
+/**
+ * Give this route a name for URL generation via route().
+ *
+ *   name('docs.index');
+ */
+function name(string $routeName): void
+{
+    Router::$_routeName = $routeName;
+}
+
 function sparkRouteRegister(string|array $verbs, callable $handler): SparkRouteRegistration
 {
     $verbs = (array) $verbs;
@@ -135,6 +169,28 @@ function url(string $path = ''): string
 function asset(string $path): string
 {
     return url('public/' . ltrim($path, '/'));
+}
+
+/**
+ * Generate a URL from a named route.
+ *
+ *   route('docs.index')                          → /documents
+ *   route('docs.show', ['slug' => '02-routing']) → /documents/02-routing
+ */
+function route(string $name, array $params = []): string
+{
+    $named = Router::getNamedRoutes();
+
+    $url = $named[$name] ?? null;
+    if ($url === null) {
+        throw new \RuntimeException("Route [{$name}] not defined.");
+    }
+
+    foreach ($params as $key => $value) {
+        $url = str_replace(":{$key}", (string) $value, $url);
+    }
+
+    return url($url);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -547,6 +603,19 @@ function sparkDumpHtml(mixed ...$vars): string
     }
     echo '</pre>';
     return (string) ob_get_clean();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CSRF verification middleware helper
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Markdown
+// ─────────────────────────────────────────────────────────────────────────────
+
+function markdown(string $text): string
+{
+    return Markdown::parse($text);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -7,7 +7,7 @@
 
         <nav class="site-nav" aria-label="Principal">
             <a href="/" @active('/', 'nav-active')>Home</a>
-            <a href="/#features">Docs</a>
+            <a href="{{ route('docs.index') }}" @active('/documents', 'nav-active')>Docs</a>
             <a href="/#showcase">Exemplos</a>
         </nav>
 

@@ -1,0 +1,141 @@
+@title('Documentação — SparkPHP')
+@bodyClass('docs-page')
+
+<style>
+    .docs-page main {
+        overflow: hidden;
+    }
+
+    .docs-shell {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem 5rem;
+    }
+
+    .docs-hero {
+        text-align: center;
+        padding: 3rem 0 2rem;
+    }
+
+    .docs-hero h1 {
+        font-size: clamp(2.5rem, 6vw, 4rem);
+        letter-spacing: -.05em;
+        margin: 0;
+    }
+
+    .docs-hero h1 span {
+        color: var(--brand);
+    }
+
+    .docs-hero p {
+        margin: 1rem auto 0;
+        max-width: 32rem;
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+
+    .docs-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+        margin-top: 2.5rem;
+    }
+
+    .docs-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.25rem 1.35rem;
+        border-radius: 1.1rem;
+        border: 1px solid var(--border-soft);
+        background: var(--surface-1);
+        color: inherit;
+        transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+    }
+
+    .docs-card:hover {
+        border-color: var(--border-strong);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+    }
+
+    :root[data-theme='light'] .docs-card {
+        background: rgba(255, 255, 255, 0.84);
+    }
+
+    .docs-card__number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.4rem;
+        height: 2.4rem;
+        border-radius: .75rem;
+        background: var(--surface-3);
+        color: var(--brand);
+        font-weight: 700;
+        font-size: .95rem;
+        flex-shrink: 0;
+    }
+
+    .docs-card__info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .docs-card__title {
+        display: block;
+        font-weight: 700;
+        font-size: 1.05rem;
+        letter-spacing: -.02em;
+        margin-bottom: .2rem;
+    }
+
+    .docs-card__slug {
+        display: block;
+        color: var(--text-muted);
+        font-size: .85rem;
+        font-family: "JetBrains Mono", "Fira Code", monospace;
+    }
+
+    .docs-card__arrow {
+        color: var(--text-muted);
+        font-size: 1.1rem;
+        transition: transform .2s ease, color .2s ease;
+    }
+
+    .docs-card:hover .docs-card__arrow {
+        transform: translateX(3px);
+        color: var(--brand);
+    }
+
+    @media (max-width: 640px) {
+        .docs-shell {
+            padding: 1.25rem 1rem 4rem;
+        }
+
+        .docs-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="docs-shell">
+    <section class="docs-hero">
+        <h1><span>Docs</span></h1>
+        <p>Guia completo do SparkPHP — do setup ao deploy.</p>
+    </section>
+
+    <div class="docs-grid">
+        @foreach($docs as $idx => $doc)
+            <a href="{{ route('docs.show', ['slug' => $doc['slug']]) }}" class="docs-card">
+                <span class="docs-card__number">{{ str_pad($idx + 1, 2, '0', STR_PAD_LEFT) }}</span>
+                <span class="docs-card__info">
+                    <span class="docs-card__title">{{ $doc['title'] }}</span>
+                    <span class="docs-card__slug">{{ $doc['slug'] }}.md</span>
+                </span>
+                <span class="docs-card__arrow">→</span>
+            </a>
+        @endforeach
+    </div>
+</div>

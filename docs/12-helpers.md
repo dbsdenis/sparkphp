@@ -1,0 +1,168 @@
+# Helpers (Funcoes Globais)
+
+O SparkPHP fornece dezenas de funcoes globais para que voce nao precise importar nada. Todas estao disponiveis em rotas, middlewares, views e qualquer lugar do app.
+
+## Aplicacao
+
+| Funcao              | Descricao                                       |
+|---------------------|-------------------------------------------------|
+| `env('KEY')`        | Le variavel do `.env` (com cache em production) |
+| `env('KEY', 'def')` | Com valor default                               |
+| `config('app.name')`| Le valor de `app/config/*.php` com dot-notation |
+| `app()`             | Instancia do Container                          |
+| `app_path('x')`     | Caminho absoluto para `app/x`                   |
+| `base_path('x')`    | Caminho absoluto para a raiz do projeto/`x`     |
+| `storage_path('x')` | Caminho absoluto para `storage/x`               |
+| `public_path('x')`  | Caminho absoluto para `public/x`                |
+| `url('/path')`      | URL completa: `APP_URL` + `/path`               |
+
+## Request & Input
+
+| Funcao                  | Descricao                                     |
+|-------------------------|-----------------------------------------------|
+| `input('key')`          | Valor do body (POST/JSON)                     |
+| `input('key', 'def')`   | Com fallback                                  |
+| `input()`               | Todos os campos do body                       |
+| `query('key')`          | Valor da query string                         |
+| `query('key', 'def')`   | Com fallback                                  |
+| `query()`               | Toda a query string como array                |
+| `method()`              | Metodo HTTP (ja resolve `_method`)            |
+| `ip()`                  | IP do cliente                                 |
+| `request()`             | Instancia de `Request`                        |
+
+## Response
+
+| Funcao                          | Descricao                          |
+|---------------------------------|------------------------------------|
+| `json($data, $status)`         | Response JSON                      |
+| `redirect('/url')`             | Redirect 302                       |
+| `redirect('/url', 301)`        | Redirect com status customizado    |
+| `back()`                       | Redirect para HTTP_REFERER         |
+| `created($data)`               | Response 201 JSON                  |
+| `noContent()`                  | Response 204                       |
+| `notFound('msg')`              | Response 404 JSON                  |
+| `download('/path')`            | Response de download de arquivo    |
+| `download('/path', 'nome.pdf')`| Com nome customizado               |
+| `abort(403)`                   | Para execucao com status code      |
+| `abort(404, 'Nao encontrado')` | Com mensagem                       |
+
+## Views
+
+| Funcao                                     | Descricao                                   |
+|--------------------------------------------|---------------------------------------------|
+| `view('name', ['key' => 'val'])`           | Renderiza view `.spark`                     |
+| `view('users.index', $data)`              | Dot-notation para subdiretorios             |
+
+## Database
+
+| Funcao              | Descricao                                     |
+|---------------------|-----------------------------------------------|
+| `db('table')`       | QueryBuilder para a tabela                    |
+| `db()`              | Instancia do Database                         |
+
+## Session
+
+| Funcao                          | Descricao                              |
+|---------------------------------|----------------------------------------|
+| `session('key')`                | Le valor da sessao                     |
+| `session('key', 'def')`        | Com fallback                           |
+| `session(['k' => 'v'])`        | Escreve na sessao                      |
+| `flash('key', 'val')`          | Seta flash data                        |
+| `flash('key')`                 | Le (e remove) flash data               |
+| `old('field')`                 | Valor antigo de input (pos-validacao)  |
+| `session_regenerate()`         | Regenera ID da sessao                  |
+
+## Cache
+
+| Funcao                                    | Descricao                                |
+|-------------------------------------------|------------------------------------------|
+| `cache('key')`                            | Le do cache                              |
+| `cache('key', 'def')`                    | Com fallback                             |
+| `cache(['key' => 'val'], $ttl)`          | Escreve no cache (TTL em segundos)       |
+| `cache_remember('key', $ttl, $callback)` | Le ou gera e cacheia                     |
+| `cache_flush()`                           | Limpa todo o cache                       |
+
+## Auth
+
+| Funcao          | Descricao                           |
+|-----------------|-------------------------------------|
+| `auth()`        | Usuario logado ou `null`            |
+| `login($user)`  | Loga usuario                        |
+| `logout()`      | Desloga                             |
+
+## Seguranca
+
+| Funcao              | Descricao                           |
+|---------------------|-------------------------------------|
+| `csrf()`            | Token CSRF atual                    |
+| `verifyCsrf()`      | Verifica token (aborta se invalido)|
+| `e($string)`        | `htmlspecialchars` (XSS protection) |
+| `uuid()`            | Gera UUID v4                        |
+
+## Validacao
+
+| Funcao                                    | Descricao                          |
+|-------------------------------------------|------------------------------------|
+| `validate($rules)`                        | Valida input e retorna dados       |
+| `validate($rules, $messages)`             | Com mensagens customizadas         |
+| `errors()`                                | Array de erros da ultima validacao |
+
+## Events & Jobs
+
+| Funcao                                      | Descricao                             |
+|---------------------------------------------|---------------------------------------|
+| `event('Name', $data)`                      | Dispara evento                        |
+| `on('Name', $callback)`                     | Registra listener in-memory           |
+| `off('Name', $callback)`                    | Remove listener                       |
+| `dispatch(Job::class, $data)`               | Despacha job para a fila              |
+| `dispatch_later(Job::class, $data, $delay)` | Despacha com delay (segundos)         |
+
+## Mail
+
+| Funcao    | Descricao                                  |
+|-----------|--------------------------------------------|
+| `mail()`  | Nova instancia do Mailer (fluent API)      |
+
+## Logging
+
+| Funcao                      | Descricao                                |
+|-----------------------------|------------------------------------------|
+| `log_debug('msg', $ctx)`   | Log nivel debug                          |
+| `log_info('msg', $ctx)`    | Log nivel info                           |
+| `log_notice('msg', $ctx)`  | Log nivel notice                         |
+| `log_warning('msg', $ctx)` | Log nivel warning                        |
+| `log_error('msg', $ctx)`   | Log nivel error                          |
+| `log_critical('msg', $ctx)`| Log nivel critical                       |
+
+Logs sao gravados em `storage/logs/spark-YYYY-MM-DD.log`.
+
+O nivel minimo e controlado por `LOG_LEVEL` no `.env`.
+
+## Debug
+
+| Funcao        | Descricao                                     |
+|---------------|-----------------------------------------------|
+| `dd($vars)`   | Dump & die — exibe variaveis e para execucao  |
+| `dump($vars)` | Dump sem parar execucao                       |
+
+## Rotas (dentro de arquivos de rota)
+
+| Funcao                  | Descricao                        |
+|-------------------------|----------------------------------|
+| `get($handler)`         | Handler para GET                 |
+| `post($handler)`        | Handler para POST                |
+| `put($handler)`         | Handler para PUT                 |
+| `patch($handler)`       | Handler para PATCH               |
+| `delete($handler)`      | Handler para DELETE              |
+| `any($handler)`         | Handler para todos os metodos    |
+
+## Migrations (dentro de arquivos de migration)
+
+| Funcao           | Descricao                    |
+|------------------|------------------------------|
+| `up($callback)`  | Define o que a migration faz |
+| `down($callback)`| Define o rollback            |
+
+## Proximo passo
+
+→ [CLI](13-cli.md)

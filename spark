@@ -1041,6 +1041,7 @@ function sparkViewsClear(): void
 
 function sparkRoutesCache(): void
 {
+    require_once SPARK_BASE . '/core/helpers.php';
     require_once SPARK_BASE . '/core/Router.php';
     $router = new Router(SPARK_BASE);
     $routes = $router->buildRoutes();
@@ -1058,21 +1059,33 @@ function sparkRoutesClear(): void
 
 function sparkRoutesList(): void
 {
+    require_once SPARK_BASE . '/core/helpers.php';
     require_once SPARK_BASE . '/core/Router.php';
     $router = new Router(SPARK_BASE);
     $routes = $router->list();
 
     echo "\n";
-    out('  ' . color(str_pad('URL', 40), 'yellow') . color(str_pad('Middlewares', 30), 'yellow') . color('File', 'yellow'));
-    out('  ' . color(str_repeat('─', 88), 'dim'));
+    out('  ' . color(str_pad('URL', 32), 'yellow') . color(str_pad('Name', 20), 'yellow') . color(str_pad('Middlewares', 24), 'yellow') . color('File', 'yellow'));
+    out('  ' . color(str_repeat('─', 100), 'dim'));
 
     foreach ($routes as $route) {
         $mwRaw = implode(', ', $route['middlewares']);
         $mw    = $mwRaw ?: '—';
         $file  = str_replace(SPARK_BASE . '/app/routes/', '', $route['file']);
-        $mwPad = str_pad($mw, 30);
-        $mwStr = $mwRaw ? color($mwPad, 'cyan') : color($mwPad, 'dim');
-        out('  ' . color(str_pad($route['url'], 40), 'green') . $mwStr . color($file, 'dim'));
+        $name  = $route['name'] ?? null;
+        $alias = $route['originalUrl'] ?? null;
+
+        $urlCol  = $route['url'];
+        if ($alias) {
+            $urlCol .= color(' ← ' . $alias, 'dim');
+        }
+
+        $namePad = str_pad($name ?: '—', 20);
+        $nameStr = $name ? color($namePad, 'magenta') : color($namePad, 'dim');
+        $mwPad   = str_pad($mw, 24);
+        $mwStr   = $mwRaw ? color($mwPad, 'cyan') : color($mwPad, 'dim');
+
+        out('  ' . color(str_pad($route['url'], 32), 'green') . $nameStr . $mwStr . color($file, 'dim'));
     }
     echo "\n";
 }

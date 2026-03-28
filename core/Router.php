@@ -6,10 +6,15 @@ class Router
     public static array $_collected = [];
     /** @internal Used by route helper chaining such as ->guard('auth') */
     public static array $_meta = [];
+    /** @internal Used by path() to redefine the route URL */
+    public static ?string $_path = null;
+    /** @internal Used by name() / path()->name() to assign a route name */
+    public static ?string $_routeName = null;
 
     private string $basePath;
     private array $routes = [];
     private string $cacheFile;
+    private static array $namedRoutes = [];
 
     public function __construct(string $basePath)
     {
@@ -95,6 +100,11 @@ class Router
         return $this->routes;
     }
 
+    public static function getNamedRoutes(): array
+    {
+        return self::$namedRoutes;
+    }
+
     // ─────────────────────────────────────────────
     // Route map building
     // ─────────────────────────────────────────────
@@ -104,7 +114,12 @@ class Router
         $isDev = ($_ENV['APP_ENV'] ?? 'dev') === 'dev';
 
         if (!$isDev && file_exists($this->cacheFile)) {
-            return require $this->cacheFile;
+            $cached = require $this->cacheFile;
+            if (isset($cached['routes'])) {
+                self::$namedRoutes = $cached['names'] ?? [];
+                return $cached['routes'];
+            }
+            return $cached;
         }
 
         return $this->buildRoutes();
@@ -157,6 +172,28 @@ class Router
             $url     = '/' . implode('/', array_filter($urlSegments));
             $pattern = $this->buildPattern($urlSegments, $paramNames);
 
+            // Extract path() / name() metadata from the route file
+            $routeName = null;
+            $originalUrl = $url;
+            $content = file_get_contents($fullPath);
+            if (str_contains($content, 'path(') || str_contains($content, 'name(')) {
+                $this->extractRouteMetadata($fullPath);
+
+                if (self::$_path !== null) {
+                    [$urlSegments, $paramNames, $hasParams] = $this->parseAliasPath(self::$_path);
+                    $url     = '/' . implode('/', array_filter($urlSegments));
+                    $pattern = $this->buildPattern($urlSegments, $paramNames);
+                }
+
+                $routeName = self::$_routeName;
+                self::$_path = null;
+                self::$_routeName = null;
+            }
+
+            if ($routeName !== null) {
+                self::$namedRoutes[$routeName] = $url;
+            }
+
             $routes[] = [
                 'file'        => $fullPath,
                 'url'         => $url,
@@ -164,6 +201,8 @@ class Router
                 'paramNames'  => $paramNames,
                 'middlewares' => $middlewares,
                 'priority'    => $hasParams ? 10 : 1,
+                'name'        => $routeName,
+                'originalUrl' => $originalUrl !== $url ? $originalUrl : null,
             ];
         }
     }
@@ -254,10 +293,60 @@ class Router
     // Handler loading
     // ─────────────────────────────────────────────
 
+    /**
+     * Load a route file to extract only path()/name() metadata.
+     * Resets all static state afterward.
+     */
+    private function extractRouteMetadata(string $file): void
+    {
+        self::$_collected = [];
+        self::$_meta = [];
+        self::$_path = null;
+        self::$_routeName = null;
+
+        (static function () use ($file) {
+            require $file;
+        })();
+
+        // Keep only $_path and $_routeName; discard handlers
+        self::$_collected = [];
+        self::$_meta = [];
+    }
+
+    /**
+     * Parse a path() alias string into URL segments and param names.
+     *
+     * Supports both :param and {param} syntax:
+     *   '/documents/:slug'  → ['documents', ':slug'], ['slug'], true
+     *   '/documents/{slug}' → ['documents', ':slug'], ['slug'], true
+     */
+    private function parseAliasPath(string $path): array
+    {
+        $path     = trim($path, '/');
+        $parts    = $path === '' ? [] : explode('/', $path);
+        $segments   = [];
+        $paramNames = [];
+        $hasParams  = false;
+
+        foreach ($parts as $part) {
+            if (preg_match('/^\{(.+)\}$/', $part, $m) || preg_match('/^:(.+)$/', $part, $m)) {
+                $segments[]   = ':' . $m[1];
+                $paramNames[] = $m[1];
+                $hasParams    = true;
+            } else {
+                $segments[] = $part;
+            }
+        }
+
+        return [$segments, $paramNames, $hasParams];
+    }
+
     private function loadHandlers(string $file): array
     {
         self::$_collected = [];
         self::$_meta = [];
+        self::$_path = null;
+        self::$_routeName = null;
 
         (static function () use ($file) {
             require $file;
@@ -267,6 +356,8 @@ class Router
         $meta      = self::$_meta;
         self::$_collected = [];
         self::$_meta = [];
+        self::$_path = null;
+        self::$_routeName = null;
 
         return [
             'handlers' => $collected,
@@ -286,6 +377,10 @@ class Router
         }
         // Routes contain closures — we only cache the metadata, not handlers
         $cacheable = array_map(fn($r) => array_diff_key($r, ['handler' => true]), $routes);
-        file_put_contents($this->cacheFile, '<?php return ' . var_export($cacheable, true) . ';');
+        $data = [
+            'routes' => $cacheable,
+            'names'  => self::$namedRoutes,
+        ];
+        file_put_contents($this->cacheFile, '<?php return ' . var_export($data, true) . ';');
     }
 }
