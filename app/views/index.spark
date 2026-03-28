@@ -398,6 +398,7 @@
         border: 1px solid var(--border-strong);
         background: linear-gradient(90deg, rgba(255, 166, 58, 0.12), rgba(255, 166, 58, 0.04));
         color: var(--text-secondary);
+        font-size: .92rem;
     }
 
     .landing-page .dev-strip__group {
@@ -411,9 +412,34 @@
         color: var(--text-primary);
     }
 
+    .landing-page .dev-strip__sep {
+        width: 1px;
+        height: 1rem;
+        background: var(--border-soft);
+    }
+
+    .landing-page .dev-strip__actions {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        flex-wrap: wrap;
+    }
+
     .landing-page .dev-strip a {
         color: var(--brand);
-        font-weight: 700;
+        font-weight: 600;
+        text-decoration: none;
+        padding: .3rem .65rem;
+        border-radius: .5rem;
+        transition: background .15s ease;
+    }
+
+    .landing-page .dev-strip a:hover {
+        background: rgba(255, 166, 58, 0.12);
+    }
+
+    .landing-page .dev-strip__actions .dev-strip__sep {
+        height: .85rem;
     }
 
     @media (max-width: 720px) {
@@ -709,11 +735,19 @@ HTML; ?></pre>
             <div class="dev-strip__group">
                 <span class="dev-strip__dot"></span>
                 <strong>Dev mode</strong>
-                <span>APP_ENV=dev</span>
+                <span class="dev-strip__sep"></span>
                 <span>PHP {{ phpversion() }}</span>
+                <span class="dev-strip__sep"></span>
+                <span>DB: {{ env('DB', 'sqlite') }}</span>
             </div>
 
-            <a href="/?_spark_routes=1">Ver rotas →</a>
+            <div class="dev-strip__actions">
+                <a href="/_spark">Inspector</a>
+                <span class="dev-strip__sep"></span>
+                <a href="/?_spark_routes=1">Rotas</a>
+                <span class="dev-strip__sep"></span>
+                <a href="{{ route('docs.index') }}">Docs</a>
+            </div>
         </div>
         @enddev
     </section>
