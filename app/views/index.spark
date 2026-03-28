@@ -297,6 +297,26 @@
         align-self: flex-start;
     }
 
+    .landing-page .capability-card-link {
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        border-radius: 1.1rem;
+        transition: transform .2s ease;
+    }
+
+    .landing-page .capability-card-link .capability-card {
+        flex: 1;
+    }
+
+    .landing-page .capability-card-link:hover {
+        transform: translateY(-3px);
+    }
+
+    .landing-page .capability-card-link:hover .capability-card {
+        border-color: var(--brand);
+    }
+
     .landing-page .showcase {
         padding-top: 4.5rem;
     }
@@ -590,29 +610,69 @@
         </div>
 
         <div class="capability-grid">
+            <a href="{{ route('docs.show', ['slug' => '13-cli']) }}" class="capability-card-link">
             <article class="capability-card">
                 <strong>CLI útil de verdade</strong>
-                <p>Servidor local, generators, cache, rotas e utilitários do inspector no mesmo comando.</p>
-                <code>php spark routes:list</code>
+                <p>Servidor local, generators (<code>make:model</code>, <code>make:migration</code>, <code>make:job</code>…), diagnósticos e benchmarks.</p>
+                <code>php spark serve</code>
             </article>
+            </a>
 
+            <a href="{{ route('docs.show', ['slug' => '05-database']) }}" class="capability-card-link">
             <article class="capability-card">
                 <strong>Migrations sem atrito</strong>
-                <p>Timestamp ordenável define ordem, com classes, schema fluente e suporte nativo para migrate, rollback e fresh.</p>
-                <code>php spark migrate</code>
+                <p>Schema builder fluente com suporte a migrate, rollback, fresh e status. Seeds com <code>DatabaseSeeder</code>.</p>
+                <code>php spark migrate --seed</code>
             </article>
+            </a>
 
+            <a href="{{ route('docs.show', ['slug' => '09-session-cache']) }}" class="capability-card-link">
             <article class="capability-card">
                 <strong>Cache e optimize</strong>
-                <p>Views, rotas, classes e schema podem ser pré-compilados para runtime sem scans.</p>
+                <p>Views, rotas e classes pré-compilados para runtime zero-scan. Um comando para deploy.</p>
                 <code>php spark optimize</code>
             </article>
+            </a>
 
+            <a href="{{ route('docs.show', ['slug' => '10-events-jobs']) }}" class="capability-card-link">
             <article class="capability-card">
                 <strong>Jobs e eventos</strong>
-                <p>Despache trabalho assíncrono e eventos do domínio com convenção, sem registro manual.</p>
-                <code>dispatch() / emit()</code>
+                <p>Despache trabalho assíncrono com <code>dispatch()</code> e eventos do domínio com <code>event()</code> — file-based, sem registro.</p>
+                <code>php spark queue:work</code>
             </article>
+            </a>
+
+            <a href="{{ route('docs.show', ['slug' => '08-authentication']) }}" class="capability-card-link">
+            <article class="capability-card">
+                <strong>Auth pronto</strong>
+                <p>Autenticação via sessão com <code>auth()</code>, <code>login()</code>, <code>logout()</code>. Guards por rota e diretivas de role nas views.</p>
+                <code>auth()->name</code>
+            </article>
+            </a>
+
+            <a href="{{ route('docs.show', ['slug' => '09-session-cache']) }}" class="capability-card-link">
+            <article class="capability-card">
+                <strong>Session e Flash</strong>
+                <p>Sessão com helpers simples, flash messages de uma requisição e proteção CSRF automática.<br></p>
+                <code>flash('success', 'Salvo!')</code>
+            </article>
+            </a>
+
+            <a href="{{ route('docs.show', ['slug' => '12-helpers']) }}" class="capability-card-link">
+            <article class="capability-card">
+                <strong>Helpers globais</strong>
+                <p>Dezenas de funções globais — input, response, cache, segurança, debug — sem imports, disponíveis em todo lugar.</p>
+                <code>dd() / dump() / uuid()</code>
+            </article>
+            </a>
+
+            <a href="{{ route('docs.show', ['slug' => '12-helpers']) }}" class="capability-card-link">
+            <article class="capability-card">
+                <strong>Logging estruturado</strong>
+                <p>Logs por nível em <code>storage/logs/</code> com rotação diária. Nível mínimo controlado via <code>.env</code>.</p>
+                <code>log_info('msg', $ctx)</code>
+            </article>
+            </a>
         </div>
     </section>
 
