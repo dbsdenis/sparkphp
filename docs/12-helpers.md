@@ -138,6 +138,57 @@ Logs sao gravados em `storage/logs/spark-YYYY-MM-DD.log`.
 
 O nivel minimo e controlado por `LOG_LEVEL` no `.env`.
 
+## Markdown
+
+| Funcao                                              | Descricao                                      |
+|-----------------------------------------------------|-------------------------------------------------|
+| `markdown($text)`                                   | Converte Markdown em HTML                       |
+| `markdown($text, copyable(['php', 'bash']))`            | Com botao copiar nos blocos dessas linguagens    |
+| `markdown($text, copyable(['*']))`                      | Com botao copiar em todos os blocos de codigo    |
+| `copyable(['php', 'bash', 'js'])`                       | Helper que define quais linguagens tem copiar    |
+
+### Exemplo em rota
+
+```php
+// app/routes/docs.[slug].php
+get(function (string $slug) {
+    $raw = file_get_contents("docs/{$slug}.md");
+
+    return view('docs/show', [
+        'content' => markdown($raw, copyable(['php', 'bash', 'env', 'html'])),
+    ]);
+});
+```
+
+### Exemplo em view
+
+```html
+<!-- Renderiza HTML do markdown com output nao-escapado -->
+{!! $content !!}
+
+<!-- Ou inline via pipe -->
+{{ $post->body | markdown }}
+```
+
+### Copiar codigo
+
+Quando `copy()` e passado, blocos de codigo fenced que correspondem as linguagens listadas recebem automaticamente:
+
+- Label da linguagem no header do bloco (ex: `PHP`, `BASH`)
+- Botao "Copiar" com feedback visual ("Copiado!") ao clicar
+- Copia o conteudo do bloco para a area de transferencia via `navigator.clipboard`
+
+```php
+// Copiar apenas em blocos PHP e Bash
+markdown($text, copyable(['php', 'bash']))
+
+// Copiar em TODOS os blocos, independente da linguagem
+markdown($text, copyable(['*']))
+
+// Sem copiar (padrao)
+markdown($text)
+```
+
 ## Debug
 
 | Funcao        | Descricao                                     |

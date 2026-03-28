@@ -118,6 +118,28 @@ Equivale a `htmlspecialchars($value)`.
 
 Use apenas quando voce confia no conteudo.
 
+### Markdown com botao de copiar codigo
+
+A funcao `markdown()` aceita um segundo argumento `copy()` que adiciona botao de copiar nos blocos de codigo das linguagens especificadas:
+
+```php
+// Na rota — define quais linguagens tem botao copiar
+return view('docs/show', [
+    'content' => markdown($raw, copyable(['php', 'bash', 'env'])),
+]);
+
+// Copiar em TODOS os blocos
+'content' => markdown($raw, copyable(['*']))
+
+// Sem copiar (padrao)
+'content' => markdown($raw)
+```
+
+```
+<!-- Na view — renderiza o HTML gerado -->
+{!! $content !!}
+```
+
 ---
 
 ## Pipes (transformacoes encadeadas)

@@ -44,7 +44,7 @@ get(function (string $slug) {
     return view('docs/show', [
         'title'      => $title,
         'slug'       => $slug,
-        'content'    => markdown($raw),
+        'content'    => markdown($raw, copyable(['php', 'bash', 'env', 'js', 'html', 'sql'])),
         'docs'       => $docs,
     ]);
 });

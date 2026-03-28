@@ -149,17 +149,73 @@
         font-size: .88em;
     }
 
-    .docs-prose pre {
+    /* ── Code block with copy ── */
+    .docs-prose .code-block {
+        position: relative;
         margin: 0 0 1.25rem;
-        padding: 1.25rem 1.5rem;
         border-radius: 1rem;
         background: var(--surface-code);
         border: 1px solid var(--border-soft);
+        overflow: hidden;
+    }
+
+    .docs-prose .code-block__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: .5rem .75rem .5rem 1.25rem;
+        border-bottom: 1px solid var(--border-soft);
+        min-height: 2.2rem;
+    }
+
+    .docs-prose .code-block__lang {
+        font-family: "JetBrains Mono", "Fira Code", monospace;
+        font-size: .75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--text-muted);
+    }
+
+    .docs-prose .code-block__copy {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .3rem .6rem;
+        border: 1px solid var(--border-soft);
+        border-radius: .5rem;
+        background: transparent;
+        color: var(--text-muted);
+        font-family: inherit;
+        font-size: .75rem;
+        cursor: pointer;
+        transition: color .2s ease, border-color .2s ease, background .2s ease;
+        margin-left: auto;
+    }
+
+    .docs-prose .code-block__copy:hover {
+        color: var(--text-primary);
+        border-color: var(--border-strong);
+        background: rgba(255, 166, 58, 0.06);
+    }
+
+    .docs-prose .code-block__copy--done {
+        color: #22c55e;
+        border-color: rgba(34, 197, 94, 0.3);
+    }
+
+    .docs-prose .code-block pre {
+        margin: 0;
+        padding: 1.25rem 1.5rem;
+        border: none;
+        border-radius: 0;
+        background: transparent;
         overflow-x: auto;
         line-height: 1.7;
         font-size: .9rem;
     }
 
+    .docs-prose .code-block pre code,
     .docs-prose pre code {
         display: block;
         padding: 0;
@@ -169,8 +225,21 @@
         font-size: inherit;
     }
 
+    :root[data-theme='light'] .docs-prose .code-block pre code,
     :root[data-theme='light'] .docs-prose pre code {
         color: #1f2937;
+    }
+
+    /* Standalone pre (without code-block wrapper) */
+    .docs-prose > pre {
+        margin: 0 0 1.25rem;
+        padding: 1.25rem 1.5rem;
+        border-radius: 1rem;
+        background: var(--surface-code);
+        border: 1px solid var(--border-soft);
+        overflow-x: auto;
+        line-height: 1.7;
+        font-size: .9rem;
     }
 
     .docs-prose blockquote {
@@ -388,7 +457,29 @@
 </div>
 
 <script>
+    // Mobile sidebar toggle
     document.getElementById('docs-mobile-toggle')?.addEventListener('click', () => {
         document.getElementById('docs-sidebar')?.classList.toggle('docs-sidebar--open');
+    });
+
+    // Copy code blocks
+    document.querySelectorAll('.code-block__copy').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const block = btn.closest('.code-block');
+            const code = block?.querySelector('code');
+            if (!code) return;
+
+            navigator.clipboard.writeText(code.textContent || '').then(() => {
+                const label = btn.querySelector('.code-block__copy-label');
+                const prev = label.textContent;
+                label.textContent = 'Copiado!';
+                btn.classList.add('code-block__copy--done');
+
+                setTimeout(() => {
+                    label.textContent = prev;
+                    btn.classList.remove('code-block__copy--done');
+                }, 2000);
+            });
+        });
     });
 </script>

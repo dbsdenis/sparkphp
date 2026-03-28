@@ -613,9 +613,25 @@ function sparkDumpHtml(mixed ...$vars): string
 // Markdown
 // ─────────────────────────────────────────────────────────────────────────────
 
-function markdown(string $text): string
+/**
+ * Convert Markdown to HTML.
+ *
+ *   markdown($text)                                    — sem botão de copiar
+ *   markdown($text, copyable(['php', 'bash', 'js']))    — copiar só nessas linguagens
+ */
+function markdown(string $text, array $copyLangs = []): string
 {
-    return Markdown::parse($text);
+    return Markdown::parse($text, $copyLangs);
+}
+
+/**
+ * Shorthand to declare which code-block languages get a copy button.
+ *
+ *   copyable(['php', 'bash', 'env'])
+ */
+function copyable(array $langs): array
+{
+    return $langs;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

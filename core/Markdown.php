@@ -10,10 +10,18 @@
 class Markdown
 {
     private string $html = '';
+    private array $copyLangs = [];
 
-    public static function parse(string $markdown): string
+    /**
+     * @param string   $markdown  Raw markdown text
+     * @param string[] $copyLangs Languages that get a copy button (e.g. ['php','bash','js'])
+     *                            Empty array = no copy button on any block
+     */
+    public static function parse(string $markdown, array $copyLangs = []): string
     {
-        return (new self())->convert($markdown);
+        $instance = new self();
+        $instance->copyLangs = array_map('strtolower', $copyLangs);
+        return $instance->convert($markdown);
     }
 
     public function convert(string $markdown): string
@@ -40,8 +48,24 @@ class Markdown
                 }
                 $i++; // skip closing fence
                 $escaped = htmlspecialchars(implode("\n", $code), ENT_QUOTES, 'UTF-8');
-                $langAttr = $lang ? ' class="language-' . htmlspecialchars($lang, ENT_QUOTES, 'UTF-8') . '"' : '';
-                $this->html .= "<pre><code{$langAttr}>{$escaped}</code></pre>\n";
+                $langSafe = $lang ? htmlspecialchars($lang, ENT_QUOTES, 'UTF-8') : '';
+                $langAttr = $langSafe ? " class=\"language-{$langSafe}\"" : '';
+                $allLangs = in_array('*', $this->copyLangs, true);
+                $showCopy = !empty($this->copyLangs) && ($allLangs || ($langSafe && in_array(strtolower($langSafe), $this->copyLangs, true)));
+
+                if ($showCopy) {
+                    $langLabel = "<span class=\"code-block__lang\">{$langSafe}</span>";
+                    $copyBtn = "<button type=\"button\" class=\"code-block__copy\" title=\"Copiar\">"
+                        . "<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">"
+                        . "<rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\" ry=\"2\"/>"
+                        . "<path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"/>"
+                        . "</svg><span class=\"code-block__copy-label\">Copiar</span></button>";
+                    $this->html .= "<div class=\"code-block\">"
+                        . "<div class=\"code-block__header\">{$langLabel}{$copyBtn}</div>"
+                        . "<pre><code{$langAttr}>{$escaped}</code></pre></div>\n";
+                } else {
+                    $this->html .= "<pre><code{$langAttr}>{$escaped}</code></pre>\n";
+                }
                 continue;
             }
 
