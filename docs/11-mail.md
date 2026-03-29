@@ -19,7 +19,7 @@ MAIL_FROM_NAME="${APP_NAME}"
 ### API fluente
 
 ```php
-mail()
+mailer()
     ->to('ana@example.com')
     ->subject('Bem-vindo!')
     ->html('<h1>Ola, Ana!</h1><p>Obrigado por se cadastrar.</p>')
@@ -29,7 +29,7 @@ mail()
 ### Com view Spark
 
 ```php
-mail()
+mailer()
     ->to('ana@example.com')
     ->subject('Bem-vindo!')
     ->view('emails.welcome', ['user' => $user])
@@ -52,7 +52,7 @@ A view `emails.welcome` busca `app/views/emails/welcome.spark`:
 ### Texto plano
 
 ```php
-mail()
+mailer()
     ->to('ana@example.com')
     ->subject('Confirmacao')
     ->text('Seu codigo de confirmacao e: 123456')
@@ -62,7 +62,7 @@ mail()
 ### Destinatarios multiplos
 
 ```php
-mail()
+mailer()
     ->to('ana@example.com')
     ->to('bob@example.com')
     ->cc('gerente@example.com')
@@ -76,7 +76,7 @@ mail()
 ### Remetente customizado
 
 ```php
-mail()
+mailer()
     ->from('noreply@example.com', 'Sistema de Alertas')
     ->to('admin@example.com')
     ->subject('Alerta de seguranca')
@@ -87,7 +87,7 @@ mail()
 ### Anexos
 
 ```php
-mail()
+mailer()
     ->to('cliente@example.com')
     ->subject('Sua nota fiscal')
     ->view('emails.invoice', ['order' => $order])
@@ -110,7 +110,7 @@ class SendEmailJob
 
     public function handle(): void
     {
-        mail()
+        mailer()
             ->to($this->data['to'])
             ->subject($this->data['subject'])
             ->view($this->data['view'], $this->data['vars'] ?? [])
@@ -145,7 +145,7 @@ post(function () {
         ['token' => $token, 'created_at' => date('Y-m-d H:i:s')]
     );
 
-    mail()
+    mailer()
         ->to($user->email)
         ->subject('Redefinir sua senha')
         ->view('emails.reset-password', [

@@ -22,7 +22,7 @@ Cria `app/events/UserRegistered.php`:
 $user = $data['user'];
 
 // Enviar email de boas-vindas
-mail()
+mailer()
     ->to($user->email)
     ->subject('Bem-vindo!')
     ->view('emails.welcome', ['user' => $user])
@@ -38,7 +38,7 @@ log_info("Novo usuario registrado: {$user->email}");
 event('UserRegistered', ['user' => $user]);
 ```
 
-O SparkPHP automaticamente localiza e executa `app/events/UserRegistered.php`, passando os dados como `$data`.
+`event()` e um alias de `emit()`. Ambos localizam e executam `app/events/UserRegistered.php`, passando os dados como `$data`.
 
 ### Listeners in-memory
 
@@ -59,22 +59,25 @@ event('OrderPlaced', ['order' => $order]);
 
 ### Eventos do Model
 
-Models disparam eventos automaticamente em operacoes CRUD:
+Models ja disparam eventos de ciclo de vida automaticamente em operacoes CRUD. O nome segue a tabela do model:
+
+```text
+users.created
+users.updating
+users.updated
+users.deleting
+users.deleted
+```
+
+Exemplo:
 
 ```php
-class User extends Model
-{
-    protected static function booted(): void
-    {
-        static::created(function ($user) {
-            event('UserRegistered', ['user' => $user]);
-        });
+// app/events/users.created.php
+<?php
 
-        static::deleted(function ($user) {
-            event('UserDeleted', ['user' => $user]);
-        });
-    }
-}
+$user = $data;
+
+log_info("Novo usuario criado: {$user->email}");
 ```
 
 ### Exemplo: sistema de notificacoes
@@ -133,7 +136,7 @@ class SendWelcomeEmail
     {
         $user = User::find($this->data['user_id']);
 
-        mail()
+        mailer()
             ->to($user->email)
             ->subject('Bem-vindo ao ' . env('APP_NAME'))
             ->view('emails.welcome', ['user' => $user])

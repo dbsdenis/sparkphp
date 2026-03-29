@@ -544,8 +544,8 @@
                 <div class="feature-card__icon">⚙️</div>
                 <h3>Zero Config</h3>
                 <p>
-                    Um <code>.env</code> configura tudo. Precisa de mais? Use <code>config('app.name')</code>
-                    com dot-notation em <code>app/config/</code>.
+                    Um <code>.env</code> cobre a configuracao obrigatoria do framework. Para agrupar
+                    valores da aplicacao, use <code>config('app.name')</code> em <code>app/config/</code>.
                 </p>
             </article>
             </a>
@@ -589,7 +589,7 @@
                 <h3>Middleware Simples</h3>
                 <p>
                     Arquivo em <code>app/middleware/</code> = alias pronto. Aplique com <code>guard()</code>
-                    na rota ou <code>_middleware.php</code> no diretório.
+                    na rota ou por convencao em pastas como <code>[auth]</code> e <code>[auth+throttle]</code>.
                 </p>
             </article>
             </a>

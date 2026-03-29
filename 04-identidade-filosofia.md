@@ -16,10 +16,10 @@ Não é um micro-framework. Não é um clone do Laravel. É uma abordagem difere
    Rotas, middlewares, services, events — nada é registrado manualmente. O framework descobre sozinho pelo sistema de arquivos e por type-hints.
 
 2. **O nome do arquivo já diz o que ele faz.**
-   `routes/api/users.php` é uma rota. `middleware/auth.php` é um middleware chamado `auth`. `events/user.created.php` dispara quando um usuário é criado. Sem mapa, sem dicionário, sem provider.
+   `routes/api/users.php` é uma rota. `middleware/auth.php` é um middleware chamado `auth`. `events/users.created.php` dispara quando um usuário é criado. Sem mapa, sem dicionário, sem provider.
 
-3. **Zero é o número certo de arquivos de configuração.**
-   Toda a configuração cabe em um `.env`. Se o framework precisa de mais que isso, a abstração está errada.
+3. **Zero é o número certo de arquivos obrigatórios além do `.env`.**
+   O framework deve ligar com um `.env`. Se a aplicação quiser agrupar valores próprios, `app/config/*.php` é opcional e não participa do wiring interno do framework.
 
 4. **A view é a página, não um pedaço dela.**
    O arquivo `.spark` representa a tela inteira. Não é uma seção encaixada num layout — é o conteúdo que o layout envolve automaticamente.
@@ -39,7 +39,7 @@ Não é um micro-framework. Não é um clone do Laravel. É uma abordagem difere
 
 ### Convenção sobre configuração (radical)
 
-Outros frameworks dizem que seguem esse princípio. O SparkPHP o leva ao extremo: **não existe mecanismo de configuração para nenhuma camada que pode ser resolvida por convenção.**
+Outros frameworks dizem que seguem esse princípio. O SparkPHP o leva ao extremo: **não existe mecanismo de configuração manual para conectar partes internas do framework que podem ser resolvidas por convenção.**
 
 | O que outros fazem | O que o SparkPHP faz |
 |---|---|
@@ -50,7 +50,7 @@ Outros frameworks dizem que seguem esse princípio. O SparkPHP o leva ao extremo
 | Model com `$fillable` declarado manualmente | Fillable inferido das colunas da tabela |
 | Relacionamentos declarados método por método | Relacionamentos inferidos das foreign keys |
 | View conectada ao layout via `@extends` + `@section` | View envolvida no layout automaticamente |
-| Config em múltiplos arquivos PHP | Um `.env` e acabou |
+| Config em múltiplos arquivos PHP | `.env` para o framework + `app/config` opcional para valores da aplicação |
 
 ### Performance por design
 
@@ -148,7 +148,7 @@ Todas as convenções do SparkPHP seguem o mesmo padrão mental:
 | `app/middleware/auth.php` | Middleware chamado `auth` |
 | `app/models/User.php` | Model da tabela `users` |
 | `app/services/PaymentService.php` | Service injetável por type-hint |
-| `app/events/user.created.php` | Evento disparado em `User::create()` |
+| `app/events/users.created.php` | Evento disparado em `User::create()` |
 | `app/jobs/SendReport.php` | Job despachável com `dispatch()` |
 | `app/views/about.spark` | View da rota `/about` |
 | `app/views/layouts/main.spark` | Layout padrão |
@@ -173,7 +173,7 @@ Todas as convenções do SparkPHP seguem o mesmo padrão mental:
 |---|---|
 | `users.[id].php` | `/users/:id` — `$id` disponível no handler |
 | `orders.[orderId].items.[itemId].php` | `/orders/:orderId/items/:itemId` |
-| `user.created.php` | Evento do model `User`, ação `created` |
+| `users.created.php` | Evento do model `User`, ação `created` |
 | `20260327000000_create_users_table.php` | Migration na posição 1 |
 
 ### O tipo de retorno define a resposta

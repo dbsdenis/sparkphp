@@ -87,6 +87,32 @@ function app(): Bootstrap
     return Bootstrap::getInstance();
 }
 
+function base_path(string $path = ''): string
+{
+    try {
+        $base = app()->getBasePath();
+    } catch (\Throwable) {
+        $base = dirname(__DIR__);
+    }
+
+    return $path === '' ? $base : $base . '/' . ltrim($path, '/\\');
+}
+
+function app_path(string $path = ''): string
+{
+    return base_path('app' . ($path === '' ? '' : '/' . ltrim($path, '/\\')));
+}
+
+function storage_path(string $path = ''): string
+{
+    return base_path('storage' . ($path === '' ? '' : '/' . ltrim($path, '/\\')));
+}
+
+function public_path(string $path = ''): string
+{
+    return base_path('public' . ($path === '' ? '' : '/' . ltrim($path, '/\\')));
+}
+
 function env(string $key, mixed $default = null): mixed
 {
     return $_ENV[$key] ?? $default;
@@ -126,6 +152,15 @@ function config(string $key, mixed $default = null): mixed
 // Request helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
+function request(): Request
+{
+    try {
+        return app()->getContainer()->make(Request::class);
+    } catch (\Throwable) {
+        return new Request();
+    }
+}
+
 function input(?string $key = null, mixed $default = null): mixed
 {
     static $request = null;
@@ -158,6 +193,11 @@ function method(): string
         return strtoupper($_POST['_method']);
     }
     return $m;
+}
+
+function ip(): string
+{
+    return request()->ip();
 }
 
 function url(string $path = ''): string
@@ -226,6 +266,22 @@ function old(string $field, mixed $default = null): mixed
     return session()?->old($field, $default) ?? $default;
 }
 
+function flash(string $key, mixed $value = null): mixed
+{
+    $sess = session();
+
+    if (!$sess instanceof Session) {
+        return null;
+    }
+
+    if (func_num_args() > 1) {
+        $sess->flash($key, $value);
+        return null;
+    }
+
+    return $sess->getFlash($key);
+}
+
 function errors(?string $field = null): mixed
 {
     return session()?->errors($field);
@@ -234,6 +290,11 @@ function errors(?string $field = null): mixed
 function csrf(): string
 {
     return session()?->csrfToken() ?? '';
+}
+
+function session_regenerate(bool $deleteOld = true): void
+{
+    session()?->regenerate($deleteOld);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -360,6 +421,26 @@ function cache(string|array|null $key = null, mixed $default = null): mixed
     return $cache->get($key, $default);
 }
 
+function cache_remember(string $key, int $ttl, callable $callback): mixed
+{
+    $store = cache();
+
+    if ($store instanceof Cache) {
+        return $store->remember($key, $ttl, $callback);
+    }
+
+    return $callback();
+}
+
+function cache_flush(): void
+{
+    $store = cache();
+
+    if ($store instanceof Cache) {
+        $store->flush();
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Auth
 // ─────────────────────────────────────────────────────────────────────────────
@@ -405,6 +486,11 @@ function emit(string $event, mixed $data = null): bool
     return EventEmitter::dispatch($event, $data);
 }
 
+function event(string $event, mixed $data = null): bool
+{
+    return emit($event, $data);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Jobs
 // ─────────────────────────────────────────────────────────────────────────────
@@ -437,6 +523,16 @@ function dispatch(string $jobClass, mixed $data = null, string $q = 'default'): 
     if (method_exists($job, 'handle')) {
         $job->handle();
     }
+}
+
+function dispatch_later(string $jobClass, mixed $data = null, int $delay = 0, string $q = 'default'): void
+{
+    if (($_ENV['QUEUE'] ?? 'sync') === 'sync') {
+        dispatch($jobClass, $data, $q);
+        return;
+    }
+
+    queue()->later($delay, $jobClass, $data, $q);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -553,8 +649,10 @@ function logger(string $message = '', string $level = 'info', array $context = [
 /** Shorthand for quick log levels. */
 function log_debug(string $message, array $context = []): void   { logger($message, 'debug', $context); }
 function log_info(string $message, array $context = []): void    { logger($message, 'info', $context); }
+function log_notice(string $message, array $context = []): void  { logger($message, 'notice', $context); }
 function log_warning(string $message, array $context = []): void { logger($message, 'warning', $context); }
 function log_error(string $message, array $context = []): void   { logger($message, 'error', $context); }
+function log_critical(string $message, array $context = []): void { logger($message, 'critical', $context); }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mail
@@ -592,6 +690,24 @@ function queue(string $job = '', mixed $data = null, string $q = 'default'): Que
 function now(): \DateTimeImmutable
 {
     return new \DateTimeImmutable();
+}
+
+function uuid(): string
+{
+    $bytes = random_bytes(16);
+    $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
+    $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
+
+    $hex = bin2hex($bytes);
+
+    return sprintf(
+        '%s-%s-%s-%s-%s',
+        substr($hex, 0, 8),
+        substr($hex, 8, 4),
+        substr($hex, 12, 4),
+        substr($hex, 16, 4),
+        substr($hex, 20, 12)
+    );
 }
 
 function sparkDumpHtml(mixed ...$vars): string

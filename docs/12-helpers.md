@@ -8,8 +8,8 @@ O SparkPHP fornece dezenas de funcoes globais para que voce nao precise importar
 |---------------------|-------------------------------------------------|
 | `env('KEY')`        | Le variavel do `.env` (com cache em production) |
 | `env('KEY', 'def')` | Com valor default                               |
-| `config('app.name')`| Le valor de `app/config/*.php` com dot-notation |
-| `app()`             | Instancia do Container                          |
+| `config('app.name')`| Le valores opcionais de `app/config/*.php` com dot-notation |
+| `app()`             | Instancia atual de `Bootstrap`                  |
 | `app_path('x')`     | Caminho absoluto para `app/x`                   |
 | `base_path('x')`    | Caminho absoluto para a raiz do projeto/`x`     |
 | `storage_path('x')` | Caminho absoluto para `storage/x`               |
@@ -68,7 +68,7 @@ O SparkPHP fornece dezenas de funcoes globais para que voce nao precise importar
 | `session('key', 'def')`        | Com fallback                           |
 | `session(['k' => 'v'])`        | Escreve na sessao                      |
 | `flash('key', 'val')`          | Seta flash data                        |
-| `flash('key')`                 | Le (e remove) flash data               |
+| `flash('key')`                 | Le flash data da requisicao atual      |
 | `old('field')`                 | Valor antigo de input (pos-validacao)  |
 | `session_regenerate()`         | Regenera ID da sessao                  |
 
@@ -111,7 +111,8 @@ O SparkPHP fornece dezenas de funcoes globais para que voce nao precise importar
 
 | Funcao                                      | Descricao                             |
 |---------------------------------------------|---------------------------------------|
-| `event('Name', $data)`                      | Dispara evento                        |
+| `emit('Name', $data)`                       | Dispara evento                        |
+| `event('Name', $data)`                      | Alias de `emit()`                     |
 | `on('Name', $callback)`                     | Registra listener in-memory           |
 | `off('Name', $callback)`                    | Remove listener                       |
 | `dispatch(Job::class, $data)`               | Despacha job para a fila              |
@@ -121,7 +122,7 @@ O SparkPHP fornece dezenas de funcoes globais para que voce nao precise importar
 
 | Funcao    | Descricao                                  |
 |-----------|--------------------------------------------|
-| `mail()`  | Nova instancia do Mailer (fluent API)      |
+| `mailer()` | Nova instancia do Mailer (fluent API)     |
 
 ## Logging
 

@@ -27,7 +27,7 @@ get(function (Session $session) {
     $session->get('locale', 'pt-BR');
 
     $session->set('locale', 'en');
-    $session->set(['a' => 1, 'b' => 2]);
+    $session->put(['a' => 1, 'b' => 2]);
 
     $session->has('locale');     // bool
     $session->forget('locale');  // remove chave
@@ -45,7 +45,7 @@ flash('success', 'Perfil atualizado!');
 flash('error', 'Algo deu errado.');
 
 // Em outro lugar (rota/view), na requisicao seguinte:
-$msg = flash('success');  // retorna e remove
+$msg = flash('success');  // valor flash disponivel nesta requisicao
 ```
 
 ### Na view
@@ -117,7 +117,7 @@ Adicione no layout:
 post(fn() => 'ok')->guard('csrf');
 ```
 
-Ou via `_middleware.php` de diretorio para proteger todas as rotas.
+Ou organizando rotas em diretorios como `app/routes/[csrf]/users.php`.
 
 ### Como funciona por baixo
 

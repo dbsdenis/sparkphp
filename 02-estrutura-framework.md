@@ -59,6 +59,9 @@ Este documento define a estrutura completa de diretórios e arquivos do SparkPHP
 │   │   ├── PaymentService.php
 │   │   └── MailService.php
 │   │
+│   ├── config/
+│   │   └── app.php                           → valores opcionais lidos via config('app.*')
+│   │
 │   ├── middleware/
 │   │   ├── auth.php
 │   │   ├── admin.php
@@ -67,8 +70,8 @@ Este documento define a estrutura completa de diretórios e arquivos do SparkPHP
 │   │   └── csrf.php
 │   │
 │   ├── events/
-│   │   ├── user.created.php
-│   │   ├── user.deleted.php
+│   │   ├── users.created.php
+│   │   ├── users.deleted.php
 │   │   └── order.completed.php
 │   │
 │   └── jobs/
@@ -120,7 +123,7 @@ Este documento define a estrutura completa de diretórios e arquivos do SparkPHP
 │   ├── Cache.php
 │   └── helpers.php                            → funções globais (app, env, db, etc.)
 │
-├── .env                                       → única configuração do projeto
+├── .env                                       → configuração obrigatória do projeto
 ├── .env.example                               → template de configuração
 ├── spark                                      → CLI de entrada
 ├── composer.json
@@ -135,7 +138,7 @@ O SparkPHP elimina por design os seguintes elementos comuns em outros frameworks
 
 | Elemento ausente | Justificativa |
 |---|---|
-| `/config/*.php` | Toda configuração vive no `.env`. Sem arquivos de config separados |
+| `/config/*.php` | Não existe diretório raiz de config do framework. O `.env` cobre a configuração obrigatória; `app/config/` é opcional e só agrupa valores da aplicação |
 | `/bootstrap/` | O bootstrap é interno ao `core/`. O desenvolvedor não precisa tocá-lo |
 | `routes/web.php` / `routes/api.php` | Rotas são definidas pelo sistema de arquivos em `app/routes/` |
 | `ServiceProvider` | Serviços são resolvidos por convenção e type-hint. Sem registro manual |
@@ -259,14 +262,14 @@ if (!session('user')) {
 
 | Arquivo | Evento |
 |---|---|
-| `app/events/user.created.php` | Disparado em `User::create()` |
-| `app/events/user.deleted.php` | Disparado em `User::delete()` |
-| `app/events/order.completed.php` | Disparado manualmente com `emit('order.completed', $data)` |
+| `app/events/users.created.php` | Disparado em `User::create()` |
+| `app/events/users.deleted.php` | Disparado em `User::delete()` |
+| `app/events/order.completed.php` | Disparado manualmente com `emit('order.completed', $data)` ou `event('order.completed', $data)` |
 
 **Regras:**
 
-- Padrão `{model}.{ação}.php` → auto-vinculado ao ciclo de vida do model.
-- Nomes customizados → disparados com `emit('nome.do.evento', $dados)`.
+- Padrão `{tabela}.{ação}.php` → auto-vinculado ao ciclo de vida do model.
+- Nomes customizados → disparados com `emit('nome.do.evento', $dados)` ou `event('nome.do.evento', $dados)`.
 - Sem registro manual.
 
 ### Services
@@ -310,7 +313,7 @@ if (!session('user')) {
 
 ## Configuração
 
-O `.env` é o **único arquivo de configuração** do projeto:
+O `.env` é a **configuração obrigatória** do projeto:
 
 ```env
 # Aplicação
@@ -345,6 +348,8 @@ MAIL_PASS=
 # Log
 LOG_LEVEL=debug
 ```
+
+Opcionalmente, você pode agrupar valores da aplicação em `app/config/*.php` e lê-los com `config('arquivo.chave')`. Esses arquivos não registram serviços, rotas ou middlewares; servem apenas para organizar valores da aplicação.
 
 Acesso no código:
 
@@ -400,8 +405,8 @@ env('CUSTOM_VAR', 'default'); // com fallback
 | Layout alternativo | `@layout('nome')` | `@layout('admin')` → `views/layouts/admin.spark` |
 | Model → Tabela | PascalCase → snake_case plural | `User` → `users`, `OrderItem` → `order_items` |
 | Relacionamento | foreign key → método | coluna `company_id` → `$user->company` |
-| Event automático | `{model}.{ação}.php` | `user.created.php` → auto-dispara em `User::create()` |
-| Event manual | `emit()` + nome do arquivo | `emit('order.completed', $data)` |
+| Event automático | `{tabela}.{ação}.php` | `users.created.php` → auto-dispara em `User::create()` |
+| Event manual | `emit()` / `event()` + nome do arquivo | `event('order.completed', $data)` |
 | Service | type-hint = injeção | `fn(PaymentService $p)` → auto-resolvido |
 | Migration | timestamp + classe = ordem | `20260327000000_create_users_table.php` executa primeiro |
 | Erro HTTP | `views/errors/{code}.spark` | `errors/404.spark` renderizado em erro 404 |

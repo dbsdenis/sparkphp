@@ -110,9 +110,9 @@ QUEUE=sync                               # sync | file
 LOG_LEVEL=debug
 ```
 
-## Configuracao via arquivos (config)
+## Configuracao opcional da aplicacao
 
-Alem do `.env`, voce pode criar arquivos PHP em `app/config/` que retornam arrays:
+O `.env` cobre a configuracao obrigatoria do framework. Se quiser agrupar valores da sua aplicacao sem espalhar `env()` pelo codigo, voce pode criar arquivos PHP opcionais em `app/config/`:
 
 ```php
 // app/config/app.php
@@ -133,6 +133,8 @@ config('app.name');          // 'SparkPHP'
 config('app.timezone');      // 'America/Sao_Paulo'
 config('app.missing', 'x');  // 'x' (default)
 ```
+
+Esses arquivos sao uma camada de conveniencia da aplicacao. Eles nao substituem o `.env` e nao funcionam como um diretorio central de wiring do framework.
 
 ## Ambientes
 

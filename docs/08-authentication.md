@@ -89,12 +89,9 @@ if (!auth()) {
 // Guard inline
 get(fn() => ['profile' => auth()])->guard('auth');
 
-// Diretorio inteiro
-// app/routes/admin/_middleware.php
-<?php
-if (!auth()) {
-    return redirect('/login');
-}
+// Diretorio inteiro via convencao file-based
+// app/routes/[auth]/admin/index.php
+get(fn() => 'admin area');
 ```
 
 ### Com role

@@ -71,6 +71,18 @@ SPARK
         $this->assertSame('Hello Spark', $second);
     }
 
+    public function testRenderAcceptsDotNotationForNestedViews(): void
+    {
+        mkdir($this->basePath . '/app/views/users', 0777, true);
+        file_put_contents($this->basePath . '/app/views/users/index.spark', 'Users {{ $name }}');
+
+        $view = new View($this->basePath);
+
+        $html = trim($view->render('users.index', ['name' => 'Spark']));
+
+        $this->assertSame('Users Spark', $html);
+    }
+
     private function deleteDirectory(string $path): void
     {
         if (!is_dir($path)) {

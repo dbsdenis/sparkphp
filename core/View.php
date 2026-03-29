@@ -35,6 +35,7 @@ class View
 
     public function render(string $name, array $data = []): string
     {
+        $name = str_replace('.', '/', $name);
         $startedAt = microtime(true);
 
         // Reset stacks and meta for each top-level render
@@ -68,6 +69,7 @@ class View
 
     public function partial(string $name, mixed ...$args): string
     {
+        $name = str_replace('.', '/', $name);
         $file = $this->basePath . "/app/views/partials/{$name}.spark";
         if (!file_exists($file)) {
             throw new \RuntimeException("Partial not found: {$name}");

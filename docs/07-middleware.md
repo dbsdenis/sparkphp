@@ -42,31 +42,26 @@ post(fn() => ['saved' => true])->guard('auth', 'csrf', 'throttle:10');
 
 ### 2. Middleware por diretorio (automatico)
 
-Coloque um arquivo `_middleware.php` dentro de um diretorio de rotas:
+No SparkPHP atual, middleware de diretorio e aplicado por **pastas entre colchetes**:
 
-```php
-// app/routes/admin/_middleware.php
-<?php
-
-// Todo arquivo em app/routes/admin/ passa por aqui
-if (!auth() || !auth()->is_admin) {
-    abort(403);
-}
+```text
+app/routes/[auth]/dashboard.php
+app/routes/api/[auth+throttle]/payments.php
+app/routes/api/[auth]/[admin]/reports.php
 ```
 
-Todos os arquivos de rota dentro de `app/routes/admin/` (e subdiretorios) serao protegidos automaticamente.
+Regras:
+
+- Pastas como `[auth]` aplicam middleware e nao aparecem na URL
+- Voce pode combinar varios middlewares: `[auth+throttle]`
+- Pastas aninhadas acumulam middleware na ordem em que aparecem
 
 ### 3. Middleware global
 
-Crie `app/routes/_middleware.php` (na raiz das rotas) para aplicar a **todas** as rotas:
+A convencao `app/routes/_middleware.php` ainda **nao faz parte do runtime atual**. Ela esta planejada no roadmap. Hoje, para regras amplas, prefira:
 
-```php
-// app/routes/_middleware.php
-<?php
-
-// CORS em todas as rotas
-require app_path('middleware/cors.php');
-```
+- organizar rotas em diretorios como `[auth]`, `[csrf]` e `[throttle]`
+- usar `guard()` nas rotas onde a regra precisar ser explicita
 
 ## Middleware com parametros
 
@@ -143,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 <?php
 
 if (!auth()) {
-    $request = app()->getContainer()->make(Request::class);
+    $request = request();
 
     if ($request->acceptsJson()) {
         return json(['error' => 'Unauthenticated.'], 401);
@@ -157,10 +152,9 @@ Note como o mesmo middleware funciona para APIs (retorna JSON 401) e web (redire
 
 ## Ordem de execucao
 
-1. Middleware global (`app/routes/_middleware.php`)
-2. Middleware de diretorio (`app/routes/admin/_middleware.php`)
-3. Guards da rota (`.guard('auth', 'csrf')`)
-4. Handler da rota
+1. Middleware de diretorio via pastas `[auth]`, `[auth+throttle]`, etc.
+2. Guards da rota (`.guard('auth', 'csrf')`)
+3. Handler da rota
 
 ## Proximo passo
 

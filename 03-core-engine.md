@@ -292,7 +292,7 @@ class User extends Model {
 
 **Ciclo de vida e events:**
 
-Ao executar `User::create($data)`, o model verifica se existe `app/events/user.created.php` e o dispara automaticamente após a inserção, passando o model criado como `$data`.
+Ao executar `User::create($data)`, o model verifica se existe `app/events/users.created.php` e o dispara automaticamente após a inserção, passando o model criado como `$data`.
 
 ### 8. View (Spark Template Engine)
 
@@ -363,12 +363,12 @@ Sistema de eventos baseado em convenção de arquivos.
 
 | Arquivo | Quando dispara |
 |---|---|
-| `user.creating.php` | Antes de `User::create()` |
-| `user.created.php` | Após `User::create()` |
-| `user.updating.php` | Antes de `User::update()` |
-| `user.updated.php` | Após `User::update()` |
-| `user.deleting.php` | Antes de `User::delete()` |
-| `user.deleted.php` | Após `User::delete()` |
+| `users.creating.php` | Antes de `User::create()` |
+| `users.created.php` | Após `User::create()` |
+| `users.updating.php` | Antes de `User::update()` |
+| `users.updated.php` | Após `User::update()` |
+| `users.deleting.php` | Antes de `User::delete()` |
+| `users.deleted.php` | Após `User::delete()` |
 
 **Eventos manuais:**
 
@@ -513,14 +513,14 @@ Todas as funções globais disponíveis em qualquer arquivo do projeto:
 | `csrf()` | Token CSRF atual |
 | `url('/path')` | URL absoluta |
 | `asset('path')` | URL de asset público |
-| `config('key')` | Alias para `env()` |
+| `config('app.key')` | Lê valores opcionais de `app/config/*.php` |
 | `now()` | Data/hora atual como Carbon-like |
 | `dump($var)` | Debug: exibe variável formatada |
 | `dd($var)` | Debug: dump and die |
 | `logger('message')` | Escreve no log |
 | `encrypt($data)` | Encripta string |
 | `decrypt($data)` | Decripta string |
-| `hash($password)` | Hash de senha (bcrypt) |
+| `hash_password($password)` | Hash de senha (bcrypt) |
 | `verify($password, $hash)` | Verifica hash |
 
 ---

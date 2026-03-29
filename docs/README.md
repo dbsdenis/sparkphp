@@ -80,7 +80,7 @@ delete(fn(int $id) => User::findOrFail($id)->delete());
 ## Principios
 
 1. **Arquivo e a convencao** — se existe, funciona. Sem registro.
-2. **Configuracao unica** — tudo no `.env`. Sem `config/app.php`, `config/database.php`, etc.
+2. **Configuracao obrigatoria minima** — o framework liga com `.env`; `app/config/` e opcional para agrupar valores da aplicacao.
 3. **Zero boilerplate** — rotas sao closures, middlewares sao scripts, eventos sao arquivos.
 4. **Smart defaults** — retorno de array vira JSON ou view automaticamente.
 5. **Performance** — cache agressivo em production, lazy loading em tudo.
