@@ -253,6 +253,21 @@ PHP
         $this->assertStringContainsString('Press Ctrl+C to stop.', $result['output']);
     }
 
+    public function testBenchmarkCommandOutputsVersionedRealProjectSuite(): void
+    {
+        $result = $this->runSpark(['benchmark', '--json', '--iterations=1', '--warmup=0', '--no-save']);
+        $payload = json_decode($result['output'], true);
+        $version = trim((string) file_get_contents(__DIR__ . '/../../VERSION'));
+
+        $this->assertSame(0, $result['exit_code'], $result['output']);
+        $this->assertIsArray($payload);
+        $this->assertSame($version, $payload['spark_version']);
+        $this->assertSame(SparkVersion::releaseLine($version), $payload['spark_release_line']);
+        $this->assertSame('real_project_fixture', $payload['profile']['name']);
+        $this->assertContains('http.request_html', array_column($payload['scenarios'], 'name'));
+        $this->assertContains('http.request_json', array_column($payload['scenarios'], 'name'));
+    }
+
     public function testApiSpecCommandGeneratesOpenApiFromRoutesValidationAndResponses(): void
     {
         mkdir($this->basePath . '/app/routes/api', 0777, true);

@@ -1,0 +1,31 @@
+# Changelog
+
+Todas as mudancas publicas relevantes do SparkPHP passam a ser registradas aqui.
+
+## [0.2.0] - 2026-03-29
+
+### Added
+
+- `PreventRequestForgery` nativo com validacao de token, `Origin`/`Referer` e defaults mais seguros de session/cookie.
+- `Request / Response v2` com content negotiation mais forte, envelopes padronizados de erro, streaming, downloads e respostas vazias consistentes.
+- serializacao de API por convencao no `Model`, sparse fields, JSON:API opcional e paginação com `links` / `meta`.
+- route model binding implicito, helpers `policy()`, `can()` e `authorize()`.
+- geracao de spec OpenAPI via `php spark api:spec`.
+- `Queue v2` com rotas por job, `tries`, `backoff`, `timeout`, `failOnTimeout`, inspect/retry/clear seletivo.
+- `Cache v2` com `touch()`, `flexible()` (stale-while-revalidate), tags e telemetria integrada.
+- `Query Builder / ORM v2` com filtros mais expressivos, eager loading aninhado e `withCount()`.
+- observabilidade profunda no Spark Inspector com pipelines de request, cache e queue, alem de gargalos consolidados.
+- suite de benchmark com cenarios de request HTML/JSON e metadados versionados no relatorio.
+- comando `php spark version` e banner do `serve` versionados a partir do arquivo `VERSION`.
+
+### Changed
+
+- baseline oficial do framework elevada para PHP 8.3+, SQLite 3.35+, MySQL 8.0+ e PostgreSQL 13+.
+- documentacao, policy de releases e upgrade guide alinhados ao runtime real do framework.
+- middleware global e por diretorio implementado de forma consistente com a documentacao.
+
+## [0.1.0] - 2026-03-27
+
+### Added
+
+- primeira linha publica do core do SparkPHP com Router file-based, View engine `.spark`, Request/Response, Database/Model, Middleware, Validator, Cache, Session, Mail, Queue, CLI e Spark Inspector inicial.

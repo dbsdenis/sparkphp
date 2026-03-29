@@ -78,13 +78,15 @@ meu-projeto/
 │   └── sessions/       ← sessions (driver file)
 ├── .env                ← configuracao do ambiente
 ├── VERSION             ← fonte oficial da versao publicada do framework/projeto
+├── CHANGELOG.md        ← historico publico das releases
 ├── spark               ← CLI do framework
 └── composer.json
 ```
 
 O arquivo `VERSION` na raiz e a fonte de verdade da versao publicada do SparkPHP no
 projeto. Ele alimenta `php spark version`, `php spark about`, a rota raiz padrao e a
-spec OpenAPI gerada pelo CLI.
+spec OpenAPI gerada pelo CLI. O `CHANGELOG.md` registra o historico humano de produto
+da linha publicada.
 
 ## Configuracao (.env)
 

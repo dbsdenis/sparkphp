@@ -45,6 +45,13 @@ Ao preparar um release, a alteracao de versao deve acontecer primeiro nesse arqu
 CLI, docs geradas e superficies publicas do framework passam a refletir o novo valor
 sem hardcodes espalhados.
 
+### Changelog oficial
+
+Toda release publica relevante tambem deve atualizar `CHANGELOG.md` na raiz do projeto.
+
+Esse arquivo e o historico humano de produto, enquanto `VERSION` continua sendo a
+fonte unica do numero publicado no runtime.
+
 ## Politica de suporte
 
 ### Linha `0.x`

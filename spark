@@ -1707,10 +1707,18 @@ function error(string $message): void
 
 function sparkRenderBenchmarkReport(array $report, bool $saved): void
 {
+    $version = $report['spark_version'] ?? SPARK_VERSION;
+    $releaseLine = $report['spark_release_line'] ?? SparkVersion::releaseLine($version);
+    $profile = $report['profile']['description'] ?? 'Isolated SparkPHP benchmark fixture';
+    $scenarioCount = (int) ($report['summary']['scenario_count'] ?? count($report['scenarios'] ?? []));
+    $groups = implode(', ', $report['summary']['groups'] ?? []);
+
     echo "\n";
-    out(color('  ⚡ SparkPHP', 'cyan') . color(' comparative benchmarks', 'dim'));
+    out(color('  ⚡ SparkPHP', 'cyan') . color(' v' . $version, 'white') . color(' comparative benchmarks', 'dim'));
     out('  ' . color("Iterations: {$report['iterations']}  Warmup: {$report['warmup']}", 'dim'));
-    out('  ' . color('Fixture: isolated synthetic project', 'dim'));
+    out('  ' . color("Release line: {$releaseLine}", 'dim'));
+    out('  ' . color("Suite: {$scenarioCount} scenarios" . ($groups !== '' ? " [{$groups}]" : ''), 'dim'));
+    out('  ' . color("Fixture: {$profile}", 'dim'));
     echo "\n";
 
     out('  ' . color(str_pad('Scenario', 28), 'yellow')
@@ -1728,9 +1736,13 @@ function sparkRenderBenchmarkReport(array $report, bool $saved): void
             $comparison = $speedup . 'x vs ' . $scenario['comparison']['against'];
         }
 
+        $scenarioName = isset($scenario['group'])
+            ? $scenario['group'] . '.' . $scenario['name']
+            : $scenario['name'];
+
         out(
             '  '
-            . color(str_pad($scenario['name'], 28), 'green')
+            . color(str_pad($scenarioName, 28), 'green')
             . color(str_pad(number_format($scenario['avg_ms'], 3), 12), 'white')
             . color(str_pad(number_format($scenario['median_ms'], 3), 12), 'white')
             . color(str_pad(number_format($scenario['p95_ms'], 3), 12), 'white')
@@ -1740,6 +1752,14 @@ function sparkRenderBenchmarkReport(array $report, bool $saved): void
     }
 
     echo "\n";
+
+    if (isset($report['summary']['fastest']['name'], $report['summary']['slowest']['name'])) {
+        out('  ' . color(
+            'Fastest: ' . $report['summary']['fastest']['name']
+            . ' • Slowest: ' . $report['summary']['slowest']['name'],
+            'dim'
+        ));
+    }
 
     if ($saved && isset($report['saved_to'])) {
         success('Benchmark report saved to ' . color(str_replace(SPARK_BASE . '/', '', $report['saved_to']), 'cyan'));

@@ -44,15 +44,15 @@ final class QueryBuilderTest extends TestCase
         ');
 
         // Seed test data
-        $this->db->pdo()->exec("INSERT INTO users (name, email, role, age, active) VALUES ('João', 'j@mail.com', 'admin', 30, 1)");
-        $this->db->pdo()->exec("INSERT INTO users (name, email, role, age, active) VALUES ('Maria', 'm@mail.com', 'editor', 25, 1)");
-        $this->db->pdo()->exec("INSERT INTO users (name, email, role, age, active) VALUES ('Pedro', 'p@mail.com', 'user', 40, 0)");
-        $this->db->pdo()->exec("INSERT INTO users (name, email, role, age, active) VALUES ('Ana', 'a@mail.com', 'admin', 35, 1)");
+        $this->db->pdo()->exec("INSERT INTO users (name, email, role, age, active, created_at, updated_at) VALUES ('João', 'j@mail.com', 'admin', 30, 1, '2026-03-10 09:00:00', '2026-03-10 09:00:00')");
+        $this->db->pdo()->exec("INSERT INTO users (name, email, role, age, active, created_at, updated_at) VALUES ('Maria', 'm@mail.com', 'editor', 25, 1, '2026-03-15 11:30:00', '2026-03-15 11:30:00')");
+        $this->db->pdo()->exec("INSERT INTO users (name, email, role, age, active, created_at, updated_at) VALUES ('Pedro', 'p@mail.com', 'user', 40, 0, '2026-03-20 14:00:00', '2026-03-20 14:00:00')");
+        $this->db->pdo()->exec("INSERT INTO users (name, email, role, age, active, created_at, updated_at) VALUES ('Ana', 'a@mail.com', 'admin', 35, 1, '2026-04-01 08:15:00', '2026-04-01 08:15:00')");
 
-        $this->db->pdo()->exec("INSERT INTO orders (user_id, total, status) VALUES (1, 100.50, 'completed')");
-        $this->db->pdo()->exec("INSERT INTO orders (user_id, total, status) VALUES (1, 200.00, 'completed')");
-        $this->db->pdo()->exec("INSERT INTO orders (user_id, total, status) VALUES (2, 50.00, 'pending')");
-        $this->db->pdo()->exec("INSERT INTO orders (user_id, total, status) VALUES (3, 75.25, 'cancelled')");
+        $this->db->pdo()->exec("INSERT INTO orders (user_id, total, status, created_at) VALUES (1, 100.50, 'completed', '2026-03-15 10:00:00')");
+        $this->db->pdo()->exec("INSERT INTO orders (user_id, total, status, created_at) VALUES (1, 200.00, 'completed', '2026-03-18 12:00:00')");
+        $this->db->pdo()->exec("INSERT INTO orders (user_id, total, status, created_at) VALUES (2, 50.00, 'pending', '2026-03-20 15:00:00')");
+        $this->db->pdo()->exec("INSERT INTO orders (user_id, total, status, created_at) VALUES (3, 75.25, 'cancelled', '2026-04-01 09:30:00')");
     }
 
     // ─── orWhere ─────────────────────────────────────
@@ -125,6 +125,21 @@ final class QueryBuilderTest extends TestCase
         $this->assertSame('Ana', $results[0]->name);
     }
 
+    public function testWhereColumnComparesTwoColumns(): void
+    {
+        $results = db('users')->whereColumn('age', '>', 'id')->get();
+
+        $this->assertCount(4, $results);
+    }
+
+    public function testWhereDateFiltersByCalendarDate(): void
+    {
+        $results = db('users')->whereDate('created_at', '2026-03-15')->get();
+
+        $this->assertCount(1, $results);
+        $this->assertSame('Maria', $results[0]->name);
+    }
+
     // ─── when (conditional) ──────────────────────────
 
     public function testWhenAppliesCallbackOnTruthyCondition(): void
@@ -152,6 +167,15 @@ final class QueryBuilderTest extends TestCase
             )
             ->get();
         $this->assertCount(3, $results); // fallback: only active
+    }
+
+    public function testUnlessAppliesCallbackOnFalsyCondition(): void
+    {
+        $results = db('users')
+            ->unless(false, fn($q) => $q->where('role', 'admin'))
+            ->get();
+
+        $this->assertCount(2, $results);
     }
 
     // ─── join / leftJoin / rightJoin ─────────────────
@@ -209,6 +233,15 @@ final class QueryBuilderTest extends TestCase
     {
         $results = db('users')->selectRaw('COUNT(*) as total')->get();
         $this->assertSame(4, (int) $results[0]->total);
+    }
+
+    public function testSelectSupportsVariadicColumns(): void
+    {
+        $user = db('users')->select('id', 'name')->where('id', 1)->first();
+
+        $this->assertSame(1, (int) $user->id);
+        $this->assertSame('João', $user->name);
+        $this->assertFalse(property_exists($user, 'email'));
     }
 
     // ─── pluck ───────────────────────────────────────

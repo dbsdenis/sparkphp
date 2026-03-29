@@ -75,6 +75,12 @@ final class SparkInspectorTest extends TestCase
         SparkInspector::recordCache('get', 'users:missing', ['miss' => true]);
         SparkInspector::recordCache('flexible', 'reports', ['hit' => true, 'stale' => true]);
         SparkInspector::recordCache('set', 'users:1', ['ttl' => 60]);
+        SparkInspector::recordQueue(['type' => 'dispatch', 'job' => 'SendEmailJob', 'queue' => 'emails', 'tries' => 3]);
+        SparkInspector::recordQueue(['type' => 'push', 'job' => 'SendEmailJob', 'queue' => 'emails', 'tries' => 3]);
+        SparkInspector::recordQueue(['type' => 'later', 'job' => 'CleanupJob', 'queue' => 'low', 'tries' => 1, 'delay' => 30]);
+        SparkInspector::recordQueue(['type' => 'released', 'job' => 'CleanupJob', 'queue' => 'low', 'attempts' => 1, 'tries' => 2, 'delay' => 60, 'error' => 'Temporary failure']);
+        SparkInspector::recordQueue(['type' => 'retry', 'job' => 'CleanupJob', 'queue' => 'low', 'tries' => 2]);
+        SparkInspector::recordQueue(['type' => 'failed', 'job' => 'CleanupJob', 'queue' => 'failed', 'attempts' => 2, 'tries' => 2, 'error' => 'Permanent failure']);
         SparkInspector::inspect(['ok' => true]);
 
         usleep(1000);
@@ -106,7 +112,19 @@ final class SparkInspectorTest extends TestCase
         $this->assertSame(1, $entry['metrics']['cache_misses']);
         $this->assertSame(1, $entry['metrics']['cache_stale_hits']);
         $this->assertSame(1, $entry['metrics']['cache_writes']);
+        $this->assertSame(6, $entry['metrics']['queue_ops']);
+        $this->assertSame(1, $entry['metrics']['queue_dispatches']);
+        $this->assertSame(2, $entry['metrics']['queue_enqueued']);
+        $this->assertSame(1, $entry['metrics']['queue_delayed']);
+        $this->assertSame(1, $entry['metrics']['queue_released']);
+        $this->assertSame(1, $entry['metrics']['queue_failed']);
+        $this->assertSame(1, $entry['metrics']['queue_retries']);
         $this->assertGreaterThan(0, (float) $entry['metrics']['total_ms']);
+        $this->assertSame('/api/users', $entry['pipelines']['request']['summary']['Path']);
+        $this->assertSame('4', $entry['pipelines']['cache']['summary']['Ops']);
+        $this->assertSame('6', $entry['pipelines']['queue']['summary']['Ops']);
+        $this->assertSame('CleanupJob', $entry['bottlenecks']['most_fragile_job']['job']);
+        $this->assertSame('users:1', $entry['bottlenecks']['noisiest_cache_key']['key']);
     }
 
     public function testInternalRequestsPageRendersStoredHistoryWithoutToolbarInjection(): void

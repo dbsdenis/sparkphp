@@ -501,9 +501,14 @@ abstract class Model implements \JsonSerializable
      * $users = User::with('orders', 'profile')->get();
      * ```
      */
-    public static function with(string ...$relations): QueryBuilder
+    public static function with(array|string ...$relations): QueryBuilder
     {
         return static::query()->with(...$relations);
+    }
+
+    public static function withCount(array|string ...$relations): QueryBuilder
+    {
+        return static::query()->withCount(...$relations);
     }
 
     /**
@@ -868,6 +873,32 @@ abstract class Model implements \JsonSerializable
         return $clone;
     }
 
+    public function load(array|string ...$relations): static
+    {
+        static::query()
+            ->with(...$relations)
+            ->eagerLoadModels([$this]);
+
+        return $this;
+    }
+
+    public function loadMissing(array|string ...$relations): static
+    {
+        $builder = static::query()->with(...$relations);
+        $this->loadMissingRelations($builder->getEagerLoads());
+
+        return $this;
+    }
+
+    public function loadCount(array|string ...$relations): static
+    {
+        static::query()
+            ->withCount(...$relations)
+            ->eagerLoadCounts([$this]);
+
+        return $this;
+    }
+
     // ─────────────────────────────────────────────
     // Fill / attributes
     // ─────────────────────────────────────────────
@@ -1021,7 +1052,7 @@ abstract class Model implements \JsonSerializable
         $data = $this->baseArrayData();
 
         foreach ($this->relations as $name => $relation) {
-            $data[$name] = $this->serializeRelation($relation, true);
+            $data[$name] = $this->serializeRelation($relation, true, $this->nestedApiOptions($options));
         }
 
         $data = $this->applyHiddenFields($data);
@@ -1079,6 +1110,11 @@ abstract class Model implements \JsonSerializable
         $this->relations[$name] = $value;
     }
 
+    public function unsetRelation(string $name): void
+    {
+        unset($this->relations[$name]);
+    }
+
     /**
      * Get a loaded relation, or null if not loaded.
      */
@@ -1093,6 +1129,42 @@ abstract class Model implements \JsonSerializable
     public function relationLoaded(string $name): bool
     {
         return array_key_exists($name, $this->relations);
+    }
+
+    private function loadMissingRelations(array $loads): void
+    {
+        $missing = [];
+
+        foreach ($loads as $name => $config) {
+            if (!$this->relationLoaded($name)) {
+                $missing[$name] = $config;
+            }
+        }
+
+        if ($missing !== []) {
+            static::query()->eagerLoadModels([$this], $missing);
+        }
+
+        foreach ($loads as $name => $config) {
+            if (empty($config['nested'])) {
+                continue;
+            }
+
+            $relation = $this->getRelation($name);
+
+            if ($relation instanceof self) {
+                $relation->loadMissingRelations($config['nested']);
+                continue;
+            }
+
+            if (is_array($relation)) {
+                foreach ($relation as $item) {
+                    if ($item instanceof self) {
+                        $item->loadMissingRelations($config['nested']);
+                    }
+                }
+            }
+        }
     }
 
     // ─────────────────────────────────────────────
@@ -1400,22 +1472,29 @@ abstract class Model implements \JsonSerializable
         return $data;
     }
 
-    private function serializeRelation(mixed $relation, bool $api): mixed
+    private function serializeRelation(mixed $relation, bool $api, array $options = []): mixed
     {
         if ($relation instanceof self) {
-            return $api ? $relation->toApi() : $relation->toArray();
+            return $api ? $relation->toApi($options) : $relation->toArray();
         }
 
         if (is_array($relation)) {
             return array_map(
                 fn($item) => $item instanceof self
-                    ? ($api ? $item->toApi() : $item->toArray())
+                    ? ($api ? $item->toApi($options) : $item->toArray())
                     : (is_object($item) ? (array) $item : $item),
                 $relation
             );
         }
 
         return $relation;
+    }
+
+    private function nestedApiOptions(array $options): array
+    {
+        unset($options['json_api'], $options['wrap'], $options['links'], $options['meta']);
+
+        return $options;
     }
 
     private function applyHiddenFields(array $data): array

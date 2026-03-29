@@ -244,8 +244,11 @@ class QueryBuilder
     private array $havings    = [];
     private array $havingBindings = [];
 
-    /** @var array<string, array> Eager-load definitions: relation name => config */
+    /** @var array<string, array{constraint: callable|null, nested: array}> */
     private array $eagerLoads = [];
+
+    /** @var array<string, callable|null> */
+    private array $withCounts = [];
 
     public function __construct(Database $db, string $table)
     {
@@ -271,9 +274,25 @@ class QueryBuilder
      * db('users')->select('id, name')->get();
      * ```
      */
-    public function select(array|string $columns): static
+    public function select(array|string ...$columns): static
     {
-        $this->selects = is_array($columns) ? $columns : [$columns];
+        if (count($columns) === 1 && is_array($columns[0])) {
+            $this->selects = $columns[0];
+            return $this;
+        }
+
+        $normalized = [];
+
+        foreach ($columns as $column) {
+            if (is_array($column)) {
+                $normalized = array_merge($normalized, $column);
+                continue;
+            }
+
+            $normalized[] = $column;
+        }
+
+        $this->selects = $normalized;
         return $this;
     }
 
@@ -319,6 +338,16 @@ class QueryBuilder
         return $this->addWhere($column, $operatorOrValue, $value, 'OR');
     }
 
+    public function whereColumn(string $first, mixed $operatorOrSecond, ?string $second = null): static
+    {
+        return $this->addColumnWhere($first, $operatorOrSecond, $second, 'AND');
+    }
+
+    public function orWhereColumn(string $first, mixed $operatorOrSecond, ?string $second = null): static
+    {
+        return $this->addColumnWhere($first, $operatorOrSecond, $second, 'OR');
+    }
+
     /**
      * Add a WHERE IN clause.
      *
@@ -334,7 +363,7 @@ class QueryBuilder
             return $this;
         }
         $placeholders = implode(',', array_fill(0, count($values), '?'));
-        $this->wheres[] = ['clause' => "`{$column}` IN ({$placeholders})", 'connector' => 'AND'];
+        $this->wheres[] = ['clause' => $this->wrapIdentifier($column) . " IN ({$placeholders})", 'connector' => 'AND'];
         $this->bindings = array_merge($this->bindings, $values);
         return $this;
     }
@@ -352,7 +381,7 @@ class QueryBuilder
             return $this; // NOT IN empty set = always true, no filter needed
         }
         $placeholders = implode(',', array_fill(0, count($values), '?'));
-        $this->wheres[] = ['clause' => "`{$column}` NOT IN ({$placeholders})", 'connector' => 'AND'];
+        $this->wheres[] = ['clause' => $this->wrapIdentifier($column) . " NOT IN ({$placeholders})", 'connector' => 'AND'];
         $this->bindings = array_merge($this->bindings, $values);
         return $this;
     }
@@ -366,7 +395,7 @@ class QueryBuilder
      */
     public function whereNull(string $column): static
     {
-        $this->wheres[] = ['clause' => "`{$column}` IS NULL", 'connector' => 'AND'];
+        $this->wheres[] = ['clause' => $this->wrapIdentifier($column) . ' IS NULL', 'connector' => 'AND'];
         return $this;
     }
 
@@ -379,7 +408,7 @@ class QueryBuilder
      */
     public function whereNotNull(string $column): static
     {
-        $this->wheres[] = ['clause' => "`{$column}` IS NOT NULL", 'connector' => 'AND'];
+        $this->wheres[] = ['clause' => $this->wrapIdentifier($column) . ' IS NOT NULL', 'connector' => 'AND'];
         return $this;
     }
 
@@ -393,7 +422,7 @@ class QueryBuilder
      */
     public function whereBetween(string $column, array $range): static
     {
-        $this->wheres[]   = ['clause' => "`{$column}` BETWEEN ? AND ?", 'connector' => 'AND'];
+        $this->wheres[]   = ['clause' => $this->wrapIdentifier($column) . ' BETWEEN ? AND ?', 'connector' => 'AND'];
         $this->bindings[] = $range[0];
         $this->bindings[] = $range[1];
         return $this;
@@ -408,7 +437,7 @@ class QueryBuilder
      */
     public function whereNotBetween(string $column, array $range): static
     {
-        $this->wheres[]   = ['clause' => "`{$column}` NOT BETWEEN ? AND ?", 'connector' => 'AND'];
+        $this->wheres[]   = ['clause' => $this->wrapIdentifier($column) . ' NOT BETWEEN ? AND ?', 'connector' => 'AND'];
         $this->bindings[] = $range[0];
         $this->bindings[] = $range[1];
         return $this;
@@ -424,9 +453,26 @@ class QueryBuilder
      */
     public function whereLike(string $column, string $pattern): static
     {
-        $this->wheres[]   = ['clause' => "`{$column}` LIKE ?", 'connector' => 'AND'];
+        $this->wheres[]   = ['clause' => $this->wrapIdentifier($column) . ' LIKE ?', 'connector' => 'AND'];
         $this->bindings[] = $pattern;
         return $this;
+    }
+
+    public function orWhereLike(string $column, string $pattern): static
+    {
+        $this->wheres[]   = ['clause' => $this->wrapIdentifier($column) . ' LIKE ?', 'connector' => 'OR'];
+        $this->bindings[] = $pattern;
+        return $this;
+    }
+
+    public function whereDate(string $column, mixed $operatorOrValue, mixed $value = null): static
+    {
+        return $this->addDateWhere($column, $operatorOrValue, $value, 'AND');
+    }
+
+    public function orWhereDate(string $column, mixed $operatorOrValue, mixed $value = null): static
+    {
+        return $this->addDateWhere($column, $operatorOrValue, $value, 'OR');
     }
 
     /**
@@ -465,6 +511,17 @@ class QueryBuilder
         } elseif ($fallback) {
             $fallback($this, $condition);
         }
+        return $this;
+    }
+
+    public function unless(mixed $condition, callable $callback, ?callable $fallback = null): static
+    {
+        if (!$condition) {
+            $callback($this, $condition);
+        } elseif ($fallback) {
+            $fallback($this, $condition);
+        }
+
         return $this;
     }
 
@@ -536,7 +593,7 @@ class QueryBuilder
      */
     public function groupBy(string ...$columns): static
     {
-        $cols = implode(', ', array_map(fn($c) => str_contains($c, '.') ? $c : "`{$c}`", $columns));
+        $cols = implode(', ', array_map(fn($c) => $this->wrapIdentifier($c), $columns));
         $this->groupByClause = $cols;
         return $this;
     }
@@ -554,7 +611,7 @@ class QueryBuilder
      */
     public function having(string $column, string $operator, mixed $value): static
     {
-        $this->havings[]        = "`{$column}` {$operator} ?";
+        $this->havings[]        = $this->wrapIdentifier($column) . " {$operator} ?";
         $this->havingBindings[] = $value;
         return $this;
     }
@@ -591,7 +648,7 @@ class QueryBuilder
      */
     public function orderBy(string $column, string $direction = 'ASC'): static
     {
-        $col = str_contains($column, '.') ? $column : "`{$column}`";
+        $col = $this->wrapIdentifier($column);
         $this->orderBy = "{$col} " . strtoupper($direction);
         return $this;
     }
@@ -679,6 +736,10 @@ class QueryBuilder
         // Eager load relationships
         if (!empty($this->eagerLoads) && !empty($results) && $this->modelClass) {
             $results = $this->loadEagerRelations($results);
+        }
+
+        if (!empty($this->withCounts) && !empty($results) && $this->modelClass) {
+            $results = $this->loadRelationCounts($results);
         }
 
         return $results;
@@ -830,7 +891,7 @@ class QueryBuilder
     public function sum(string $column): float
     {
         [$w, $b] = $this->buildWhereWithJoins();
-        $sql = "SELECT SUM(`{$column}`) FROM `{$this->table}`" . $this->buildJoinString() . $w;
+        $sql = "SELECT SUM(" . $this->wrapIdentifier($column) . ") FROM `{$this->table}`" . $this->buildJoinString() . $w;
         $stmt = $this->db->execute($sql, $b);
         return (float) ($stmt->fetchColumn() ?? 0);
     }
@@ -846,7 +907,7 @@ class QueryBuilder
     public function avg(string $column): float
     {
         [$w, $b] = $this->buildWhereWithJoins();
-        $sql = "SELECT AVG(`{$column}`) FROM `{$this->table}`" . $this->buildJoinString() . $w;
+        $sql = "SELECT AVG(" . $this->wrapIdentifier($column) . ") FROM `{$this->table}`" . $this->buildJoinString() . $w;
         $stmt = $this->db->execute($sql, $b);
         return (float) ($stmt->fetchColumn() ?? 0);
     }
@@ -861,7 +922,7 @@ class QueryBuilder
     public function max(string $column): mixed
     {
         [$w, $b] = $this->buildWhereWithJoins();
-        $sql = "SELECT MAX(`{$column}`) FROM `{$this->table}`" . $this->buildJoinString() . $w;
+        $sql = "SELECT MAX(" . $this->wrapIdentifier($column) . ") FROM `{$this->table}`" . $this->buildJoinString() . $w;
         $stmt = $this->db->execute($sql, $b);
         return $stmt->fetchColumn();
     }
@@ -876,7 +937,7 @@ class QueryBuilder
     public function min(string $column): mixed
     {
         [$w, $b] = $this->buildWhereWithJoins();
-        $sql = "SELECT MIN(`{$column}`) FROM `{$this->table}`" . $this->buildJoinString() . $w;
+        $sql = "SELECT MIN(" . $this->wrapIdentifier($column) . ") FROM `{$this->table}`" . $this->buildJoinString() . $w;
         $stmt = $this->db->execute($sql, $b);
         return $stmt->fetchColumn();
     }
@@ -983,11 +1044,28 @@ class QueryBuilder
      * User::query()->with('orders', 'profile')->get();
      * ```
      */
-    public function with(string ...$relations): static
+    public function with(array|string ...$relations): static
     {
-        foreach ($relations as $relation) {
-            $this->eagerLoads[$relation] = [];
+        foreach ($relations as $entry) {
+            foreach ($this->normalizeRelationDefinitions($entry) as [$relation, $constraint]) {
+                $this->registerEagerLoad($relation, $constraint);
+            }
         }
+
+        return $this;
+    }
+
+    public function withCount(array|string ...$relations): static
+    {
+        foreach ($relations as $entry) {
+            foreach ($this->normalizeRelationDefinitions($entry) as [$relation, $constraint]) {
+                $this->withCounts[$relation] = $this->composeConstraint(
+                    $this->withCounts[$relation] ?? null,
+                    $constraint
+                );
+            }
+        }
+
         return $this;
     }
 
@@ -1225,6 +1303,29 @@ class QueryBuilder
         return $this->buildSelect();
     }
 
+    public function getEagerLoads(): array
+    {
+        return $this->eagerLoads;
+    }
+
+    public function eagerLoadModels(array $models, ?array $loads = null): array
+    {
+        if ($models === []) {
+            return $models;
+        }
+
+        return $this->loadEagerRelations($models, $loads);
+    }
+
+    public function eagerLoadCounts(array $models, ?array $counts = null): array
+    {
+        if ($models === []) {
+            return $models;
+        }
+
+        return $this->loadRelationCounts($models, $counts);
+    }
+
     // ─────────────────────────────────────────────
     // SQL building
     // ─────────────────────────────────────────────
@@ -1303,12 +1404,54 @@ class QueryBuilder
     private function addWhere(string $column, mixed $operatorOrValue, mixed $value, string $connector): static
     {
         if ($value === null) {
-            $this->wheres[]   = ['clause' => "`{$column}` = ?", 'connector' => $connector];
+            $this->wheres[]   = ['clause' => $this->wrapIdentifier($column) . ' = ?', 'connector' => $connector];
             $this->bindings[] = $operatorOrValue;
         } else {
-            $this->wheres[]   = ['clause' => "`{$column}` {$operatorOrValue} ?", 'connector' => $connector];
+            $this->wheres[]   = ['clause' => $this->wrapIdentifier($column) . " {$operatorOrValue} ?", 'connector' => $connector];
             $this->bindings[] = $value;
         }
+        return $this;
+    }
+
+    private function addColumnWhere(string $first, mixed $operatorOrSecond, ?string $second, string $connector): static
+    {
+        $operator = '=';
+        $right = $second;
+
+        if ($second === null) {
+            $right = (string) $operatorOrSecond;
+        } else {
+            $operator = (string) $operatorOrSecond;
+        }
+
+        $this->wheres[] = [
+            'clause' => $this->wrapIdentifier($first) . " {$operator} " . $this->wrapIdentifier((string) $right),
+            'connector' => $connector,
+        ];
+
+        return $this;
+    }
+
+    private function addDateWhere(string $column, mixed $operatorOrValue, mixed $value, string $connector): static
+    {
+        $operator = '=';
+        $binding = $operatorOrValue;
+
+        if ($value !== null) {
+            $operator = (string) $operatorOrValue;
+            $binding = $value;
+        }
+
+        if ($binding instanceof \DateTimeInterface) {
+            $binding = $binding->format('Y-m-d');
+        }
+
+        $this->wheres[] = [
+            'clause' => 'DATE(' . $this->wrapIdentifier($column) . ") {$operator} ?",
+            'connector' => $connector,
+        ];
+        $this->bindings[] = $binding;
+
         return $this;
     }
 
@@ -1347,48 +1490,203 @@ class QueryBuilder
      * Load eager relations onto a collection of hydrated models.
      * Uses batch queries (single query per relation) to avoid N+1.
      */
-    private function loadEagerRelations(array $models): array
+    private function loadEagerRelations(array $models, ?array $loads = null): array
     {
-        foreach ($this->eagerLoads as $relation => $config) {
-            // Try method call first, then attribute-defined relation
-            $relationInstance = null;
+        $loads ??= $this->eagerLoads;
 
-            if (method_exists($models[0], $relation)) {
-                $relationInstance = $models[0]->$relation();
-            } elseif ($models[0] instanceof Model) {
-                // Check attribute-defined relations via __call
-                try {
-                    $relationInstance = $models[0]->$relation();
-                } catch (\BadMethodCallException) {
-                    continue;
-                }
-            } else {
+        foreach ($loads as $relation => $config) {
+            $relationInstance = $this->resolveRelationInstance($models[0], $relation);
+
+            if (!$relationInstance instanceof Relation) {
                 continue;
             }
 
-            if ($relationInstance instanceof Relation) {
-                // Batch: set constraints for all models at once
-                $relationInstance->addEagerConstraints($models);
+            $relationInstance->addEagerConstraints($models);
+            $this->configureRelationQuery($relationInstance, $config);
 
-                // BelongsToMany handles its own matching internally
-                if ($relationInstance instanceof BelongsToManyRelation) {
-                    $relationInstance->match($models, [], $relation);
-                } else {
-                    // Execute one query for all results
-                    $results = $relationInstance->get();
-                    // Distribute results back to each model
-                    $relationInstance->match($models, $results, $relation);
-                }
+            if ($relationInstance instanceof BelongsToManyRelation) {
+                $relationInstance->match($models, [], $relation);
             } else {
-                // Fallback for non-Relation methods (backward compat)
-                foreach ($models as $model) {
-                    if ($model instanceof Model) {
-                        $model->setRelation($relation, $model->$relation());
-                    }
-                }
+                $results = $relationInstance->get();
+                $relationInstance->match($models, $results, $relation);
             }
         }
 
         return $models;
+    }
+
+    private function loadRelationCounts(array $models, ?array $counts = null): array
+    {
+        $counts ??= $this->withCounts;
+
+        foreach ($counts as $relation => $constraint) {
+            $relationInstance = $this->resolveRelationInstance($models[0], $relation);
+
+            if (!$relationInstance instanceof Relation) {
+                continue;
+            }
+
+            $tempRelation = '__spark_count_' . $relation;
+
+            $relationInstance->addEagerConstraints($models);
+
+            if ($constraint !== null) {
+                $constraint($relationInstance->getQuery());
+            }
+
+            if ($relationInstance instanceof BelongsToManyRelation) {
+                $relationInstance->match($models, [], $tempRelation);
+            } else {
+                $results = $relationInstance->get();
+                $relationInstance->match($models, $results, $tempRelation);
+            }
+
+            foreach ($models as $model) {
+                if (!$model instanceof Model) {
+                    continue;
+                }
+
+                $loaded = $model->getRelation($tempRelation);
+
+                $count = match (true) {
+                    $loaded instanceof Model => 1,
+                    is_array($loaded) => count($loaded),
+                    $loaded === null => 0,
+                    default => 1,
+                };
+
+                $model->setAttribute($relation . '_count', $count);
+                $model->unsetRelation($tempRelation);
+            }
+        }
+
+        return $models;
+    }
+
+    private function resolveRelationInstance(mixed $model, string $relation): ?Relation
+    {
+        if (!$model instanceof Model) {
+            return null;
+        }
+
+        try {
+            $resolved = $model->$relation();
+        } catch (\BadMethodCallException) {
+            return null;
+        }
+
+        return $resolved instanceof Relation ? $resolved : null;
+    }
+
+    private function configureRelationQuery(Relation $relationInstance, array $config): void
+    {
+        $query = $relationInstance->getQuery();
+
+        if (($config['constraint'] ?? null) !== null) {
+            $config['constraint']($query);
+        }
+
+        if (!empty($config['nested'])) {
+            $query->with($this->flattenEagerLoadTree($config['nested']));
+        }
+    }
+
+    private function normalizeRelationDefinitions(array|string $entry): array
+    {
+        if (is_string($entry)) {
+            return [[$entry, null]];
+        }
+
+        $normalized = [];
+
+        foreach ($entry as $key => $value) {
+            if (is_int($key)) {
+                $normalized[] = [(string) $value, null];
+                continue;
+            }
+
+            $normalized[] = [(string) $key, is_callable($value) ? $value : null];
+        }
+
+        return $normalized;
+    }
+
+    private function registerEagerLoad(string $relation, ?callable $constraint = null): void
+    {
+        $segments = array_values(array_filter(explode('.', $relation), static fn(string $segment): bool => $segment !== ''));
+
+        if ($segments === []) {
+            return;
+        }
+
+        $cursor =& $this->eagerLoads;
+        $lastIndex = count($segments) - 1;
+
+        foreach ($segments as $index => $segment) {
+            if (!isset($cursor[$segment])) {
+                $cursor[$segment] = [
+                    'constraint' => null,
+                    'nested' => [],
+                ];
+            }
+
+            if ($index === $lastIndex) {
+                $cursor[$segment]['constraint'] = $this->composeConstraint($cursor[$segment]['constraint'], $constraint);
+                return;
+            }
+
+            $cursor =& $cursor[$segment]['nested'];
+        }
+    }
+
+    private function composeConstraint(?callable $existing, ?callable $incoming): ?callable
+    {
+        if ($existing === null) {
+            return $incoming;
+        }
+
+        if ($incoming === null) {
+            return $existing;
+        }
+
+        return static function (QueryBuilder $query) use ($existing, $incoming): void {
+            $existing($query);
+            $incoming($query);
+        };
+    }
+
+    private function flattenEagerLoadTree(array $tree, string $prefix = ''): array
+    {
+        $flattened = [];
+
+        foreach ($tree as $relation => $config) {
+            $path = $prefix === '' ? $relation : $prefix . '.' . $relation;
+
+            if (($config['constraint'] ?? null) !== null) {
+                $flattened[$path] = $config['constraint'];
+            } else {
+                $flattened[] = $path;
+            }
+
+            if (!empty($config['nested'])) {
+                $flattened = array_merge($flattened, $this->flattenEagerLoadTree($config['nested'], $path));
+            }
+        }
+
+        return $flattened;
+    }
+
+    private function wrapIdentifier(string $column): string
+    {
+        if ($column === '*' || str_contains($column, '(') || str_contains($column, ' ')) {
+            return $column;
+        }
+
+        $segments = explode('.', $column);
+
+        return implode('.', array_map(
+            static fn(string $segment): string => $segment === '*' ? '*' : '`' . $segment . '`',
+            $segments
+        ));
     }
 }

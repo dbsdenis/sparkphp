@@ -160,11 +160,11 @@ Sempre analise os seguintes documentos (vão criar uma orientação melhor do pr
   - Considerar `stale-while-revalidate`, tags e métricas de cache
   - Integrar melhor os eventos de cache ao Inspector
 
-- [ ] Task 6.3 — Query Builder / ORM v2
+- [x] Task 6.3 — Query Builder / ORM v2
   - Expandir operadores modernos de banco e ergonomia do Query Builder
   - Melhorar relacionamentos, eager loading e serialização
 
-- [ ] Task 6.4 — Observabilidade profunda
+- [x] Task 6.4 — Observabilidade profunda
   - Evoluir o Inspector para mostrar pipelines completos de request, queue e cache
   - Adicionar visibilidade melhor para jobs, falhas, retries e bottlenecks
   - Consolidar benchmarks comparativos do SparkPHP em cenários reais

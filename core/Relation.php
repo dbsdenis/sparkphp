@@ -210,6 +210,18 @@ abstract class Relation
         return $this;
     }
 
+    public function whereColumn(string $first, mixed $opOrSecond, ?string $second = null): static
+    {
+        $this->query->whereColumn($first, $opOrSecond, $second);
+        return $this;
+    }
+
+    public function whereDate(string $column, mixed $opOrValue, mixed $value = null): static
+    {
+        $this->query->whereDate($column, $opOrValue, $value);
+        return $this;
+    }
+
     public function whereIn(string $column, array $values): static
     {
         $this->query->whereIn($column, $values);
@@ -261,6 +273,18 @@ abstract class Relation
     public function select(string ...$columns): static
     {
         $this->query->select(...$columns);
+        return $this;
+    }
+
+    public function with(array|string ...$relations): static
+    {
+        $this->query->with(...$relations);
+        return $this;
+    }
+
+    public function withCount(array|string ...$relations): static
+    {
+        $this->query->withCount(...$relations);
         return $this;
     }
 
@@ -519,7 +543,7 @@ class BelongsToManyRelation extends Relation
         // One query for all related models
         $relatedModels = [];
         if (!empty($allRelatedIds)) {
-            $relatedQuery = db((new $this->related())->getTable())->setModel($this->related);
+            $relatedQuery = $this->query;
             $relatedModels = $relatedQuery->whereIn('id', $allRelatedIds)->get();
         }
 

@@ -25,6 +25,7 @@ class BenchmarkRunner
             $scenarios = [
                 [
                     'name' => 'autoloader.map_build',
+                    'group' => 'bootstrap',
                     'callback' => function () use ($fixture): void {
                         $_ENV['APP_ENV'] = 'dev';
                         $autoloader = new Autoloader($fixture);
@@ -33,6 +34,7 @@ class BenchmarkRunner
                 ],
                 [
                     'name' => 'autoloader.cache_load',
+                    'group' => 'bootstrap',
                     'compare_to' => 'autoloader.map_build',
                     'callback' => function () use ($fixture): void {
                         $_ENV['APP_ENV'] = 'prod';
@@ -41,6 +43,7 @@ class BenchmarkRunner
                 ],
                 [
                     'name' => 'router.routes_build',
+                    'group' => 'routing',
                     'callback' => function () use ($fixture): void {
                         $_ENV['APP_ENV'] = 'dev';
                         $router = new Router($fixture);
@@ -49,6 +52,7 @@ class BenchmarkRunner
                 ],
                 [
                     'name' => 'router.resolve_static',
+                    'group' => 'routing',
                     'callback' => function () use ($fixture): void {
                         $_ENV['APP_ENV'] = 'prod';
                         $router = new Router($fixture);
@@ -57,6 +61,7 @@ class BenchmarkRunner
                 ],
                 [
                     'name' => 'router.resolve_dynamic',
+                    'group' => 'routing',
                     'compare_to' => 'router.resolve_static',
                     'callback' => function () use ($fixture): void {
                         $_ENV['APP_ENV'] = 'prod';
@@ -66,6 +71,7 @@ class BenchmarkRunner
                 ],
                 [
                     'name' => 'view.render_cold',
+                    'group' => 'views',
                     'callback' => function () use ($fixture): void {
                         $_ENV['APP_ENV'] = 'dev';
                         $compiledFile = $fixture . '/storage/cache/views/' . md5($fixture . '/app/views/index.spark') . '.php';
@@ -79,6 +85,7 @@ class BenchmarkRunner
                 ],
                 [
                     'name' => 'view.render_warm',
+                    'group' => 'views',
                     'compare_to' => 'view.render_cold',
                     'callback' => function () use ($fixture): void {
                         $_ENV['APP_ENV'] = 'dev';
@@ -87,7 +94,23 @@ class BenchmarkRunner
                     },
                 ],
                 [
+                    'name' => 'http.request_html',
+                    'group' => 'http',
+                    'callback' => function () use ($fixture): void {
+                        $this->simulateHttpRequest($fixture, '/', 'GET', 'text/html');
+                    },
+                ],
+                [
+                    'name' => 'http.request_json',
+                    'group' => 'http',
+                    'compare_to' => 'http.request_html',
+                    'callback' => function () use ($fixture): void {
+                        $this->simulateHttpRequest($fixture, '/api/health', 'GET', 'application/json');
+                    },
+                ],
+                [
                     'name' => 'container.autowire',
+                    'group' => 'container',
                     'callback' => function (): void {
                         $container = new Container();
                         $container->make(BenchController::class);
@@ -95,6 +118,7 @@ class BenchmarkRunner
                 ],
                 [
                     'name' => 'container.singleton_hit',
+                    'group' => 'container',
                     'compare_to' => 'container.autowire',
                     'callback' => function (): void {
                         $container = new Container();
@@ -112,11 +136,12 @@ class BenchmarkRunner
                     $scenario['callback'],
                     $iterations,
                     $warmup,
+                    $scenario['group'] ?? 'core',
                     $scenario['compare_to'] ?? null
                 );
             }
 
-            return $this->buildReport($results, $iterations, $warmup);
+            return $this->buildReport($results, $iterations, $warmup, $fixture);
         } finally {
             $_ENV = $previousEnv;
             $this->deleteDirectory($fixture);
@@ -143,7 +168,7 @@ class BenchmarkRunner
         return $fullPath;
     }
 
-    private function buildReport(array $results, int $iterations, int $warmup): array
+    private function buildReport(array $results, int $iterations, int $warmup, string $fixture): array
     {
         $indexed = [];
         foreach ($results as $result) {
@@ -167,11 +192,48 @@ class BenchmarkRunner
         }
         unset($result);
 
+        usort($results, static function (array $left, array $right): int {
+            return [$left['group'], $left['name']] <=> [$right['group'], $right['name']];
+        });
+
+        $fastest = null;
+        $slowest = null;
+
+        foreach ($results as $result) {
+            if ($fastest === null || $result['avg_ns'] < $fastest['avg_ns']) {
+                $fastest = $result;
+            }
+
+            if ($slowest === null || $result['avg_ns'] > $slowest['avg_ns']) {
+                $slowest = $result;
+            }
+        }
+
+        $sparkVersion = SparkVersion::current($this->basePath);
+
         return [
             'generated_at' => date(DATE_ATOM),
+            'spark_version' => $sparkVersion,
+            'spark_release_line' => SparkVersion::releaseLine($sparkVersion),
             'php' => PHP_VERSION,
             'iterations' => $iterations,
             'warmup' => $warmup,
+            'profile' => $this->fixtureProfile($fixture),
+            'summary' => [
+                'scenario_count' => count($results),
+                'groups' => array_values(array_unique(array_map(
+                    static fn(array $result): string => (string) ($result['group'] ?? 'core'),
+                    $results
+                ))),
+                'fastest' => $fastest !== null ? [
+                    'name' => $fastest['name'],
+                    'avg_ms' => $fastest['avg_ms'],
+                ] : null,
+                'slowest' => $slowest !== null ? [
+                    'name' => $slowest['name'],
+                    'avg_ms' => $slowest['avg_ms'],
+                ] : null,
+            ],
             'scenarios' => $results,
         ];
     }
@@ -181,6 +243,7 @@ class BenchmarkRunner
         callable $callback,
         int $iterations,
         int $warmup,
+        string $group,
         ?string $compareTo = null
     ): array {
         for ($i = 0; $i < $warmup; $i++) {
@@ -212,6 +275,7 @@ class BenchmarkRunner
 
         return [
             'name' => $name,
+            'group' => $group,
             'avg_ns' => $avgNs,
             'avg_ms' => $avgNs / 1_000_000,
             'median_ms' => $medianNs / 1_000_000,
@@ -284,7 +348,7 @@ class BenchmarkRunner
 
         file_put_contents($fixture . '/app/routes/index.php', <<<'PHP'
 <?php
-get(fn() => ['message' => 'SparkPHP']);
+get(fn() => ['message' => 'SparkPHP', 'items' => range(1, 10)]);
 PHP
         );
 
@@ -326,6 +390,19 @@ SPARK
 SPARK
         );
 
+        file_put_contents($fixture . '/.env', <<<'ENV'
+APP_NAME=SparkPHP Benchmark
+APP_ENV=dev
+APP_KEY=benchmark-key-12345678901234567890
+APP_URL=http://benchmark.test
+APP_TIMEZONE=America/Sao_Paulo
+SESSION=file
+CACHE=file
+QUEUE=sync
+SPARK_INSPECTOR=off
+ENV
+        );
+
         return $fixture;
     }
 
@@ -353,13 +430,71 @@ SPARK
 
     private function loadDependencies(): void
     {
+        require_once __DIR__ . '/Version.php';
         require_once __DIR__ . '/Bootstrap.php';
         require_once __DIR__ . '/Autoloader.php';
         require_once __DIR__ . '/Container.php';
         require_once __DIR__ . '/Cache.php';
+        require_once __DIR__ . '/Request.php';
+        require_once __DIR__ . '/Response.php';
         require_once __DIR__ . '/Router.php';
         require_once __DIR__ . '/View.php';
         require_once __DIR__ . '/helpers.php';
+    }
+
+    private function simulateHttpRequest(string $fixture, string $path, string $method, string $accept): void
+    {
+        $serverBackup = $_SERVER;
+        $getBackup = $_GET;
+        $postBackup = $_POST;
+        $envBackup = $_ENV;
+
+        $_ENV['APP_ENV'] = 'dev';
+        $_SERVER['REQUEST_METHOD'] = $method;
+        $_SERVER['REQUEST_URI'] = $path;
+        $_SERVER['HTTP_HOST'] = 'benchmark.test';
+        $_SERVER['HTTP_ACCEPT'] = $accept;
+        $_GET = [];
+        $_POST = [];
+
+        try {
+            $request = new Request();
+            $router = new Router($fixture);
+            $match = $router->resolve($request->path(), $request->method());
+
+            if (!$match || (($match['status'] ?? 200) !== 200)) {
+                throw new RuntimeException('Benchmark request scenario failed to resolve route.');
+            }
+
+            $view = new View($fixture);
+            $response = new Response();
+
+            ob_start();
+
+            try {
+                $result = ($match['handler'])();
+                $response->resolve($result, $request, $view, $match['route'] ?? '');
+            } finally {
+                ob_end_clean();
+            }
+        } finally {
+            $_SERVER = $serverBackup;
+            $_GET = $getBackup;
+            $_POST = $postBackup;
+            $_ENV = $envBackup;
+        }
+    }
+
+    private function fixtureProfile(string $fixture): array
+    {
+        return [
+            'name' => 'real_project_fixture',
+            'description' => 'Isolated SparkPHP project with file-based routes, views and full request scenarios.',
+            'route_files' => count(glob($fixture . '/app/routes/**/*.php', GLOB_BRACE) ?: []) + count(glob($fixture . '/app/routes/*.php') ?: []),
+            'model_files' => count(glob($fixture . '/app/models/*.php') ?: []),
+            'service_files' => count(glob($fixture . '/app/services/*.php') ?: []),
+            'view_files' => count(glob($fixture . '/app/views/**/*.spark', GLOB_BRACE) ?: []) + count(glob($fixture . '/app/views/*.spark') ?: []),
+        ];
     }
 }
 

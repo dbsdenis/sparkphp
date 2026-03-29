@@ -211,6 +211,8 @@ class SparkInspector
             'queue' => [],
             'dumps' => [],
             'exceptions' => [],
+            'pipelines' => [],
+            'bottlenecks' => [],
             'metrics' => [
                 'db_ms' => 0.0,
                 'view_ms' => 0.0,
@@ -220,6 +222,15 @@ class SparkInspector
                 'cache_misses' => 0,
                 'cache_stale_hits' => 0,
                 'cache_writes' => 0,
+                'queue_ops' => 0,
+                'queue_dispatches' => 0,
+                'queue_sync_dispatches' => 0,
+                'queue_enqueued' => 0,
+                'queue_delayed' => 0,
+                'queue_processed' => 0,
+                'queue_released' => 0,
+                'queue_failed' => 0,
+                'queue_retries' => 0,
                 'memory_start_kb' => memory_get_usage(true) / 1024,
                 'memory_end_kb' => 0.0,
                 'memory_peak_kb' => 0.0,
@@ -446,7 +457,57 @@ class SparkInspector
             return;
         }
 
-        $this->context['queue'][] = $this->sanitize($payload);
+        $sanitizedPayload = $this->sanitize($payload);
+        $type = (string) ($payload['type'] ?? 'unknown');
+
+        $this->context['queue'][] = $sanitizedPayload;
+        $this->context['metrics']['queue_ops']++;
+
+        if (in_array($type, ['dispatch', 'dispatch-sync'], true)) {
+            $this->context['metrics']['queue_dispatches']++;
+        }
+
+        if ($type === 'dispatch-sync') {
+            $this->context['metrics']['queue_sync_dispatches']++;
+        }
+
+        if (in_array($type, ['push', 'later'], true)) {
+            $this->context['metrics']['queue_enqueued']++;
+        }
+
+        if ($type === 'later') {
+            $this->context['metrics']['queue_delayed']++;
+        }
+
+        if ($type === 'processed') {
+            $this->context['metrics']['queue_processed']++;
+        }
+
+        if ($type === 'released') {
+            $this->context['metrics']['queue_released']++;
+        }
+
+        if ($type === 'failed') {
+            $this->context['metrics']['queue_failed']++;
+        }
+
+        if ($type === 'retry') {
+            $this->context['metrics']['queue_retries']++;
+        }
+
+        $this->context['timeline'][] = [
+            'label' => 'queue:' . $type,
+            'type' => 'queue',
+            'duration_ms' => 0.0,
+            'status' => match ($type) {
+                'failed' => 'failed',
+                'released' => 'released',
+                'retry' => 'retry',
+                'later' => 'delayed',
+                default => 'ok',
+            },
+            'meta' => $sanitizedPayload,
+        ];
     }
 
     private function addDump(string $type, array $values): void
@@ -546,6 +607,7 @@ class SparkInspector
             'body_length' => $bodyLength,
             'body_preview' => $preview,
         ];
+        $this->refreshInsights();
 
         if ($this->persistCurrentRequest) {
             $this->storage->save($this->context);
@@ -575,6 +637,22 @@ class SparkInspector
         $memoryKb = number_format((float) ($this->context['metrics']['memory_peak_kb'] ?? 0.0), 0);
         $queries = count($this->context['queries'] ?? []);
         $exceptions = count($this->context['exceptions'] ?? []);
+        $queueFailures = (int) ($this->context['metrics']['queue_failed'] ?? 0);
+        $queueOps = (int) ($this->context['metrics']['queue_ops'] ?? 0);
+        $cacheHitRate = $this->cacheHitRate($this->context['metrics'] ?? []);
+        $summaryParts = [
+            $totalMs . ' ms',
+            $queries . ' queries',
+            $cacheHitRate . ' cache hit',
+        ];
+
+        if ($queueFailures > 0) {
+            $summaryParts[] = $queueFailures . ' queue failures';
+        } elseif ($queueOps > 0) {
+            $summaryParts[] = $queueOps . ' queue ops';
+        }
+
+        $summary = htmlspecialchars(implode(' • ', $summaryParts));
         $href = htmlspecialchars($this->inspectorUrl($this->context['id']));
 
         return <<<HTML
@@ -631,7 +709,7 @@ class SparkInspector
         <button type="button" id="spark-inspector-badge-toggle" class="spark-inspector-badge spark-inspector-badge-toggle" aria-label="Minimize toolbar">S</button>
         <div style="min-width:0;">
           <strong class="spark-inspector-name">Spark Inspector</strong>
-          <div class="spark-inspector-summary">{$totalMs} ms • {$queries} queries • {$exceptions} exceptions</div>
+          <div class="spark-inspector-summary">{$summary}</div>
         </div>
       </div>
       <div class="spark-inspector-controls">
@@ -644,6 +722,8 @@ class SparkInspector
       <div class="spark-inspector-metric"><strong>Memory</strong><span>{$memoryKb} KB</span></div>
       <div class="spark-inspector-metric"><strong>Queries</strong><span>{$queries}</span></div>
       <div class="spark-inspector-metric"><strong>Exceptions</strong><span>{$exceptions}</span></div>
+      <div class="spark-inspector-metric"><strong>Cache Hit</strong><span>{$cacheHitRate}</span></div>
+      <div class="spark-inspector-metric"><strong>Queue</strong><span>{$queueOps} ops</span></div>
     </div>
     <div class="spark-inspector-footer">
       <span class="spark-inspector-id">{$id}</span>
@@ -912,6 +992,7 @@ HTML;
     {
         $tabIcons = [
             'overview' => '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>',
+            'pipelines' => '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 7h14"/><path d="M5 12h8"/><path d="M5 17h14"/><circle cx="18" cy="12" r="2"/></svg>',
             'timeline' => '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
             'request' => '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
             'response' => '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
@@ -930,6 +1011,7 @@ HTML;
 
         $tabs = [
             'overview' => $this->renderOverviewTab($entry),
+            'pipelines' => $this->renderPipelinesTab($entry),
             'timeline' => $this->renderCollectionTab('Timeline', $entry['timeline'] ?? []),
             'request' => $this->renderPrettyTab('Request', $entry['request'] ?? []),
             'response' => $this->renderPrettyTab('Response', $entry['response'] ?? []),
@@ -1027,14 +1109,18 @@ HTML;
         $cacheHits = (int) ($metrics['cache_hits'] ?? 0);
         $cacheMisses = (int) ($metrics['cache_misses'] ?? 0);
         $cacheStaleHits = (int) ($metrics['cache_stale_hits'] ?? 0);
-        $cacheLookups = $cacheHits + $cacheMisses;
-        $cacheHitRate = $cacheLookups > 0
-            ? number_format(($cacheHits / $cacheLookups) * 100, 1) . '%'
-            : 'n/a';
+        $cacheHitRate = $this->cacheHitRate($metrics);
+        $queueOps = (int) ($metrics['queue_ops'] ?? 0);
+        $queueFailed = (int) ($metrics['queue_failed'] ?? 0);
+        $queueRetries = (int) ($metrics['queue_retries'] ?? 0);
 
         $status = (int) ($entry['response']['status'] ?? 0);
         $statusColor = $status >= 500 ? '#dc2626' : ($status >= 400 ? '#d97706' : '#059669');
         $exColor = $exceptions > 0 ? '#dc2626' : '#111827';
+        $bottlenecks = $entry['bottlenecks'] ?? [];
+        $bottlenecksCard = $bottlenecks === []
+            ? '<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg><p>No bottlenecks detected</p></div>'
+            : '<pre>' . $this->pretty($bottlenecks) . '</pre>';
 
         return <<<HTML
 <div class="metric-grid">
@@ -1046,12 +1132,70 @@ HTML;
   {$this->metricCard('Cache Ops', (string) $cacheOps, '#d97706', 'cache')}
   {$this->metricCard('Cache Hit Rate', $cacheHitRate, '#d97706', 'cache')}
   {$this->metricCard('Stale Hits', (string) $cacheStaleHits, '#ea580c', 'cache')}
+  {$this->metricCard('Queue Ops', (string) $queueOps, '#2563eb', 'queue')}
+  {$this->metricCard('Queue Failures', (string) $queueFailed, $queueFailed > 0 ? '#dc2626' : '#2563eb', 'queue')}
+  {$this->metricCard('Queue Retries', (string) $queueRetries, $queueRetries > 0 ? '#d97706' : '#2563eb', 'queue')}
   {$this->metricCard('Exceptions', (string) $exceptions, $exColor, 'exceptions')}
   {$this->metricCard('Memory Peak', number_format((float) ($metrics['memory_peak_kb'] ?? 0), 0) . ' KB', '#059669', 'memory')}
 </div>
 <div class="card" style="margin-top:16px;">
   <h3 class="card-title">Route Information</h3>
   <pre>{$this->pretty($entry['route'] ?? [])}</pre>
+</div>
+<div class="card" style="margin-top:16px;">
+  <h3 class="card-title">Bottlenecks</h3>
+  {$bottlenecksCard}
+</div>
+HTML;
+    }
+
+    private function renderPipelinesTab(array $entry): string
+    {
+        $pipelines = $entry['pipelines'] ?? [];
+        $requestPipeline = $pipelines['request'] ?? ['summary' => [], 'steps' => []];
+        $cachePipeline = $pipelines['cache'] ?? ['summary' => [], 'hot_keys' => []];
+        $queuePipeline = $pipelines['queue'] ?? ['summary' => [], 'jobs' => []];
+
+        $cacheHighlights = ($cachePipeline['hot_keys'] ?? []) === []
+            ? '<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg><p>No cache hotspots captured</p></div>'
+            : '<pre>' . $this->pretty($cachePipeline['hot_keys']) . '</pre>';
+
+        $queueHighlights = ($queuePipeline['jobs'] ?? []) === []
+            ? '<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg><p>No queue jobs captured</p></div>'
+            : '<pre>' . $this->pretty($queuePipeline['jobs']) . '</pre>';
+
+        return <<<HTML
+<div class="stack-grid">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Request Pipeline</h3>
+      <span class="badge">{$this->countPipelineSteps($requestPipeline['steps'] ?? [])} steps</span>
+    </div>
+    {$this->renderSummaryGrid($requestPipeline['summary'] ?? [])}
+    {$this->renderPipelineSteps($requestPipeline['steps'] ?? [])}
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Cache Pipeline</h3>
+      <span class="badge">{$this->countPipelineItems($cachePipeline['summary'] ?? [])} metrics</span>
+    </div>
+    {$this->renderSummaryGrid($cachePipeline['summary'] ?? [])}
+    <div class="section-split">
+      <h4 class="section-heading">Hot Keys</h4>
+      {$cacheHighlights}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Queue Pipeline</h3>
+      <span class="badge">{$this->countPipelineItems($queuePipeline['jobs'] ?? [])} jobs</span>
+    </div>
+    {$this->renderSummaryGrid($queuePipeline['summary'] ?? [])}
+    <div class="section-split">
+      <h4 class="section-heading">Jobs, failures and retries</h4>
+      {$queueHighlights}
+    </div>
+  </div>
 </div>
 HTML;
     }
@@ -1154,6 +1298,19 @@ HTML;
     .card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
     .card-title { margin:0; font-size:15px; font-weight:600; color:#0f172a; }
     .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; background:#f1f5f9; color:#64748b; }
+    .stack-grid { display:grid; gap:16px; }
+    .summary-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; margin-bottom:16px; }
+    .summary-item { border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; background:#f8fafc; }
+    .summary-item strong { display:block; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:#94a3b8; margin-bottom:6px; }
+    .summary-item span { color:#0f172a; font-size:14px; font-weight:600; word-break:break-word; }
+    .pipeline-list { display:grid; gap:10px; }
+    .pipeline-step { border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; background:#fff; }
+    .pipeline-step__top { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .pipeline-step__stage { display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:#2563eb; text-transform:uppercase; letter-spacing:.04em; }
+    .pipeline-step__label { color:#0f172a; font-weight:600; }
+    .pipeline-step__meta { margin-top:6px; color:#64748b; font-size:12px; }
+    .section-split { margin-top:16px; }
+    .section-heading { margin:0 0 10px; font-size:13px; font-weight:700; color:#334155; }
 
     /* Metric grid */
     .metric-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; }
@@ -1290,5 +1447,384 @@ HTML;
         $this->context['metrics']['total_ms'] = round($totalMs, 3);
         $this->context['metrics']['memory_end_kb'] = round(memory_get_usage(true) / 1024, 3);
         $this->context['metrics']['memory_peak_kb'] = round(memory_get_peak_usage(true) / 1024, 3);
+    }
+
+    private function refreshInsights(): void
+    {
+        if ($this->context === []) {
+            return;
+        }
+
+        $this->context['pipelines'] = [
+            'request' => $this->buildRequestPipeline(),
+            'cache' => $this->buildCachePipeline(),
+            'queue' => $this->buildQueuePipeline(),
+        ];
+
+        $this->context['bottlenecks'] = $this->buildBottlenecks($this->context['pipelines']);
+    }
+
+    private function buildRequestPipeline(): array
+    {
+        $request = $this->context['request'] ?? [];
+        $response = $this->context['response'] ?? [];
+        $route = $this->context['route'] ?? [];
+        $timeline = $this->context['timeline'] ?? [];
+        $metrics = $this->context['metrics'] ?? [];
+
+        $steps = [[
+            'stage' => 'request',
+            'label' => trim(($request['method'] ?? 'GET') . ' ' . ($request['path'] ?? '/')),
+            'status' => 'received',
+            'meta' => implode(' • ', array_filter([
+                $request['preferred_format'] ?? null,
+                ($request['ajax'] ?? false) ? 'ajax' : null,
+                $request['ip'] ?? null,
+            ])),
+        ]];
+
+        if (($route['url'] ?? null) !== null || ($route['status'] ?? null) !== null) {
+            $steps[] = [
+                'stage' => 'route',
+                'label' => (string) ($route['url'] ?? ($request['path'] ?? '/')),
+                'status' => match ((int) ($route['status'] ?? 200)) {
+                    404 => 'missing',
+                    405 => 'method_not_allowed',
+                    default => 'matched',
+                },
+                'meta' => implode(' • ', array_filter([
+                    !empty($route['middlewares']) ? count($route['middlewares']) . ' middleware(s)' : null,
+                    !empty($route['allowed']) ? 'Allow: ' . implode(', ', $route['allowed']) : null,
+                ])),
+            ];
+        }
+
+        foreach ($timeline as $item) {
+            $meta = [];
+
+            if (isset($item['duration_ms']) && (float) $item['duration_ms'] > 0) {
+                $meta[] = number_format((float) $item['duration_ms'], 3) . ' ms';
+            }
+
+            if (isset($item['status'])) {
+                $meta[] = (string) $item['status'];
+            }
+
+            if (isset($item['key']) && $item['key'] !== null) {
+                $meta[] = 'key: ' . $item['key'];
+            }
+
+            if (isset($item['meta']['job']) && $item['meta']['job']) {
+                $meta[] = 'job: ' . $item['meta']['job'];
+            }
+
+            if (isset($item['meta']['queue']) && $item['meta']['queue']) {
+                $meta[] = 'queue: ' . $item['meta']['queue'];
+            }
+
+            $steps[] = [
+                'stage' => $this->humanizePipelineStage((string) ($item['type'] ?? 'step')),
+                'label' => (string) ($item['label'] ?? 'step'),
+                'status' => (string) ($item['status'] ?? 'ok'),
+                'meta' => implode(' • ', $meta),
+            ];
+        }
+
+        $steps[] = [
+            'stage' => 'response',
+            'label' => (string) (($response['status'] ?? 'n/a') . ' ' . ($response['content_type'] ?? 'response')),
+            'status' => 'sent',
+            'meta' => implode(' • ', array_filter([
+                isset($response['body_length']) ? number_format((float) $response['body_length']) . ' bytes' : null,
+                isset($metrics['memory_peak_kb']) ? number_format((float) $metrics['memory_peak_kb'], 0) . ' KB peak' : null,
+            ])),
+        ];
+
+        return [
+            'summary' => [
+                'Method' => $request['method'] ?? 'GET',
+                'Path' => $request['path'] ?? '/',
+                'Status' => (string) ($response['status'] ?? 'n/a'),
+                'Total Time' => number_format((float) ($metrics['total_ms'] ?? 0.0), 1) . ' ms',
+                'Queries' => (string) count($this->context['queries'] ?? []),
+                'Views' => (string) count($this->context['views'] ?? []),
+                'Cache Ops' => (string) ($metrics['cache_ops'] ?? 0),
+                'Queue Ops' => (string) ($metrics['queue_ops'] ?? 0),
+            ],
+            'steps' => $steps,
+        ];
+    }
+
+    private function buildCachePipeline(): array
+    {
+        $metrics = $this->context['metrics'] ?? [];
+        $cache = $this->context['cache'] ?? [];
+        $keys = [];
+
+        foreach ($cache as $item) {
+            $key = (string) ($item['key'] ?? '[none]');
+            if (!isset($keys[$key])) {
+                $keys[$key] = [
+                    'key' => $key,
+                    'ops' => 0,
+                    'hits' => 0,
+                    'misses' => 0,
+                    'writes' => 0,
+                    'stale_hits' => 0,
+                    'tags' => [],
+                ];
+            }
+
+            $keys[$key]['ops']++;
+
+            if (($item['meta']['hit'] ?? false) === true) {
+                $keys[$key]['hits']++;
+            }
+
+            if (($item['meta']['miss'] ?? false) === true) {
+                $keys[$key]['misses']++;
+            }
+
+            if (($item['meta']['stale'] ?? false) === true) {
+                $keys[$key]['stale_hits']++;
+            }
+
+            if (in_array($item['operation'] ?? '', ['set', 'touch', 'forget', 'flush', 'flush_tags', 'increment', 'decrement', 'refresh'], true)) {
+                $keys[$key]['writes']++;
+            }
+
+            foreach ((array) ($item['meta']['tags'] ?? []) as $tag) {
+                $keys[$key]['tags'][$tag] = true;
+            }
+        }
+
+        foreach ($keys as &$key) {
+            $key['tags'] = array_values(array_keys($key['tags']));
+        }
+        unset($key);
+
+        usort($keys, static function (array $left, array $right): int {
+            return [$right['ops'], $right['writes'], $right['hits']] <=> [$left['ops'], $left['writes'], $left['hits']];
+        });
+
+        return [
+            'summary' => [
+                'Ops' => (string) ($metrics['cache_ops'] ?? 0),
+                'Hit Rate' => $this->cacheHitRate($metrics),
+                'Hits' => (string) ($metrics['cache_hits'] ?? 0),
+                'Misses' => (string) ($metrics['cache_misses'] ?? 0),
+                'Stale Hits' => (string) ($metrics['cache_stale_hits'] ?? 0),
+                'Writes' => (string) ($metrics['cache_writes'] ?? 0),
+                'Unique Keys' => (string) count($keys),
+            ],
+            'hot_keys' => array_slice($keys, 0, 5),
+        ];
+    }
+
+    private function buildQueuePipeline(): array
+    {
+        $metrics = $this->context['metrics'] ?? [];
+        $queue = $this->context['queue'] ?? [];
+        $jobs = [];
+
+        foreach ($queue as $item) {
+            $job = (string) ($item['job'] ?? 'unknown');
+
+            if (!isset($jobs[$job])) {
+                $jobs[$job] = [
+                    'job' => $job,
+                    'queues' => [],
+                    'events' => [],
+                    'attempts' => 0,
+                    'tries' => null,
+                    'failures' => 0,
+                    'retries' => 0,
+                    'released' => 0,
+                    'last_error' => null,
+                ];
+            }
+
+            $type = (string) ($item['type'] ?? 'unknown');
+            $jobs[$job]['events'][$type] = ((int) ($jobs[$job]['events'][$type] ?? 0)) + 1;
+
+            if (isset($item['queue']) && $item['queue']) {
+                $jobs[$job]['queues'][(string) $item['queue']] = true;
+            }
+
+            $jobs[$job]['attempts'] = max((int) $jobs[$job]['attempts'], (int) ($item['attempts'] ?? 0));
+            $jobs[$job]['tries'] = $item['tries'] ?? $jobs[$job]['tries'];
+
+            if ($type === 'failed') {
+                $jobs[$job]['failures']++;
+            }
+
+            if ($type === 'retry') {
+                $jobs[$job]['retries']++;
+            }
+
+            if ($type === 'released') {
+                $jobs[$job]['released']++;
+            }
+
+            if (!empty($item['error'])) {
+                $jobs[$job]['last_error'] = $item['error'];
+            }
+        }
+
+        foreach ($jobs as &$job) {
+            $job['queues'] = array_values(array_keys($job['queues']));
+        }
+        unset($job);
+
+        $jobs = array_values($jobs);
+        usort($jobs, static function (array $left, array $right): int {
+            return [$right['failures'], $right['retries'], array_sum($right['events'])] <=> [$left['failures'], $left['retries'], array_sum($left['events'])];
+        });
+
+        return [
+            'summary' => [
+                'Ops' => (string) ($metrics['queue_ops'] ?? 0),
+                'Dispatches' => (string) ($metrics['queue_dispatches'] ?? 0),
+                'Sync Dispatches' => (string) ($metrics['queue_sync_dispatches'] ?? 0),
+                'Enqueued' => (string) ($metrics['queue_enqueued'] ?? 0),
+                'Delayed' => (string) ($metrics['queue_delayed'] ?? 0),
+                'Processed' => (string) ($metrics['queue_processed'] ?? 0),
+                'Released' => (string) ($metrics['queue_released'] ?? 0),
+                'Failures' => (string) ($metrics['queue_failed'] ?? 0),
+                'Retries' => (string) ($metrics['queue_retries'] ?? 0),
+            ],
+            'jobs' => array_slice($jobs, 0, 8),
+        ];
+    }
+
+    private function buildBottlenecks(array $pipelines): array
+    {
+        $timeline = $this->context['timeline'] ?? [];
+        $queries = $this->context['queries'] ?? [];
+        $views = $this->context['views'] ?? [];
+        $cacheHotKeys = $pipelines['cache']['hot_keys'] ?? [];
+        $queueJobs = $pipelines['queue']['jobs'] ?? [];
+
+        $slowestStep = $this->findMaxBy($timeline, 'duration_ms');
+        $slowestQuery = $this->findMaxBy($queries, 'duration_ms');
+        $slowestView = $this->findMaxBy($views, 'duration_ms');
+        $noisiestCacheKey = $this->findMaxBy($cacheHotKeys, 'ops');
+        $mostFragileJob = null;
+
+        if ($queueJobs !== []) {
+            usort($queueJobs, static function (array $left, array $right): int {
+                return [$right['failures'], $right['retries'], $right['released']] <=> [$left['failures'], $left['retries'], $left['released']];
+            });
+
+            $mostFragileJob = ($queueJobs[0]['failures'] ?? 0) > 0 || ($queueJobs[0]['retries'] ?? 0) > 0
+                ? $queueJobs[0]
+                : null;
+        }
+
+        return array_filter([
+            'slowest_step' => $slowestStep,
+            'slowest_query' => $slowestQuery,
+            'slowest_view' => $slowestView,
+            'noisiest_cache_key' => $noisiestCacheKey,
+            'most_fragile_job' => $mostFragileJob,
+        ], static fn(mixed $value): bool => $value !== null);
+    }
+
+    private function renderSummaryGrid(array $items): string
+    {
+        if ($items === []) {
+            return '<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg><p>No summary available</p></div>';
+        }
+
+        $rows = [];
+
+        foreach ($items as $label => $value) {
+            $rows[] = sprintf(
+                '<div class="summary-item"><strong>%s</strong><span>%s</span></div>',
+                htmlspecialchars((string) $label),
+                htmlspecialchars((string) $value)
+            );
+        }
+
+        return '<div class="summary-grid">' . implode('', $rows) . '</div>';
+    }
+
+    private function renderPipelineSteps(array $steps): string
+    {
+        if ($steps === []) {
+            return '<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg><p>No pipeline steps captured</p></div>';
+        }
+
+        $rows = [];
+
+        foreach ($steps as $step) {
+            $stage = htmlspecialchars((string) ($step['stage'] ?? 'step'));
+            $label = htmlspecialchars((string) ($step['label'] ?? ''));
+            $status = htmlspecialchars((string) ($step['status'] ?? 'ok'));
+            $meta = trim((string) ($step['meta'] ?? ''));
+
+            $rows[] = sprintf(
+                '<div class="pipeline-step"><div class="pipeline-step__top"><div><div class="pipeline-step__stage">%s</div><div class="pipeline-step__label">%s</div></div><span class="badge">%s</span></div>%s</div>',
+                $stage,
+                $label,
+                $status,
+                $meta !== '' ? '<div class="pipeline-step__meta">' . htmlspecialchars($meta) . '</div>' : ''
+            );
+        }
+
+        return '<div class="pipeline-list">' . implode('', $rows) . '</div>';
+    }
+
+    private function humanizePipelineStage(string $type): string
+    {
+        $type = str_replace(['_', '-'], ' ', trim($type));
+        $type = ucwords($type);
+
+        return $type !== '' ? $type : 'Step';
+    }
+
+    private function cacheHitRate(array $metrics): string
+    {
+        $hits = (int) ($metrics['cache_hits'] ?? 0);
+        $misses = (int) ($metrics['cache_misses'] ?? 0);
+        $lookups = $hits + $misses;
+
+        return $lookups > 0
+            ? number_format(($hits / $lookups) * 100, 1) . '%'
+            : 'n/a';
+    }
+
+    private function findMaxBy(array $items, string $key): ?array
+    {
+        $winner = null;
+        $max = null;
+
+        foreach ($items as $item) {
+            if (!is_array($item) || !array_key_exists($key, $item)) {
+                continue;
+            }
+
+            $value = (float) $item[$key];
+            if ($max === null || $value > $max) {
+                $max = $value;
+                $winner = $item;
+            }
+        }
+
+        if ($winner === null || ((float) ($winner[$key] ?? 0)) <= 0) {
+            return null;
+        }
+
+        return $winner;
+    }
+
+    private function countPipelineSteps(array $steps): int
+    {
+        return count($steps);
+    }
+
+    private function countPipelineItems(array $items): int
+    {
+        return count($items);
     }
 }

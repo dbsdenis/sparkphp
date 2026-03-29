@@ -56,6 +56,7 @@ $users = db('users')->get();
 
 // Com selecao de colunas
 $users = db('users')->select('id', 'name', 'email')->get();
+$users = db('users')->select(['id', 'name', 'email'])->get();
 
 // Select com expressao SQL
 $stats = db('orders')
@@ -98,6 +99,9 @@ db('users')
     ->orWhere('role', 'mod')
     ->get();
 
+// Comparar colunas da mesma linha
+db('users')->whereColumn('updated_at', '>', 'created_at')->get();
+
 // IN
 db('users')->whereIn('status', ['active', 'pending'])->get();
 
@@ -114,6 +118,11 @@ db('users')->whereNotBetween('salary', [3000, 8000])->get();
 
 // LIKE
 db('users')->whereLike('name', '%silva%')->get();
+db('users')->orWhereLike('email', '%@empresa.com')->get();
+
+// Filtro por data (ignora hora)
+db('orders')->whereDate('created_at', '2026-03-15')->get();
+db('orders')->whereDate('created_at', '>=', '2026-03-01')->get();
 
 // Raw WHERE (quando precisa de SQL puro)
 db('users')->whereRaw('YEAR(created_at) = ?', [2026])->get();
@@ -140,6 +149,16 @@ $users = db('users')
         fn($q) => $q->whereLike('name', "%{$search}%"),
         fn($q) => $q->orderByDesc('created_at')
     )
+    ->get();
+```
+
+### Condicional fluente inversa (unless)
+
+Aplica o callback quando a condicao e falsa:
+
+```php
+$users = db('users')
+    ->unless($includeInactive, fn($q) => $q->where('active', true))
     ->get();
 ```
 
@@ -509,6 +528,19 @@ $user->toApi();
 // ]
 ```
 
+Tambem da para passar `fields` explicitamente para `toApi()` sem depender da query string:
+
+```php
+$user = User::with('posts')->findOrFail(1);
+
+$user->toApi([
+    'fields' => [
+        'users' => 'id,posts',
+        'posts' => 'id,title',
+    ],
+]);
+```
+
 #### JSON:API opcional
 
 Se quiser um documento compativel com JSON:API, voce pode optar por isso apenas
@@ -726,6 +758,20 @@ $posts = Post::with('author')->where('published', true)->get();
 
 // Multiplos relacionamentos
 $users = User::with('posts', 'profile', 'roles')->get();
+
+// Eager loading aninhado
+$users = User::with('posts.author')->get();
+
+// Eager loading com constraint
+$users = User::with([
+    'posts' => fn($q) => $q->where('published', true)->latest(),
+])->get();
+
+// Contadores sem carregar a colecao inteira na serializacao final
+$users = User::withCount('posts')->get();
+$users = User::withCount([
+    'posts' => fn($q) => $q->where('published', true),
+])->get();
 ```
 
 #### Encadeando constraints no relacionamento
@@ -757,6 +803,27 @@ $user->posts()->delete();
 
 > **Dica:** `$user->posts` (propriedade) executa e retorna os resultados.
 > `$user->posts()` (metodo) retorna o Relation, permitindo encadear antes de executar.
+
+#### Carregando depois que o model ja existe
+
+Quando o model ja foi buscado, ainda da para carregar relacionamentos e contadores:
+
+```php
+$user = User::findOrFail(1);
+
+$user->load('posts.author', 'profile');
+$user->loadMissing('posts.author');   // so carrega o que ainda nao estiver resolvido
+$user->loadCount('posts');
+```
+
+Os atributos `*_count` entram em `toArray()`, `toApi()` e respostas JSON por convencao:
+
+```php
+$user = User::withCount('posts')->findOrFail(1);
+
+$user->toApi();
+// ['id' => 1, 'name' => 'Ana', 'posts_count' => 12]
+```
 
 #### Sintaxe via metodos
 

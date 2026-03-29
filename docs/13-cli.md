@@ -148,6 +148,9 @@ php spark serve --dry-run
 # Gerar spec OpenAPI da API
 php spark api:spec
 
+# Rodar a suite comparativa de benchmark
+php spark benchmark --iterations=50 --warmup=5
+
 # Verificar o banco
 php spark db:show
 php spark db:table posts
@@ -196,6 +199,32 @@ O gerador usa convencoes do Spark para inferir a spec a partir de:
 Se a rota montar a resposta de forma muito dinamica, a spec pode cair para um schema
 mais generico. O objetivo do Spark aqui e cobrir muito bem o caso convencional,
 sem obrigar anotacoes verbosas em cada endpoint.
+
+### Benchmark comparativo versionado
+
+O comando `php spark benchmark` agora gera uma suite com metadados de produto:
+
+- `spark_version` e `spark_release_line`
+- perfil da fixture benchmarkada
+- cenarios agrupados (`bootstrap`, `routing`, `views`, `http`, `container`)
+- resumo com cenario mais rapido e mais lento
+
+Exemplos:
+
+```bash
+# Rodar com configuracao padrao e salvar em storage/benchmarks/latest.json
+php spark benchmark
+
+# Suite curta para smoke test local
+php spark benchmark --iterations=20 --warmup=3
+
+# Emitir JSON no stdout sem salvar
+php spark benchmark --json --no-save
+```
+
+Os cenarios `http.request_html` e `http.request_json` usam uma fixture file-based real
+do SparkPHP para medir request pipeline completo, em vez de apenas microbenchmarks
+isolados.
 
 ### Deploy em producao
 
@@ -254,8 +283,8 @@ php spark --version
 php spark -V
 
 # Saida:
-#   SparkPHP v0.1.0 (0.1.x)
-#   SparkPHP environment report  v0.1.0
+#   SparkPHP v0.2.0 (0.2.x)
+#   SparkPHP environment report  v0.2.0
 #   PHP 8.3.0
 #   Environment: production
 #   Database: mysql (sparkphp@localhost)
@@ -277,10 +306,11 @@ SPARK_INSPECTOR_SLOW_MS=250  # threshold para marcar request como lenta
 Acesse `http://localhost:8000/_spark` para ver o painel do Inspector com:
 
 - Historico de requests
-- Queries executadas e tempo
-- Uso de memoria
-- Logs da requisicao
-- Rotas resolvidas
+- pipelines completos de request, cache e queue
+- queries executadas e tempo
+- gargalos como slow query, slow view e cache hot keys
+- jobs, falhas, releases e retries quando a fila passa pelo runtime instrumentado
+- uso de memoria, logs e rotas resolvidas
 
 ## Proximo passo
 

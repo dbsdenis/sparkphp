@@ -643,6 +643,76 @@ final class ModelTest extends TestCase
         $this->assertCount(0, $users[1]->getRelation('orders'));
     }
 
+    public function testEagerLoadingSupportsNestedRelations(): void
+    {
+        $users = TestUser::with('orders.user')->get();
+
+        $this->assertCount(3, $users);
+        $this->assertTrue($users[0]->orders[0]->relationLoaded('user'));
+        $this->assertSame('João', $users[0]->orders[0]->user->name);
+    }
+
+    public function testEagerLoadingSupportsConstrainedRelations(): void
+    {
+        $user = TestUser::with([
+            'orders' => fn(QueryBuilder $query) => $query->where('status', 'completed'),
+        ])->find(1);
+
+        $this->assertCount(1, $user->orders);
+        $this->assertSame('completed', $user->orders[0]->status);
+    }
+
+    public function testLoadCanEagerLoadRelationsAfterRetrieval(): void
+    {
+        $user = TestUser::find(1);
+
+        $this->assertFalse($user->relationLoaded('orders'));
+
+        $user->load('orders.user');
+
+        $this->assertTrue($user->relationLoaded('orders'));
+        $this->assertTrue($user->orders[0]->relationLoaded('user'));
+        $this->assertSame('João', $user->orders[0]->user->name);
+    }
+
+    public function testLoadMissingLoadsOnlyMissingNestedRelations(): void
+    {
+        $user = TestUser::find(1);
+        $orders = $user->orders;
+
+        $this->assertFalse($orders[0]->relationLoaded('user'));
+
+        $user->loadMissing('orders.user');
+
+        $this->assertTrue($orders[0]->relationLoaded('user'));
+        $this->assertSame('João', $orders[0]->user->name);
+    }
+
+    public function testWithCountAddsRelationCountAttribute(): void
+    {
+        $user = TestUser::withCount('orders')->find(1);
+
+        $this->assertSame(2, $user->orders_count);
+    }
+
+    public function testWithCountSupportsConstraints(): void
+    {
+        $user = TestUser::withCount([
+            'orders' => fn(QueryBuilder $query) => $query->where('status', 'completed'),
+        ])->find(1);
+
+        $this->assertSame(1, $user->orders_count);
+    }
+
+    public function testLoadCountAddsRelationCountAfterRetrieval(): void
+    {
+        $user = TestUser::find(1);
+
+        $user->loadCount('orders');
+
+        $this->assertSame(2, $user->orders_count);
+    }
+
     public function testRelationDelete(): void
     {
         $user = TestUser::find(1);
@@ -860,6 +930,34 @@ final class ModelTest extends TestCase
             'id' => 1,
             'status' => 'completed',
         ], $data['purchases'][0]);
+    }
+
+    public function testToApiPropagatesExplicitSparseFieldsToLoadedRelations(): void
+    {
+        $user = TestApiUser::with('orders')->find(1);
+
+        $data = $user->toApi([
+            'fields' => [
+                'users' => 'id,purchases',
+                'orders' => 'id,status',
+            ],
+        ]);
+
+        $this->assertSame(1, $data['id']);
+        $this->assertCount(2, $data['purchases']);
+        $this->assertSame([
+            'id' => 1,
+            'status' => 'completed',
+        ], $data['purchases'][0]);
+    }
+
+    public function testToApiIncludesRelationCountsLoadedByWithCount(): void
+    {
+        $user = TestApiUser::withCount('orders')->find(1);
+
+        $data = $user->toApi();
+
+        $this->assertSame(2, $data['orders_count']);
     }
 
     public function testJsonSerializeUsesApiSerializationByDefault(): void

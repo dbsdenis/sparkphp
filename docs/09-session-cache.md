@@ -313,6 +313,12 @@ Na aba Overview do Inspector voce tambem encontra:
 - `Cache Hit Rate`
 - `Stale Hits`
 
+E na aba `Pipelines`:
+
+- resumo do pipeline de cache da request
+- hot keys com maior volume de operacoes
+- correlacao com queue/request quando a resposta tambem enfileira jobs
+
 ### Cache de blocos na view
 
 ```

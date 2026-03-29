@@ -610,8 +610,8 @@
                 <div class="feature-card__icon">🐞</div>
                 <h3>Spark Inspector</h3>
                 <p>
-                    Debugger nativo que rastreia requests, queries com tempo, memória, logs
-                    e slow-requests — configurável via <code>.env</code>.
+                    Debugger nativo que rastreia pipelines completos de request, cache e queue,
+                    alem de queries, memoria, logs e bottlenecks — configuravel via <code>.env</code>.
                 </p>
             </article>
             </a>
@@ -639,7 +639,7 @@
             <a href="{{ route('docs.show', ['slug' => '13-cli']) }}" class="capability-card-link">
             <article class="capability-card">
                 <strong>CLI útil de verdade</strong>
-                <p>Servidor local, generators (<code>make:model</code>, <code>make:migration</code>, <code>make:job</code>…), diagnósticos e benchmarks.</p>
+                <p>Servidor local versionado, generators (<code>make:model</code>, <code>make:migration</code>, <code>make:job</code>…), diagnosticos e benchmarks reais.</p>
                 <code>php spark serve</code>
             </article>
             </a>

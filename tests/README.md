@@ -27,6 +27,15 @@ Os seguintes componentes são tratados como fronteira de estabilidade do framewo
 - `Queue`
 - `helpers.php`
 - `SparkInspector`
+- `BenchmarkRunner`
+
+## Suites que nao podem regredir silenciosamente
+
+Algumas frentes agora sao tratadas como contratos publicos do produto:
+
+- benchmark versionado via `php spark benchmark`
+- observabilidade profunda do `SparkInspector` (pipelines, gargalos, queue/cache/request)
+- surfaces publicas de versao (`VERSION`, CLI e relatorios gerados)
 
 ## Meta mínima de cobertura
 

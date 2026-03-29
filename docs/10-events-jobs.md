@@ -295,6 +295,21 @@ O payload persistido guarda metadados como:
 
 Isso permite retry, inspect e limpeza seletiva sem depender de banco ou pacote externo.
 
+### Observabilidade de fila no Spark Inspector
+
+Quando o Spark Inspector esta ativo em desenvolvimento, o runtime tambem registra:
+
+- `dispatch`, `push`, `later` e `dispatch-sync`
+- `processed`, `released`, `failed` e `retry`
+- fila efetiva, tentativas, `tries`, delay e erro final quando existir
+
+Na aba `Pipelines` do Inspector voce enxerga:
+
+- resumo do pipeline de queue da request
+- jobs mais ativos
+- falhas e retries consolidados
+- gargalos operacionais, como o job mais fragil daquela captura
+
 ### Exemplo pratico: processamento de imagem
 
 ```php

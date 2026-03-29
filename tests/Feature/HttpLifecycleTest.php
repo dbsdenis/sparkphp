@@ -234,7 +234,16 @@ final class HttpLifecycleTest extends TestCase
         $this->assertNotEmpty($payload['queue']);
         $this->assertNotEmpty($payload['dumps']);
         $this->assertNotEmpty($payload['mail']);
+        $this->assertArrayHasKey('pipelines', $payload);
+        $this->assertSame('/api/inspector', $payload['pipelines']['request']['summary']['Path']);
+        $this->assertNotEmpty($payload['pipelines']['request']['steps']);
+        $this->assertArrayHasKey('hot_keys', $payload['pipelines']['cache']);
+        $this->assertNotEmpty($payload['pipelines']['queue']['jobs']);
+        $this->assertArrayHasKey('bottlenecks', $payload);
         $this->assertSame(200, $detailPage['status']);
+        $this->assertStringContainsString('Request Pipeline', $detailPage['body']);
+        $this->assertStringContainsString('Queue Pipeline', $detailPage['body']);
+        $this->assertStringContainsString('Bottlenecks', $detailPage['body']);
         $this->assertStringContainsString('Cache Ops', $detailPage['body']);
         $this->assertStringContainsString('Queries', $detailPage['body']);
         $this->assertStringContainsString('Logs', $detailPage['body']);

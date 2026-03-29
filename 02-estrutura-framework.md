@@ -137,6 +137,7 @@ Baseline atual do framework:
 ├── .env                                       → configuração obrigatória do projeto
 ├── .env.example                               → template de configuração
 ├── VERSION                                    → fonte oficial da versão publicada
+├── CHANGELOG.md                               → histórico oficial de releases públicas
 ├── spark                                      → CLI de entrada
 ├── composer.json
 └── README.md
@@ -160,6 +161,8 @@ O SparkPHP elimina por design os seguintes elementos comuns em outros frameworks
 
 O arquivo `VERSION` na raiz e a fonte unica da versao publicada do produto. O Spark usa
 esse valor no CLI, helpers globais, rota raiz padrao e artefatos gerados como OpenAPI.
+O `CHANGELOG.md` acompanha a numeracao e registra o historico publico das features e
+mudancas relevantes de cada release.
 
 ---
 
