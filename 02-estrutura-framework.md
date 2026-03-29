@@ -131,10 +131,12 @@ Baseline atual do framework:
 │   ├── Container.php
 │   ├── Session.php
 │   ├── Cache.php
+│   ├── Version.php
 │   └── helpers.php                            → funções globais (app, env, db, etc.)
 │
 ├── .env                                       → configuração obrigatória do projeto
 ├── .env.example                               → template de configuração
+├── VERSION                                    → fonte oficial da versão publicada
 ├── spark                                      → CLI de entrada
 ├── composer.json
 └── README.md
@@ -155,6 +157,9 @@ O SparkPHP elimina por design os seguintes elementos comuns em outros frameworks
 | `Kernel.php` | Middleware global e por diretório existem por convenção em `app/routes/_middleware.php` e pastas da arvore |
 | `AppServiceProvider` | Não existe bootstrap customizável pelo dev nessa camada |
 | `RouteServiceProvider` | O Router escaneia `app/routes/` automaticamente |
+
+O arquivo `VERSION` na raiz e a fonte unica da versao publicada do produto. O Spark usa
+esse valor no CLI, helpers globais, rota raiz padrao e artefatos gerados como OpenAPI.
 
 ---
 

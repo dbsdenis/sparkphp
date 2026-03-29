@@ -215,6 +215,11 @@ class SparkInspector
                 'db_ms' => 0.0,
                 'view_ms' => 0.0,
                 'total_ms' => 0.0,
+                'cache_ops' => 0,
+                'cache_hits' => 0,
+                'cache_misses' => 0,
+                'cache_stale_hits' => 0,
+                'cache_writes' => 0,
                 'memory_start_kb' => memory_get_usage(true) / 1024,
                 'memory_end_kb' => 0.0,
                 'memory_peak_kb' => 0.0,
@@ -363,10 +368,41 @@ class SparkInspector
             return;
         }
 
+        $sanitizedMeta = $this->sanitize($meta);
+
         $this->context['cache'][] = [
             'operation' => $operation,
             'key' => $key,
-            'meta' => $this->sanitize($meta),
+            'meta' => $sanitizedMeta,
+        ];
+
+        $this->context['metrics']['cache_ops']++;
+
+        if (($meta['hit'] ?? false) === true) {
+            $this->context['metrics']['cache_hits']++;
+        }
+
+        if (($meta['miss'] ?? false) === true) {
+            $this->context['metrics']['cache_misses']++;
+        }
+
+        if (($meta['stale'] ?? false) === true) {
+            $this->context['metrics']['cache_stale_hits']++;
+        }
+
+        if (in_array($operation, ['set', 'touch', 'forget', 'flush', 'flush_tags', 'increment', 'decrement', 'refresh'], true)) {
+            $this->context['metrics']['cache_writes']++;
+        }
+
+        $this->context['timeline'][] = [
+            'label' => 'cache:' . $operation,
+            'type' => 'cache',
+            'duration_ms' => 0.0,
+            'status' => ($meta['hit'] ?? false) === true
+                ? (($meta['stale'] ?? false) === true ? 'stale' : 'hit')
+                : (($meta['miss'] ?? false) === true ? 'miss' : 'ok'),
+            'meta' => $sanitizedMeta,
+            'key' => $key,
         ];
     }
 
@@ -987,6 +1023,14 @@ HTML;
         $queries = count($entry['queries'] ?? []);
         $exceptions = count($entry['exceptions'] ?? []);
         $views = count($entry['views'] ?? []);
+        $cacheOps = (int) ($metrics['cache_ops'] ?? 0);
+        $cacheHits = (int) ($metrics['cache_hits'] ?? 0);
+        $cacheMisses = (int) ($metrics['cache_misses'] ?? 0);
+        $cacheStaleHits = (int) ($metrics['cache_stale_hits'] ?? 0);
+        $cacheLookups = $cacheHits + $cacheMisses;
+        $cacheHitRate = $cacheLookups > 0
+            ? number_format(($cacheHits / $cacheLookups) * 100, 1) . '%'
+            : 'n/a';
 
         $status = (int) ($entry['response']['status'] ?? 0);
         $statusColor = $status >= 500 ? '#dc2626' : ($status >= 400 ? '#d97706' : '#059669');
@@ -999,6 +1043,9 @@ HTML;
   {$this->metricCard('DB Time', number_format((float) ($metrics['db_ms'] ?? 0), 1) . ' ms', '#7c3aed', 'db')}
   {$this->metricCard('Views', (string) $views, '#0891b2', 'views')}
   {$this->metricCard('Queries', (string) $queries, '#7c3aed', 'queries')}
+  {$this->metricCard('Cache Ops', (string) $cacheOps, '#d97706', 'cache')}
+  {$this->metricCard('Cache Hit Rate', $cacheHitRate, '#d97706', 'cache')}
+  {$this->metricCard('Stale Hits', (string) $cacheStaleHits, '#ea580c', 'cache')}
   {$this->metricCard('Exceptions', (string) $exceptions, $exColor, 'exceptions')}
   {$this->metricCard('Memory Peak', number_format((float) ($metrics['memory_peak_kb'] ?? 0), 0) . ' KB', '#059669', 'memory')}
 </div>

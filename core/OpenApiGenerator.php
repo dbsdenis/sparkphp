@@ -14,6 +14,7 @@ class OpenApiGenerator
 
     public function generate(array $options = []): array
     {
+        require_once $this->basePath . '/core/Version.php';
         require_once $this->basePath . '/core/Response.php';
         require_once $this->basePath . '/core/Database.php';
         require_once $this->basePath . '/core/Relation.php';
@@ -52,7 +53,7 @@ class OpenApiGenerator
             'openapi' => '3.1.0',
             'info' => [
                 'title' => ($_ENV['APP_NAME'] ?? basename($this->basePath)) . ' API',
-                'version' => defined('SPARK_VERSION') ? SPARK_VERSION : '0.1.0',
+                'version' => SparkVersion::current($this->basePath),
             ],
             'servers' => [
                 ['url' => $_ENV['APP_URL'] ?? 'http://localhost:8000'],

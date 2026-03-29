@@ -118,6 +118,20 @@ function env(string $key, mixed $default = null): mixed
     return $_ENV[$key] ?? $default;
 }
 
+function spark_version(): string
+{
+    require_once __DIR__ . '/Version.php';
+
+    return SparkVersion::current(base_path());
+}
+
+function spark_release_line(): string
+{
+    require_once __DIR__ . '/Version.php';
+
+    return SparkVersion::releaseLine(spark_version());
+}
+
 function config(string $key, mixed $default = null): mixed
 {
     static $configs = [];
@@ -519,28 +533,25 @@ function schema(): Schema
 
 function cache(string|array|null $key = null, mixed $default = null): mixed
 {
-    static $cache = null;
-    if (!$cache) {
-        try {
-            $cache = app()->getContainer()->make(Cache::class);
-        } catch (\Throwable) {
-            $cache = new Cache(app()->getBasePath());
-        }
+    try {
+        $store = app()->getContainer()->make(Cache::class);
+    } catch (\Throwable) {
+        $store = new Cache(app()->getBasePath());
     }
 
     if ($key === null) {
-        return $cache;
+        return $store;
     }
 
     if (is_array($key)) {
         // cache(['key' => 'value'], 3600)
         foreach ($key as $k => $v) {
-            $cache->set($k, $v, is_int($default) ? $default : 0);
+            $store->set($k, $v, is_int($default) ? $default : 0);
         }
         return null;
     }
 
-    return $cache->get($key, $default);
+    return $store->get($key, $default);
 }
 
 function cache_remember(string $key, int $ttl, callable $callback): mixed
@@ -561,6 +572,50 @@ function cache_flush(): void
     if ($store instanceof Cache) {
         $store->flush();
     }
+}
+
+function cache_touch(string $key, int $ttl): bool
+{
+    $store = cache();
+
+    if ($store instanceof Cache) {
+        return $store->touch($key, $ttl);
+    }
+
+    return false;
+}
+
+function cache_flexible(string $key, array $ttl, callable $callback): mixed
+{
+    $store = cache();
+
+    if ($store instanceof Cache) {
+        return $store->flexible($key, $ttl, $callback);
+    }
+
+    return $callback();
+}
+
+function cache_tags(string|array $tags): TaggedCache|Cache
+{
+    $store = cache();
+
+    if ($store instanceof Cache) {
+        return $store->tags($tags);
+    }
+
+    return $store;
+}
+
+function cache_flush_tags(string|array $tags): int
+{
+    $store = cache();
+
+    if ($store instanceof Cache) {
+        return $store->flushTags($tags);
+    }
+
+    return 0;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

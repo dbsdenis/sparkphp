@@ -71,6 +71,10 @@ final class SparkInspectorTest extends TestCase
         SparkInspector::startRequest($request);
         SparkInspector::recordQuery('select * from users where id = ?', [1], 4.2, 1);
         SparkInspector::recordView('users/index', 'view', 1.7, false, true);
+        SparkInspector::recordCache('get', 'users:1', ['hit' => true]);
+        SparkInspector::recordCache('get', 'users:missing', ['miss' => true]);
+        SparkInspector::recordCache('flexible', 'reports', ['hit' => true, 'stale' => true]);
+        SparkInspector::recordCache('set', 'users:1', ['ttl' => 60]);
         SparkInspector::inspect(['ok' => true]);
 
         usleep(1000);
@@ -95,7 +99,13 @@ final class SparkInspectorTest extends TestCase
         $this->assertSame(200, $entry['response']['status']);
         $this->assertSame(1, count($entry['queries']));
         $this->assertSame(1, count($entry['views']));
+        $this->assertSame(4, count($entry['cache']));
         $this->assertSame(1, count($entry['dumps']));
+        $this->assertSame(4, $entry['metrics']['cache_ops']);
+        $this->assertSame(2, $entry['metrics']['cache_hits']);
+        $this->assertSame(1, $entry['metrics']['cache_misses']);
+        $this->assertSame(1, $entry['metrics']['cache_stale_hits']);
+        $this->assertSame(1, $entry['metrics']['cache_writes']);
         $this->assertGreaterThan(0, (float) $entry['metrics']['total_ms']);
     }
 

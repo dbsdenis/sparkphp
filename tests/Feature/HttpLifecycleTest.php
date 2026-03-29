@@ -227,11 +227,15 @@ final class HttpLifecycleTest extends TestCase
         $this->assertCount(1, $payload['queries']);
         $this->assertNotEmpty($payload['logs']);
         $this->assertNotEmpty($payload['cache']);
+        $this->assertGreaterThanOrEqual(1, $payload['metrics']['cache_ops']);
+        $this->assertArrayHasKey('cache_hits', $payload['metrics']);
+        $this->assertArrayHasKey('cache_misses', $payload['metrics']);
         $this->assertNotEmpty($payload['events']);
         $this->assertNotEmpty($payload['queue']);
         $this->assertNotEmpty($payload['dumps']);
         $this->assertNotEmpty($payload['mail']);
         $this->assertSame(200, $detailPage['status']);
+        $this->assertStringContainsString('Cache Ops', $detailPage['body']);
         $this->assertStringContainsString('Queries', $detailPage['body']);
         $this->assertStringContainsString('Logs', $detailPage['body']);
         $this->assertStringContainsString('Mail', $detailPage['body']);
@@ -346,6 +350,7 @@ final class HttpLifecycleTest extends TestCase
     {
         mkdir($this->basePath, 0777, true);
         $this->copyDirectory(__DIR__ . '/../../core', $this->basePath . '/core');
+        copy(__DIR__ . '/../../VERSION', $this->basePath . '/VERSION');
 
         mkdir($this->basePath . '/app/events', 0777, true);
         mkdir($this->basePath . '/app/jobs', 0777, true);
@@ -432,6 +437,10 @@ get(function () {
     logger('page-hit', 'info', ['route' => '/']);
     cache(['welcome' => 'spark'], 60);
     cache('welcome');
+    cache_touch('welcome', 120);
+    cache_tags(['pages'])->set('home', ['hero' => true], 60);
+    cache_tags(['pages'])->get('home');
+    cache_flexible('stats', [1, 3], fn() => ['visits' => 1]);
     emit('user.created', ['id' => 1]);
     queue('SendEmailJob', ['mode' => 'queued']);
     dispatch('SendEmailJob', ['mode' => 'sync']);
@@ -504,6 +513,9 @@ get(function () {
     logger('api-hit', 'info', ['route' => '/api/inspector']);
     cache(['api-key' => 'spark'], 30);
     cache('api-key');
+    cache_tags(['api'])->remember('health', 30, fn() => ['ok' => true]);
+    cache_tags(['api'])->get('health');
+    cache_flexible('api-stats', [1, 3], fn() => ['count' => 1]);
     emit('api.called', ['ok' => true]);
     queue('SendEmailJob', ['mode' => 'api']);
     inspect(['api' => true]);

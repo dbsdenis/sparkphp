@@ -116,6 +116,11 @@ Sempre analise os seguintes documentos (vão criar uma orientação melhor do pr
   - Criar política de suporte para PHP, banco e segurança
   - Publicar guia de upgrade e política de deprecações
 
+- [x] Task 4.6 — Fonte única de versão do produto
+  - Criar o arquivo `VERSION` na raiz como source of truth da versão publicada
+  - Consumir esse valor no CLI, helpers, rota raiz, landing e OpenAPI
+  - Documentar como consultar versão e release line no runtime e no processo de release
+
 ## Fase 5 — Segurança, HTTP e APIs (médio prazo)
 
 - [x] Task 5.1 — `PreventRequestForgery` nativo
@@ -150,7 +155,7 @@ Sempre analise os seguintes documentos (vão criar uma orientação melhor do pr
   - Suportar `tries`, `backoff`, `timeout`, `failOnTimeout` e filas de falha mais ricas
   - Melhorar comandos CLI para retry, inspect e limpeza seletiva
 
-- [ ] Task 6.2 — Cache v2
+- [x] Task 6.2 — Cache v2
   - Adicionar `touch()` como extensão de TTL sem regravar valor
   - Considerar `stale-while-revalidate`, tags e métricas de cache
   - Integrar melhor os eventos de cache ao Inspector

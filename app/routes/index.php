@@ -3,6 +3,7 @@
 // GET /
 get(fn() => [
     'framework' => 'SparkPHP',
-    'version'   => '1.0.0',
+    'version'   => spark_version(),
+    'release'   => spark_release_line(),
     'php'       => PHP_VERSION,
 ]);

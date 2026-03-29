@@ -197,6 +197,42 @@ PHP
         $this->assertNull(cache('helpers:key'));
     }
 
+    public function testCacheTouchTagsAndFlexibleHelpersExposeCacheV2Apis(): void
+    {
+        cache(['touch:key' => 'value'], 60);
+
+        $this->assertTrue(cache_touch('touch:key', 120));
+
+        cache_tags(['users'])->set('list', ['alice'], 300);
+        cache_tags(['posts'])->set('list', ['post-1'], 300);
+
+        $this->assertSame(['alice'], cache_tags(['users'])->get('list'));
+        $this->assertSame(['post-1'], cache_tags(['posts'])->get('list'));
+        $this->assertSame(1, cache_flush_tags('users'));
+        $this->assertNull(cache_tags(['users'])->get('list'));
+
+        $calls = 0;
+
+        $first = cache_flexible('flex:key', [1, 3], function () use (&$calls) {
+            $calls++;
+            return 'fresh-' . $calls;
+        });
+
+        sleep(2);
+
+        $stale = cache_flexible('flex:key', [1, 3], function () use (&$calls) {
+            $calls++;
+            return 'fresh-' . $calls;
+        });
+
+        $this->assertSame('fresh-1', $first);
+        $this->assertSame('fresh-1', $stale);
+
+        Cache::runDeferredRefreshes();
+
+        $this->assertSame('fresh-2', cache('flex:key'));
+    }
+
     public function testEventHelperAliasesEmit(): void
     {
         EventEmitter::off('helpers.event');

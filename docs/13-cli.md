@@ -16,9 +16,11 @@ php spark <comando> [opcoes]
 
 | Comando              | Descricao                                              |
 |----------------------|--------------------------------------------------------|
-| `php spark serve`    | Inicia o servidor de desenvolvimento                   |
+| `php spark serve`    | Inicia o servidor de desenvolvimento com banner de versao |
 | `php spark serve --port=3000` | Com porta customizada                         |
+| `php spark serve --dry-run` | Mostra o banner/configuracao sem abrir o servidor |
 | `php spark init`     | Inicializa um novo projeto (copia .env, cria diretorios) |
+| `php spark version`  | Exibe a versao atual do framework e a release line     |
 | `php spark about`    | Exibe diagnosticos do ambiente, PHP, extensoes, banco  |
 | `php spark benchmark`| Roda benchmark de performance do framework             |
 
@@ -116,6 +118,8 @@ php spark seed
 php spark serve
 ```
 
+Ao subir o servidor, o banner mostra a versao atual do SparkPHP lida de `VERSION`.
+
 ### Fluxo de desenvolvimento
 
 ```bash
@@ -135,6 +139,12 @@ php spark routes:list
 
 # A saida inclui middlewares globais, por diretorio e inline
 
+# Ver a versao atual do framework
+php spark version
+
+# Testar o banner do servidor sem abrir a porta
+php spark serve --dry-run
+
 # Gerar spec OpenAPI da API
 php spark api:spec
 
@@ -150,6 +160,9 @@ O comando `php spark api:spec` gera uma spec OpenAPI 3.1 em JSON, por padrao em:
 ```bash
 storage/api/openapi.json
 ```
+
+O campo `info.version` da spec e preenchido automaticamente a partir do arquivo
+`VERSION` na raiz do projeto.
 
 Opcoes:
 
@@ -233,14 +246,19 @@ e `fail_on_timeout`), resolvidos a partir de:
 # Ver informacoes do ambiente
 php spark about
 
+# Ver apenas a versao atual
+php spark version
+# ou
+php spark --version
+# ou
+php spark -V
+
 # Saida:
-#   SparkPHP v1.0.0
+#   SparkPHP v0.1.0 (0.1.x)
+#   SparkPHP environment report  v0.1.0
 #   PHP 8.3.0
 #   Environment: production
 #   Database: mysql (sparkphp@localhost)
-#   Cache: file
-#   Queue: file
-#   Session: file
 #   ...
 ```
 

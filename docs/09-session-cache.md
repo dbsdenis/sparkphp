@@ -205,14 +205,15 @@ get(function (Cache $cache) {
     $cache->get('key', 'default');
 
     $cache->set('key', 'value', 300);     // 300 segundos
-    $cache->has('key');                    // bool
+    $cache->has('key');                   // bool
+    $cache->touch('key', 600);            // estende TTL sem trocar o valor
 
-    $cache->forget('key');                 // remove chave
-    $cache->flush();                       // limpa tudo
+    $cache->forget('key');                // remove chave
+    $cache->flush();                      // limpa tudo
 
-    $cache->increment('visits');           // +1
-    $cache->increment('views', 5);         // +5
-    $cache->decrement('stock');            // -1
+    $cache->increment('visits');          // +1
+    $cache->increment('views', 5);        // +5
+    $cache->decrement('stock');           // -1
 });
 ```
 
@@ -226,6 +227,91 @@ $users = cache_remember('all_users', 600, function () {
 // Se 'all_users' existe no cache, retorna direto.
 // Se nao, executa o callback, salva no cache por 600s, e retorna.
 ```
+
+### `touch()` e extensao de TTL
+
+Use `touch()` quando quiser prolongar a vida de uma chave sem recalcular nem regravar
+o valor da aplicacao:
+
+```php
+$cache->set('auth:token', 'abc123', 300);
+$cache->touch('auth:token', 900);
+
+cache_touch('auth:token', 900);
+```
+
+`expire()` continua existindo como alias por compatibilidade, mas a API preferida do
+Spark passa a ser `touch()`.
+
+### Stale-While-Revalidate
+
+O Cache v2 inclui uma API de `stale-while-revalidate` para cenarios em que e melhor
+servir um valor levemente antigo do que bloquear a resposta esperando recomputacao.
+
+```php
+$stats = cache_flexible('dashboard.stats', [30, 120], function () {
+    return [
+        'users' => User::count(),
+        'sales' => Order::query()->sum('total'),
+    ];
+});
+```
+
+Nesse exemplo:
+
+- por `30s` o valor e considerado fresco
+- entre `31s` e `120s` o valor pode ser servido como stale
+- durante a janela stale o Spark devolve o valor antigo e agenda um refresh no shutdown da requisicao
+- depois de `120s`, se nao houver valor fresco, o callback roda sincronicamente
+
+Tambem funciona via objeto:
+
+```php
+$cache->flexible('dashboard.stats', [30, 120], fn() => expensive_report());
+```
+
+### Tags
+
+Tags permitem agrupar entradas relacionadas e invalida-las de forma previsivel sem
+inventar prefixes manuais em cada chave.
+
+```php
+cache_tags(['users'])->set('list', User::all(), 300);
+cache_tags(['users'])->set('summary', ['count' => User::count()], 300);
+
+$users = cache_tags(['users'])->get('list');
+
+cache_flush_tags('users'); // invalida o grupo inteiro
+```
+
+Via objeto:
+
+```php
+$usersCache = $cache->tags(['users']);
+
+$usersCache->remember('list', 300, fn() => User::all());
+$usersCache->touch('list', 600);
+$usersCache->flush();
+```
+
+As tags tambem isolam namespaces iguais. Ou seja, `users:list` e `posts:list` podem
+ter a mesma chave logica `list` sem colidir.
+
+### Observabilidade no Spark Inspector
+
+As operacoes de cache agora aparecem no Inspector com mais contexto:
+
+- `hit` / `miss`
+- `stale hit`
+- `ttl` e `stale_ttl`
+- `tags`
+- `flush` por tag
+
+Na aba Overview do Inspector voce tambem encontra:
+
+- `Cache Ops`
+- `Cache Hit Rate`
+- `Stale Hits`
 
 ### Cache de blocos na view
 

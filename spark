@@ -4,7 +4,9 @@
 declare(strict_types=1);
 
 define('SPARK_BASE', __DIR__);
-define('SPARK_VERSION', '0.1.0');
+
+require_once __DIR__ . '/core/Version.php';
+SparkVersion::define(__DIR__);
 
 require_once __DIR__ . '/core/Bootstrap.php';
 
@@ -26,6 +28,7 @@ try {
         // ── Server ────────────────────────────────────────────────────────────
         $command === 'serve' => sparkServe($rest),
         $command === 'about' || $command === 'doctor' => sparkAbout(),
+        $command === 'version' || $command === '--version' || $command === '-V' => sparkVersion(),
 
         // ── Benchmarks ────────────────────────────────────────────────────────
         $command === 'benchmark' || $command === 'bench' => sparkBenchmark($rest),
@@ -81,16 +84,26 @@ try {
 function sparkServe(array $args): void
 {
     $port = 8000;
+    $dryRun = false;
     foreach ($args as $arg) {
         if (str_starts_with($arg, '--port=')) {
             $port = (int) substr($arg, 7);
         }
+
+        if ($arg === '--dry-run') {
+            $dryRun = true;
+        }
     }
     $host = '0.0.0.0';
     echo "\n";
-    out(color('  ⚡ SparkPHP', 'cyan') . color(" server running at ", 'dim') . color("http://localhost:{$port}", 'green'));
+    out(color('  ⚡ SparkPHP', 'cyan') . color(' v' . SPARK_VERSION, 'white') . color(" server running at ", 'dim') . color("http://localhost:{$port}", 'green'));
     out(color("     Press Ctrl+C to stop.", 'dim'));
     echo "\n";
+
+    if ($dryRun) {
+        return;
+    }
+
     passthru("php -S {$host}:{$port} " . SPARK_BASE . '/public/index.php');
 }
 
@@ -108,6 +121,7 @@ function sparkAbout(): void
 
     sparkAboutSection('Application', [
         ['Version', SPARK_VERSION],
+        ['Release Line', SparkVersion::releaseLine(SPARK_VERSION)],
         ['Base Path', SPARK_BASE],
         ['Environment', $_ENV['APP_ENV'] ?? 'dev'],
         ['URL', $_ENV['APP_URL'] ?? 'http://localhost:8000'],
@@ -155,6 +169,11 @@ function sparkAbout(): void
     ]);
 
     echo "\n";
+}
+
+function sparkVersion(): void
+{
+    out('SparkPHP v' . SPARK_VERSION . ' (' . SparkVersion::releaseLine(SPARK_VERSION) . ')');
 }
 
 function sparkBenchmark(array $args): void
@@ -1583,7 +1602,8 @@ ASCII;
     $sections = [
         ['Server', [
             ['init', '[--force] [--quiet]', 'Prepare a fresh project skeleton'],
-            ['serve', '--port=8000', 'Start development server'],
+            ['serve', '--port=8000 [--dry-run]', 'Start development server'],
+            ['version', '', 'Show framework version and release line'],
             ['about', '', 'Show environment, system and database diagnostics'],
             ['doctor', '', 'Alias for about'],
         ]],

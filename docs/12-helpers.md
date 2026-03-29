@@ -14,6 +14,8 @@ O SparkPHP fornece dezenas de funcoes globais para que voce nao precise importar
 | `base_path('x')`    | Caminho absoluto para a raiz do projeto/`x`     |
 | `storage_path('x')` | Caminho absoluto para `storage/x`               |
 | `public_path('x')`  | Caminho absoluto para `public/x`                |
+| `spark_version()`   | Versao atual do framework lida de `VERSION`     |
+| `spark_release_line()` | Linha de release atual (`0.1.x`, `1.2.x`)   |
 | `url('/path')`      | URL completa: `APP_URL` + `/path`               |
 
 ## Request & Input
@@ -81,7 +83,11 @@ O SparkPHP fornece dezenas de funcoes globais para que voce nao precise importar
 | `cache('key', 'def')`                    | Com fallback                             |
 | `cache(['key' => 'val'], $ttl)`          | Escreve no cache (TTL em segundos)       |
 | `cache_remember('key', $ttl, $callback)` | Le ou gera e cacheia                     |
-| `cache_flush()`                           | Limpa todo o cache                       |
+| `cache_touch('key', $ttl)`               | Estende TTL sem recalcular o valor       |
+| `cache_flexible('key', [$fresh, $stale], $callback)` | Usa stale-while-revalidate |
+| `cache_tags(['users'])`                  | Retorna um cache com namespace por tags  |
+| `cache_flush_tags('users')`              | Invalida todas as chaves da tag          |
+| `cache_flush()`                          | Limpa todo o cache                       |
 
 ## Auth
 

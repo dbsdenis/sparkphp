@@ -29,6 +29,22 @@ Quando o SparkPHP chegar em `1.0`, a politica passa a ser:
 - `MINOR` adiciona features e deprecacoes sem remocoes
 - `MAJOR` concentra remocoes e mudancas incompatíveis
 
+### Fonte unica da versao publicada
+
+O numero de versao publicado do SparkPHP fica no arquivo `VERSION` na raiz do projeto.
+
+Esse arquivo e consumido por:
+
+- `php spark version`
+- `php spark about`
+- helpers como `spark_version()` e `spark_release_line()`
+- rota raiz padrao do projeto
+- `php spark api:spec`, preenchendo `info.version`
+
+Ao preparar um release, a alteracao de versao deve acontecer primeiro nesse arquivo.
+CLI, docs geradas e superficies publicas do framework passam a refletir o novo valor
+sem hardcodes espalhados.
+
 ## Politica de suporte
 
 ### Linha `0.x`

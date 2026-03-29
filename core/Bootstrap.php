@@ -13,6 +13,8 @@ class Bootstrap
     {
         $this->ensureRuntimeBaseline();
         $this->basePath = rtrim($basePath, '/\\');
+        require_once __DIR__ . '/Version.php';
+        SparkVersion::define($this->basePath);
         static::$instance = $this;
     }
 

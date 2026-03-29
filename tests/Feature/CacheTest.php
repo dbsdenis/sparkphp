@@ -23,6 +23,10 @@ final class CacheTest extends TestCase
     protected function tearDown(): void
     {
         $this->cache->flush();
+        foreach (glob($this->basePath . '/storage/cache/app/tags/*') ?: [] as $file) {
+            @unlink($file);
+        }
+        @rmdir($this->basePath . '/storage/cache/app/tags');
         @rmdir($this->basePath . '/storage/cache/app');
         @rmdir($this->basePath . '/storage/cache');
         @rmdir($this->basePath . '/storage');
@@ -105,5 +109,86 @@ final class CacheTest extends TestCase
     {
         $this->cache->set('arr', ['foo' => 'bar']);
         $this->assertSame(['foo' => 'bar'], $this->cache->get('arr'));
+    }
+
+    public function testTouchExtendsTtlWithoutChangingStoredValue(): void
+    {
+        $_ENV['CACHE'] = 'file';
+        $cache = new Cache($this->basePath);
+
+        $cache->set('token', 'abc123', 60);
+
+        $path = $this->basePath . '/storage/cache/app/' . md5('token') . '.cache';
+        $before = unserialize((string) file_get_contents($path));
+
+        $this->assertTrue($cache->touch('token', 180));
+
+        $after = unserialize((string) file_get_contents($path));
+
+        $this->assertSame('abc123', $cache->get('token'));
+        $this->assertSame('abc123', $after['value']);
+        $this->assertSame(180, $after['ttl']);
+        $this->assertGreaterThan($before['expires_at'], $after['expires_at']);
+    }
+
+    public function testTaggedCacheNamespacesKeysAndCanFlushByTag(): void
+    {
+        $users = $this->cache->tags(['users']);
+        $posts = $this->cache->tags(['posts']);
+
+        $users->set('list', ['alice'], 300);
+        $posts->set('list', ['post-1'], 300);
+
+        $this->assertSame(['alice'], $users->get('list'));
+        $this->assertSame(['post-1'], $posts->get('list'));
+
+        $removed = $this->cache->flushTags('users');
+
+        $this->assertSame(1, $removed);
+        $this->assertNull($users->get('list'));
+        $this->assertSame(['post-1'], $posts->get('list'));
+    }
+
+    public function testFlexibleReturnsStaleValueAndRefreshesOnDeferredPass(): void
+    {
+        $calls = 0;
+
+        $first = $this->cache->flexible('report', [1, 3], function () use (&$calls) {
+            $calls++;
+            return 'fresh-' . $calls;
+        });
+
+        sleep(2);
+
+        $stale = $this->cache->flexible('report', [1, 3], function () use (&$calls) {
+            $calls++;
+            return 'fresh-' . $calls;
+        });
+
+        $this->assertSame('fresh-1', $first);
+        $this->assertSame('fresh-1', $stale);
+        $this->assertSame(1, $calls);
+
+        Cache::runDeferredRefreshes();
+
+        $this->assertSame(2, $calls);
+        $this->assertSame('fresh-2', $this->cache->get('report'));
+    }
+
+    public function testMetricsTrackHitsMissesWritesAndRefreshLifecycle(): void
+    {
+        $this->cache->set('users', ['id' => 1], 60);
+        $this->cache->get('users');
+        $this->cache->get('missing');
+        $this->cache->touch('users', 120);
+
+        $metrics = $this->cache->metrics();
+
+        $this->assertSame('memory', $metrics['driver']);
+        $this->assertSame(2, $metrics['gets']);
+        $this->assertSame(1, $metrics['hits']);
+        $this->assertSame(1, $metrics['misses']);
+        $this->assertSame(1, $metrics['sets']);
+        $this->assertSame(1, $metrics['touches']);
     }
 }

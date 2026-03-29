@@ -40,6 +40,8 @@ php spark serve
 ```
 
 Acesse `http://localhost:8000` e voce vera a pagina inicial do SparkPHP.
+Ao subir com `php spark serve`, o banner do servidor tambem mostra a versao atual
+publicada do framework lida de `VERSION`.
 
 ## Porta customizada
 
@@ -75,9 +77,14 @@ meu-projeto/
 │   ├── queue/          ← jobs da fila (driver file)
 │   └── sessions/       ← sessions (driver file)
 ├── .env                ← configuracao do ambiente
+├── VERSION             ← fonte oficial da versao publicada do framework/projeto
 ├── spark               ← CLI do framework
 └── composer.json
 ```
+
+O arquivo `VERSION` na raiz e a fonte de verdade da versao publicada do SparkPHP no
+projeto. Ele alimenta `php spark version`, `php spark about`, a rota raiz padrao e a
+spec OpenAPI gerada pelo CLI.
 
 ## Configuracao (.env)
 

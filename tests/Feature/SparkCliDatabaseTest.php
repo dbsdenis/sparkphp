@@ -19,6 +19,7 @@ final class SparkCliDatabaseTest extends TestCase
 
         $this->copyDirectory(__DIR__ . '/../../core', $this->basePath . '/core');
         copy(__DIR__ . '/../../spark', $this->basePath . '/spark');
+        copy(__DIR__ . '/../../VERSION', $this->basePath . '/VERSION');
         chmod($this->basePath . '/spark', 0755);
 
         file_put_contents($this->basePath . '/.env.example', <<<'ENV'
@@ -225,9 +226,31 @@ PHP
         $this->assertStringContainsString('environment report', $result['output']);
         $this->assertStringContainsString('Application', $result['output']);
         $this->assertStringContainsString('Database', $result['output']);
+        $this->assertStringContainsString(trim((string) file_get_contents(__DIR__ . '/../../VERSION')), $result['output']);
         $this->assertStringContainsString('sqlite', $result['output']);
         $this->assertStringContainsString('connected', $result['output']);
         $this->assertStringContainsString('Pending', $result['output']);
+    }
+
+    public function testVersionCommandReadsVersionFileAndReleaseLine(): void
+    {
+        $result = $this->runSpark(['version']);
+        $version = trim((string) file_get_contents(__DIR__ . '/../../VERSION'));
+
+        $this->assertSame(0, $result['exit_code'], $result['output']);
+        $this->assertStringContainsString('SparkPHP v' . $version, $result['output']);
+        $this->assertStringContainsString(SparkVersion::releaseLine($version), $result['output']);
+    }
+
+    public function testServeCommandShowsVersionInBanner(): void
+    {
+        $result = $this->runSpark(['serve', '--port=8123', '--dry-run']);
+        $version = trim((string) file_get_contents(__DIR__ . '/../../VERSION'));
+
+        $this->assertSame(0, $result['exit_code'], $result['output']);
+        $this->assertStringContainsString('SparkPHP v' . $version, $result['output']);
+        $this->assertStringContainsString('http://localhost:8123', $result['output']);
+        $this->assertStringContainsString('Press Ctrl+C to stop.', $result['output']);
     }
 
     public function testApiSpecCommandGeneratesOpenApiFromRoutesValidationAndResponses(): void
@@ -280,6 +303,7 @@ PHP
         $this->assertFileExists($specPath);
         $this->assertStringContainsString('OpenAPI spec generated', $result['output']);
         $this->assertSame('3.1.0', $spec['openapi']);
+        $this->assertSame(trim((string) file_get_contents(__DIR__ . '/../../VERSION')), $spec['info']['version']);
         $this->assertArrayHasKey('/api/users', $spec['paths']);
         $this->assertArrayHasKey('/api/users/{id}', $spec['paths']);
         $this->assertSame([['sessionAuth' => []]], $spec['paths']['/api/users']['get']['security']);

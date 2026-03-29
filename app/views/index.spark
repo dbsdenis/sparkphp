@@ -655,7 +655,7 @@
             <a href="{{ route('docs.show', ['slug' => '09-session-cache']) }}" class="capability-card-link">
             <article class="capability-card">
                 <strong>Cache e optimize</strong>
-                <p>Views, rotas e classes pré-compilados para runtime zero-scan. Um comando para deploy.</p>
+                <p>Cache com <code>touch()</code>, tags, stale-while-revalidate e telemetria no Inspector, alem de optimize para deploy.</p>
                 <code>php spark optimize</code>
             </article>
             </a>
@@ -735,6 +735,8 @@ HTML; ?></pre>
             <div class="dev-strip__group">
                 <span class="dev-strip__dot"></span>
                 <strong>Dev mode</strong>
+                <span class="dev-strip__sep"></span>
+                <span>Spark {{ spark_version() }}</span>
                 <span class="dev-strip__sep"></span>
                 <span>PHP {{ phpversion() }}</span>
                 <span class="dev-strip__sep"></span>
