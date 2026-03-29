@@ -96,6 +96,7 @@
 
     .docs-highlight strong {
         display: block;
+        margin-top: .85rem;
         margin-bottom: .35rem;
         font-size: .95rem;
     }
@@ -107,75 +108,138 @@
         line-height: 1.6;
     }
 
+    .docs-highlight__icon,
+    .principle-card__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--brand);
+    }
+
+    .docs-highlight__icon {
+        width: 2rem;
+        height: 2rem;
+        border-radius: .6rem;
+        background: rgba(255, 166, 58, 0.1);
+    }
+
+    .docs-highlight__icon svg,
+    .principle-card__icon svg {
+        width: .95rem;
+        height: .95rem;
+    }
+
     /* ── Guide Table ── */
+    .docs-guide-block {
+        opacity: 1;
+        transform: none;
+    }
+
+    .docs-guide-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .docs-guide-toolbar h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        letter-spacing: -.03em;
+    }
+
+    .docs-search-wrap {
+        position: relative;
+        width: 100%;
+        max-width: 20rem;
+    }
+
+    .docs-search-icon {
+        position: absolute;
+        top: 50%;
+        left: 1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1rem;
+        height: 1rem;
+        color: var(--text-muted);
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
+
+    .docs-search-icon svg {
+        width: 1rem;
+        height: 1rem;
+    }
+
     .docs-guide-section {
-        border-radius: 1.25rem;
+        border-radius: 1.5rem;
         border: 1px solid var(--border-soft);
         background: var(--surface-1);
         overflow: hidden;
     }
 
     :root[data-theme='light'] .docs-guide-section {
-        background: rgba(255, 255, 255, 0.84);
-    }
-
-    .docs-guide-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 1.25rem 1.5rem;
-        border-bottom: 1px solid var(--border-soft);
-        flex-wrap: wrap;
-    }
-
-    .docs-guide-header h2 {
-        margin: 0;
-        font-size: 1.5rem;
-        letter-spacing: -.03em;
+        background: rgba(255, 255, 255, 0.88);
     }
 
     .docs-search {
-        display: flex;
-        align-items: center;
-        gap: .5rem;
-        min-width: 220px;
-        padding: .55rem .85rem;
-        border-radius: .7rem;
+        width: 100%;
+        padding: .78rem 1rem .78rem 2.55rem;
+        border-radius: .95rem;
         border: 1px solid var(--border-soft);
-        background: var(--surface-3);
-        color: var(--text-secondary);
+        background: var(--surface-1);
+        color: var(--text-primary);
         font-size: .9rem;
         font-family: inherit;
-        transition: border-color .2s ease;
+        transition: border-color .2s ease, box-shadow .2s ease;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    }
+
+    :root[data-theme='light'] .docs-search {
+        background: rgba(255, 255, 255, 0.92);
+    }
+
+    .docs-search::placeholder {
+        color: var(--text-muted);
     }
 
     .docs-search:focus {
         outline: none;
         border-color: var(--brand);
+        box-shadow: 0 0 0 4px rgba(255, 166, 58, 0.14);
     }
 
     .docs-table-head {
         display: grid;
-        grid-template-columns: auto 1fr;
-        gap: 2rem;
-        padding: .75rem 1.5rem;
+        grid-template-columns: 3rem minmax(0, 1fr) minmax(0, 1.5fr);
+        gap: 1rem;
+        padding: .95rem 1.25rem;
         border-bottom: 1px solid var(--border-soft);
+        background: rgba(255, 255, 255, 0.03);
         color: var(--text-muted);
-        font-size: .82rem;
-        font-weight: 600;
-        letter-spacing: .04em;
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .12em;
         text-transform: uppercase;
+    }
+
+    :root[data-theme='light'] .docs-table-head {
+        background: rgba(243, 236, 226, 0.46);
     }
 
     .docs-table-row {
         display: grid;
-        grid-template-columns: auto 1fr;
-        gap: 2rem;
-        padding: 1rem 1.5rem;
+        grid-template-columns: 3rem minmax(0, 1fr) minmax(0, 1.5fr);
+        gap: 1rem;
+        padding: 1rem 1.25rem;
         border-bottom: 1px solid var(--border-soft);
         color: inherit;
-        transition: background .15s ease;
+        align-items: center;
+        transition: background .18s ease, color .18s ease;
     }
 
     .docs-table-row:last-child {
@@ -183,18 +247,79 @@
     }
 
     .docs-table-row:hover {
-        background: rgba(255, 166, 58, 0.04);
+        background: rgba(255, 166, 58, 0.05);
+    }
+
+    .docs-table-row__group {
+        display: contents;
+    }
+
+    .docs-table-row__number {
+        color: var(--brand);
+        font-family: "JetBrains Mono", "Fira Code", monospace;
+        font-size: .95rem;
+        font-weight: 700;
+    }
+
+    .docs-table-row__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.65rem;
+        height: 1.65rem;
+        border-radius: .55rem;
+        background: rgba(255, 166, 58, 0.1);
+        color: var(--brand);
+        flex-shrink: 0;
+    }
+
+    .docs-table-row__icon svg {
+        width: .85rem;
+        height: .85rem;
+    }
+
+    .docs-table-row__icon--mobile {
+        display: none;
     }
 
     .docs-table-row__title {
+        display: inline-flex;
+        align-items: center;
+        gap: .55rem;
+        min-width: 0;
+        color: var(--text-primary);
+        font-size: .95rem;
         font-weight: 600;
-        font-size: .98rem;
-        min-width: 12rem;
+        line-height: 1.35;
+        transition: color .18s ease;
+    }
+
+    .docs-table-row__title-label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .docs-table-row__desc {
         color: var(--text-secondary);
-        font-size: .92rem;
+        font-size: .9rem;
+        line-height: 1.5;
+    }
+
+    .docs-table-row:hover .docs-table-row__title {
+        color: var(--brand);
+    }
+
+    .docs-table-row__desc code,
+    .guide-card p code,
+    .topic-link__desc code {
+        display: inline;
+        padding: .1rem .35rem;
+        border-radius: .35rem;
+        background: var(--surface-3);
+        color: var(--text-primary);
+        font-size: .85em;
     }
 
     /* ── Code Window ── */
@@ -319,15 +444,10 @@
 
     .principle-card__icon {
         flex-shrink: 0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
         width: 2rem;
         height: 2rem;
         border-radius: .5rem;
         background: rgba(255, 166, 58, 0.1);
-        color: var(--brand);
-        font-size: .85rem;
     }
 
     .principle-card p {
@@ -374,6 +494,16 @@
         letter-spacing: -.02em;
     }
 
+    .guide-card__kicker {
+        display: inline-flex;
+        margin-bottom: .65rem;
+        color: var(--brand);
+        font-size: .78rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
     .guide-card p {
         margin: 0;
         color: var(--text-secondary);
@@ -393,44 +523,61 @@
     }
 
     /* ── Topics Grid ── */
+    .docs-section-head--topics {
+        margin-bottom: 2.25rem;
+    }
+
+    .docs-section-head--topics h2 {
+        margin-top: .4rem;
+    }
+
     .topics-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: .75rem;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1.25rem;
     }
 
     .topic-link {
         display: flex;
         align-items: center;
-        gap: .75rem;
-        padding: .85rem 1rem;
-        border-radius: .85rem;
+        gap: 1rem;
+        min-height: 8rem;
+        padding: 1.35rem 1.6rem;
+        border-radius: 1.6rem;
         border: 1px solid var(--border-soft);
         background: var(--surface-1);
         color: inherit;
-        transition: border-color .2s ease, transform .2s ease;
+        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset;
+        transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
     }
 
     :root[data-theme='light'] .topic-link {
-        background: rgba(255, 255, 255, 0.84);
+        background: rgba(255, 255, 255, 0.88);
     }
 
     .topic-link:hover {
-        border-color: var(--border-strong);
+        border-color: rgba(255, 166, 58, 0.28);
         transform: translateY(-1px);
+        box-shadow:
+            0 14px 28px rgba(22, 22, 20, 0.06),
+            0 1px 0 rgba(255, 255, 255, 0.45) inset;
     }
 
     .topic-link__icon {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 2rem;
-        height: 2rem;
-        border-radius: .5rem;
+        width: 3.25rem;
+        height: 3.25rem;
+        border-radius: 1rem;
         background: rgba(255, 166, 58, 0.1);
         color: var(--brand);
-        font-size: .85rem;
         flex-shrink: 0;
+    }
+
+    .topic-link__icon svg {
+        width: 1.25rem;
+        height: 1.25rem;
     }
 
     .topic-link__info {
@@ -438,20 +585,73 @@
         min-width: 0;
     }
 
+    .topic-link__meta {
+        display: flex;
+        align-items: center;
+        gap: .7rem;
+        min-width: 0;
+    }
+
+    .topic-link__number {
+        color: var(--brand);
+        font-family: "JetBrains Mono", "Fira Code", monospace;
+        font-size: .95rem;
+        font-weight: 700;
+        letter-spacing: -.03em;
+        flex-shrink: 0;
+    }
+
     .topic-link__title {
         display: block;
-        font-weight: 600;
-        font-size: .95rem;
-        letter-spacing: -.01em;
+        min-width: 0;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: -.02em;
+        line-height: 1.3;
+        transition: color .2s ease;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .topic-link__desc {
-        display: block;
-        color: var(--text-muted);
-        font-size: .8rem;
+        display: -webkit-box;
+        color: var(--text-secondary);
+        font-size: .9rem;
+        line-height: 1.45;
+        margin-top: .3rem;
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: nowrap;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+    }
+
+    .topic-link__arrow {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1rem;
+        height: 1rem;
+        color: var(--text-muted);
+        opacity: 0;
+        flex-shrink: 0;
+        margin-left: auto;
+        transform: translateX(-3px);
+        transition: opacity .2s ease, transform .2s ease;
+    }
+
+    .topic-link__arrow svg {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .topic-link:hover .topic-link__title {
+        color: var(--brand);
+    }
+
+    .topic-link:hover .topic-link__arrow {
+        opacity: 1;
+        transform: translateX(0);
     }
 
     /* ── CTA ── */
@@ -495,22 +695,66 @@
         .principles-grid {
             grid-template-columns: 1fr;
         }
+
+        .topics-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
     }
 
     @media (max-width: 640px) {
-        .docs-table-row,
-        .docs-table-head {
-            grid-template-columns: 1fr;
-            gap: .25rem;
-        }
-
-        .docs-guide-header {
+        .docs-guide-toolbar {
             flex-direction: column;
             align-items: stretch;
         }
 
-        .docs-search {
-            width: 100%;
+        .docs-search-wrap {
+            max-width: none;
+        }
+
+        .docs-table-head {
+            display: none;
+        }
+
+        .docs-table-row {
+            grid-template-columns: 1fr;
+            gap: .4rem;
+        }
+
+        .docs-table-row__group {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            min-width: 0;
+        }
+
+        .docs-table-row__icon--mobile {
+            display: inline-flex;
+        }
+
+        .docs-table-row__icon--desktop {
+            display: none;
+        }
+
+        .docs-table-row__title-label {
+            white-space: normal;
+        }
+
+        .docs-table-row__desc {
+            padding-left: 2.55rem;
+        }
+
+        .topics-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .topic-link {
+            min-height: auto;
+            padding: 1.2rem 1.15rem;
+            border-radius: 1.35rem;
+        }
+
+        .topic-link__title {
+            white-space: normal;
         }
     }
 </style>
@@ -524,47 +768,59 @@
         <p>Guia completo do SparkPHP — do setup ao deploy, com posicionamento de produto, adoção, benchmark e migração.</p>
 
         <div class="docs-badges">
-            <span class="docs-badge"><strong>PHP 8.2+</strong></span>
-            <span class="docs-badge"><strong>MySQL 8.0+</strong></span>
-            <span class="docs-badge"><strong>PostgreSQL 15+</strong></span>
+            @foreach($badges as $badge)
+                <span class="docs-badge"><strong>{{ $badge }}</strong></span>
+            @endforeach
         </div>
 
         <div class="docs-highlights">
-            <div class="docs-highlight">
-                <strong>Narrativa</strong>
-                <p>Mais simples, mais previsível, mais observável</p>
-            </div>
-            <div class="docs-highlight">
-                <strong>PHP puro</strong>
-                <p>Sem dependências. Composer opcional.</p>
-            </div>
-            <div class="docs-highlight">
-                <strong>Zero config</strong>
-                <p>Rode com .env e php spark serve</p>
-            </div>
+            @foreach($highlights as $highlight)
+                <div class="docs-highlight">
+                    <span class="docs-highlight__icon">{!! $highlight['icon'] !!}</span>
+                    <strong>{{ $highlight['title'] }}</strong>
+                    <p>{{ $highlight['description'] }}</p>
+                </div>
+            @endforeach
         </div>
     </section>
 
     <!-- ── Guide Table ── -->
     <section>
-        <div class="docs-guide-section">
-            <div class="docs-guide-header">
+        <div class="docs-guide-block">
+            <div class="docs-guide-toolbar">
                 <h2>Guia</h2>
-                <input type="text" class="docs-search" placeholder="Buscar tópico..." id="docs-search" autocomplete="off">
+                <div class="docs-search-wrap">
+                    <span class="docs-search-icon">{!! $guideSearchIcon !!}</span>
+                    <input type="text" class="docs-search" placeholder="Buscar tópico..." id="docs-search" autocomplete="off">
+                </div>
             </div>
 
-            <div class="docs-table-head">
-                <span>Tópico</span>
-                <span>O que você vai aprender</span>
-            </div>
+            <div class="docs-guide-section">
+                <div class="docs-table-head">
+                    <span>#</span>
+                    <span>Tópico</span>
+                    <span>O que você vai aprender</span>
+                </div>
 
-            <div id="docs-table-body">
-                @foreach($docs as $idx => $doc)
-                    <a href="{{ route('docs.show', ['slug' => $doc['slug']]) }}" class="docs-table-row" data-title="{{ strtolower($doc['title']) }}">
-                        <span class="docs-table-row__title">{{ $doc['title'] }}</span>
-                        <span class="docs-table-row__desc">{{ $doc['slug'] }}.md</span>
-                    </a>
-                @endforeach
+                <div id="docs-table-body">
+                    @foreach($quickTopics as $doc)
+                        <a
+                            href="{{ route('docs.show', ['slug' => $doc['slug']]) }}"
+                            class="docs-table-row"
+                            data-search="{{ strtolower($doc['title'] . ' ' . $doc['description']) }}"
+                        >
+                            <span class="docs-table-row__group">
+                                <span class="docs-table-row__number">{{ $doc['number'] }}</span>
+                                <span class="docs-table-row__icon docs-table-row__icon--mobile">{!! $doc['icon'] !!}</span>
+                                <span class="docs-table-row__title">
+                                    <span class="docs-table-row__icon docs-table-row__icon--desktop">{!! $doc['icon'] !!}</span>
+                                    <span class="docs-table-row__title-label">{{ $doc['title'] }}</span>
+                                </span>
+                            </span>
+                            <span class="docs-table-row__desc">{{ $doc['description'] }}</span>
+                        </a>
+                    @endforeach
+                </div>
             </div>
         </div>
     </section>
@@ -589,13 +845,15 @@ cd meu-app && <span class="line-keyword">composer install</span>
 
 <span class="line-comment"># 2. Configure</span>
 cp .env.example .env
-<span class="line-keyword">php spark key:generate</span>
+<span class="line-comment"># edite .env com suas credenciais</span>
 
-<span class="line-comment"># 3. Suba as migrations e inicie o servidor</span>
-<span class="line-keyword">php spark migrate --seed</span>
+<span class="line-comment"># 3. Rode</span>
 <span class="line-keyword">php spark serve</span>
 
-<span class="line-comment"># 4. Acesse http://localhost:8080 → pronto</span>
+<span class="line-comment"># Ou gere um projeto novo ja com starter first-party</span>
+<span class="line-keyword">php spark new ../meu-saas --starter=saas</span>
+
+<span class="line-comment"># Acesse http://localhost:8000 — pronto</span>
 HTML; ?></pre>
         </div>
     </section>
@@ -652,16 +910,14 @@ HTML; ?></pre>
             <pre><?php echo <<<'HTML'
 <span class="line-comment">&lt;!-- app/views/hello.spark --&gt;</span>
 
-<span class="line-tag">@title</span>(<span class="line-string">'{{ $message }}'</span>)
-<span class="line-tag">@layout</span>(<span class="line-string">'main'</span>)
+<span class="line-tag">@title</span>(<span class="line-string">'Hello'</span>)
 
 <span class="line-tag">&lt;h1&gt;</span>{{ <span class="line-var">$message</span> }}<span class="line-tag">&lt;/h1&gt;</span>
+<span class="line-tag">&lt;p&gt;</span>Data: {{ now() | date:<span class="line-string">'d/m/Y'</span> }}<span class="line-tag">&lt;/p&gt;</span>
 
-<span class="line-tag">@foreach</span>(<span class="line-var">$items</span> as <span class="line-var">$item</span>)
-    <span class="line-tag">&lt;article&gt;</span>
-        <span class="line-tag">&lt;h2&gt;</span>{{ <span class="line-var">$item</span>-><span class="line-fn">title</span> }}<span class="line-tag">&lt;/h2&gt;</span>
-    <span class="line-tag">&lt;/article&gt;</span>
-<span class="line-tag">@endforeach</span>
+<span class="line-tag">@auth</span>
+    <span class="line-tag">&lt;p&gt;</span>Logado como {{ auth()->name }}<span class="line-tag">&lt;/p&gt;</span>
+<span class="line-tag">@endauth</span>
 HTML; ?></pre>
         </div>
     </section>
@@ -674,30 +930,12 @@ HTML; ?></pre>
         </div>
 
         <div class="principles-grid">
-            <div class="principle-card">
-                <span class="principle-card__icon">&#128196;</span>
-                <p><strong>Arquivo e convenção</strong> — se existe, funciona. Sem registro.</p>
-            </div>
-            <div class="principle-card">
-                <span class="principle-card__icon">&#9881;</span>
-                <p><strong>Configuração obrigatória mínima</strong> — o framework roda com .env, php.ini e pronto.</p>
-            </div>
-            <div class="principle-card">
-                <span class="principle-card__icon">&#9889;</span>
-                <p><strong>Zero boilerplate</strong> — rotas são closures, middlewares são scripts, eventos são explícitos.</p>
-            </div>
-            <div class="principle-card">
-                <span class="principle-card__icon">&#128161;</span>
-                <p><strong>Smart defaults</strong> — retorno de array vira JSON ou view automaticamente.</p>
-            </div>
-            <div class="principle-card">
-                <span class="principle-card__icon">&#128640;</span>
-                <p><strong>Performance</strong> — cache agressivo em produção, lazy loading em tudo.</p>
-            </div>
-            <div class="principle-card">
-                <span class="principle-card__icon">&#128187;</span>
-                <p><strong>PHP puro</strong> — sem dependências externas. Composer é opcional (dev tools).</p>
-            </div>
+            @foreach($principles as $principle)
+                <div class="principle-card">
+                    <span class="principle-card__icon">{!! $principle['icon'] !!}</span>
+                    <p><strong>{{ $principle['title'] }}</strong> — {{ $principle['description'] }}</p>
+                </div>
+            @endforeach
         </div>
     </section>
 
@@ -710,57 +948,40 @@ HTML; ?></pre>
         </div>
 
         <div class="guides-grid">
-            <a href="{{ route('docs.show', ['slug' => '21-spark-vs-laravel']) }}" class="guide-card">
-                <h3>SparkPHP vs Laravel</h3>
-                <p>Comparação honesta de filosofia, custo de adoção e trade-offs</p>
-                <span class="guide-card__action">Ler guia &rarr;</span>
-            </a>
-
-            <a href="{{ route('docs.show', ['slug' => '22-adoption-guide']) }}" class="guide-card">
-                <h3>Guia de Adoção</h3>
-                <p>Como validar, pilotar e adotar SparkPHP com risco controlado</p>
-                <span class="guide-card__action">Ler guia &rarr;</span>
-            </a>
-
-            <a href="{{ route('docs.show', ['slug' => '23-benchmarking']) }}" class="guide-card">
-                <h3>Benchmarks</h3>
-                <p>Como medir Spark com honestidade e usar o CLI de benchmarks</p>
-                <span class="guide-card__action">Ler guia &rarr;</span>
-            </a>
-
-            <a href="{{ route('docs.show', ['slug' => '24-migrating-from-laravel']) }}" class="guide-card">
-                <h3>Migração do Laravel</h3>
-                <p>Quando migrar, como migrar e como fazer com segurança</p>
-                <span class="guide-card__action">Ler guia &rarr;</span>
-            </a>
-
-            <a href="{{ route('docs.show', ['slug' => '25-review-checklist']) }}" class="guide-card">
-                <h3>Review Checklist</h3>
-                <p>Guia oficial de review mais curta, rápida e com mais cobertura</p>
-                <span class="guide-card__action">Ler guia &rarr;</span>
-            </a>
+            @foreach($productGuides as $guide)
+                <a href="{{ route('docs.show', ['slug' => $guide['slug']]) }}" class="guide-card">
+                    <span class="guide-card__kicker">Guia {{ str_pad($guide['number'], 2, '0', STR_PAD_LEFT) }}</span>
+                    <h3>{{ $guide['title'] }}</h3>
+                    <p>{!! $guide['description_html'] !!}</p>
+                    <span class="guide-card__action">Ler guia &rarr;</span>
+                </a>
+            @endforeach
         </div>
     </section>
 
     <!-- ── All Topics ── -->
     <section>
-        <div class="docs-section-head">
-            <span class="section-tag">Referência rápida</span>
-            <h2>Todos os tópicos</h2>
-        </div>
+        <div style="opacity: 1; transform: none;">
+            <div class="docs-section-head docs-section-head--topics">
+                <span class="section-tag">Referência rápida</span>
+                <h2>Todos os tópicos</h2>
+            </div>
 
-        <div class="topics-grid">
-            @foreach($docs as $doc)
-                <a href="{{ route('docs.show', ['slug' => $doc['slug']]) }}" class="topic-link">
-                    <span class="topic-link__icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>
-                    </span>
-                    <span class="topic-link__info">
-                        <span class="topic-link__title">{{ $doc['title'] }}</span>
-                        <span class="topic-link__desc">{{ $doc['slug'] }}.md</span>
-                    </span>
-                </a>
-            @endforeach
+            <div class="topics-grid">
+                @foreach($quickTopics as $topic)
+                    <a href="{{ route('docs.show', ['slug' => $topic['slug']]) }}" class="topic-link">
+                        <span class="topic-link__icon">{!! $topic['icon'] !!}</span>
+                        <span class="topic-link__info">
+                            <span class="topic-link__meta">
+                                <span class="topic-link__number">{{ $topic['number'] }}</span>
+                                <span class="topic-link__title">{{ $topic['title'] }}</span>
+                            </span>
+                            <span class="topic-link__desc">{{ $topic['description'] }}</span>
+                        </span>
+                        <span class="topic-link__arrow">{!! $arrowIcon !!}</span>
+                    </a>
+                @endforeach
+            </div>
         </div>
     </section>
 
@@ -781,9 +1002,8 @@ HTML; ?></pre>
         searchInput.addEventListener('input', function () {
             const query = this.value.toLowerCase();
             document.querySelectorAll('.docs-table-row').forEach(row => {
-                const title = row.dataset.title || '';
-                const desc = row.querySelector('.docs-table-row__desc')?.textContent?.toLowerCase() || '';
-                row.style.display = (title.includes(query) || desc.includes(query)) ? '' : 'none';
+                const haystack = row.dataset.search || '';
+                row.style.display = haystack.includes(query) ? '' : 'none';
             });
         });
     }
