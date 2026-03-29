@@ -90,6 +90,10 @@ O SparkPHP fornece dezenas de funcoes globais para que voce nao precise importar
 | `auth()`        | Usuario logado ou `null`            |
 | `login($user)`  | Loga usuario                        |
 | `logout()`      | Desloga                             |
+| `policy($subject)` | Resolve a policy por convencao   |
+| `can('update', $post)` | Verifica autorizacao         |
+| `authorize('update', $post)` | Aborta com 403 se negar |
+| `authorize('view', $post, $user)` | Usa actor explicito |
 
 ## Seguranca
 

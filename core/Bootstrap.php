@@ -276,7 +276,7 @@ class Bootstrap
         }
 
         // Execute handler
-        $result = $this->container->call($handler, $params);
+        $result = $this->container->callRoute($handler, $params);
 
         // Resolve and send response
         $response = new Response();

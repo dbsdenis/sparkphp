@@ -133,7 +133,7 @@ Sempre analise os seguintes documentos (vão criar uma orientação melhor do pr
   - Suportar paginação, `links`, `meta` e sparse fields sem exigir classes de Resource dedicadas
   - Oferecer compliance JSON:API opcional sem obrigar o projeto inteiro a usar o padrão
 
-- [ ] Task 5.4 — Route model binding implícito e autorização mais inteligente
+- [x] Task 5.4 — Route model binding implícito e autorização mais inteligente
   - Se o type-hint de um handler é um Model e existe parâmetro de URL correspondente, resolver com `findOrFail()` automaticamente
   - Separar claramente route model binding (Model da URL) da resolução de services (DI do Container)
   - Definir base para policies/authorize sem perder a simplicidade do Spark

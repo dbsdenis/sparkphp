@@ -76,23 +76,43 @@ class Container
      */
     public function call(callable $callable, array $extras = []): mixed
     {
-        $ref = is_array($callable)
+        $ref = $this->reflectCallable($callable);
+
+        $args = $this->resolveParameters($ref->getParameters(), $extras, []);
+        return $callable(...$args);
+    }
+
+    /**
+     * Call a route handler, resolving URL params, model bindings, and services separately.
+     */
+    public function callRoute(callable $callable, array $routeParams = [], array $extras = []): mixed
+    {
+        $ref = $this->reflectCallable($callable);
+
+        $args = $this->resolveParameters($ref->getParameters(), $extras, $routeParams);
+        return $callable(...$args);
+    }
+
+    private function reflectCallable(callable $callable): \ReflectionFunctionAbstract
+    {
+        return is_array($callable)
             ? new \ReflectionMethod($callable[0], $callable[1])
             : new \ReflectionFunction(\Closure::fromCallable($callable));
-
-        $args = $this->resolveParameters($ref->getParameters(), $extras);
-        return $callable(...$args);
     }
 
     /**
      * Resolve an array of ReflectionParameter values.
      * $extras: ['paramName' => value, ...] — from URL params or explicit overrides.
      */
-    private function resolveParameters(array $params, array $extras): array
+    private function resolveParameters(array $params, array $extras, array $routeParams = []): array
     {
         $args = [];
+        $namedRouteParams = $this->namedRouteParams($routeParams);
+
         foreach ($params as $param) {
             $name = $param->getName();
+            $type = $param->getType();
+            $className = $this->parameterClassName($type);
 
             // Explicit extra by name
             if (array_key_exists($name, $extras)) {
@@ -100,13 +120,28 @@ class Container
                 continue;
             }
 
-            $type = $param->getType();
+            // Route model binding: URL param -> Model::resolveRouteBinding()
+            if ($className !== null && is_subclass_of($className, Model::class)) {
+                [$foundBinding, $bindingValue] = $this->findRouteModelBindingValue($name, $className, $namedRouteParams);
+                if ($foundBinding) {
+                    $args[] = $className::resolveRouteBinding($bindingValue);
+                    continue;
+                }
+            }
+
+            // Primitive or raw route param by name
+            [$foundRouteParam, $routeValue] = $this->findNamedRouteParameter($name, $namedRouteParams);
+            if ($foundRouteParam) {
+                $args[] = ($type && $type->isBuiltin())
+                    ? $this->castPrimitive($routeValue, $type->getName())
+                    : $routeValue;
+                continue;
+            }
 
             // Typed class parameter → resolve from container
-            if ($type && !$type->isBuiltin()) {
-                $typeName = $type->getName();
+            if ($className !== null) {
                 try {
-                    $args[] = $this->make($typeName);
+                    $args[] = $this->make($className);
                     continue;
                 } catch (\RuntimeException) {}
             }
@@ -135,6 +170,106 @@ class Container
             throw new \RuntimeException("Container: cannot resolve parameter \${$name}");
         }
         return $args;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function namedRouteParams(array $routeParams): array
+    {
+        return array_filter(
+            $routeParams,
+            static fn(mixed $key): bool => is_string($key),
+            ARRAY_FILTER_USE_KEY
+        );
+    }
+
+    private function parameterClassName(?\ReflectionType $type): ?string
+    {
+        if (!$type instanceof \ReflectionNamedType || $type->isBuiltin()) {
+            return null;
+        }
+
+        return $type->getName();
+    }
+
+    /**
+     * @return array{0: bool, 1: mixed}
+     */
+    private function findNamedRouteParameter(string $parameterName, array $routeParams): array
+    {
+        return $this->matchRouteParamCandidates($routeParams, [
+            $parameterName,
+            $this->toSnake($parameterName),
+        ]);
+    }
+
+    /**
+     * @return array{0: bool, 1: mixed}
+     */
+    private function findRouteModelBindingValue(string $parameterName, string $modelClass, array $routeParams): array
+    {
+        $modelBase = (new \ReflectionClass($modelClass))->getShortName();
+        $modelBase = lcfirst($modelBase);
+        $modelSnake = $this->toSnake($modelBase);
+        $parameterSnake = $this->toSnake($parameterName);
+
+        $candidates = [
+            $parameterName,
+            $parameterSnake,
+            $parameterName . 'Id',
+            $parameterSnake . '_id',
+            $modelBase,
+            $modelSnake,
+            $modelBase . 'Id',
+            $modelSnake . '_id',
+        ];
+
+        if (array_key_exists('id', $routeParams)) {
+            $candidates[] = 'id';
+        }
+
+        if (count($routeParams) === 1) {
+            $candidates[] = array_key_first($routeParams);
+        }
+
+        return $this->matchRouteParamCandidates($routeParams, array_values(array_unique(array_filter($candidates))));
+    }
+
+    /**
+     * @return array{0: bool, 1: mixed}
+     */
+    private function matchRouteParamCandidates(array $routeParams, array $candidates): array
+    {
+        foreach ($candidates as $candidate) {
+            if (array_key_exists($candidate, $routeParams)) {
+                return [true, $routeParams[$candidate]];
+            }
+        }
+
+        $normalized = [];
+        foreach ($routeParams as $key => $value) {
+            $normalized[$this->normalizeRouteParamName((string) $key)] = $value;
+        }
+
+        foreach ($candidates as $candidate) {
+            $normalizedCandidate = $this->normalizeRouteParamName((string) $candidate);
+            if (array_key_exists($normalizedCandidate, $normalized)) {
+                return [true, $normalized[$normalizedCandidate]];
+            }
+        }
+
+        return [false, null];
+    }
+
+    private function toSnake(string $value): string
+    {
+        return strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $value) ?? $value);
+    }
+
+    private function normalizeRouteParamName(string $value): string
+    {
+        return strtolower(str_replace(['-', '_'], '', $value));
     }
 
     private function castPrimitive(mixed $value, string $type): mixed

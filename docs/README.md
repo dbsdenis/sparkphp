@@ -60,11 +60,11 @@ Retorna JSON para APIs, renderiza view para browsers.
 ```php
 // app/routes/users.[id].php — acesse /users/42
 
-get(fn(int $id) => User::findOrFail($id));
+get(fn(User $user) => $user);
 
-put(fn(int $id) => User::findOrFail($id)->update(input()));
+put(fn(User $user) => $user->update(input()));
 
-delete(fn(int $id) => User::findOrFail($id)->delete());
+delete(fn(User $user) => $user->delete());
 ```
 
 ## Sua primeira view

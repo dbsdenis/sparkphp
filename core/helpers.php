@@ -599,6 +599,53 @@ function logout(): void
     session()?->regenerate();
 }
 
+function policy(mixed $subject): mixed
+{
+    $class = null;
+
+    if (is_object($subject)) {
+        $class = $subject::class;
+    } elseif (is_string($subject) && class_exists($subject)) {
+        $class = $subject;
+    }
+
+    if ($class === null) {
+        return null;
+    }
+
+    $policyClass = (new ReflectionClass($class))->getShortName() . 'Policy';
+    if (!class_exists($policyClass)) {
+        return null;
+    }
+
+    try {
+        return app()->getContainer()->make($policyClass);
+    } catch (\Throwable) {
+        return new $policyClass();
+    }
+}
+
+function can(string $ability, mixed $subject, mixed $user = null, mixed ...$context): bool
+{
+    $policy = policy($subject);
+    if (!$policy || !method_exists($policy, $ability)) {
+        return false;
+    }
+
+    $actor = $user ?? auth();
+
+    return (bool) $policy->{$ability}($actor, $subject, ...$context);
+}
+
+function authorize(string $ability, mixed $subject, mixed $user = null, mixed ...$context): bool
+{
+    if (can($ability, $subject, $user, ...$context)) {
+        return true;
+    }
+
+    abort(403, 'This action is unauthorized.');
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Events
 // ─────────────────────────────────────────────────────────────────────────────

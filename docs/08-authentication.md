@@ -8,6 +8,9 @@ O SparkPHP fornece helpers simples para autenticacao baseada em sessao.
 auth();              // Retorna o usuario logado (Model) ou null
 login($user);        // Loga o usuario (salva na sessao)
 logout();            // Desloga o usuario (limpa a sessao)
+policy($subject);    // Resolve SubjectPolicy por convencao
+can('update', $post);        // true/false
+authorize('update', $post);  // aborta com 403 se negar
 ```
 
 ## Login
@@ -106,6 +109,60 @@ get(fn() => 'admin area');
 // Na rota
 get(fn() => 'admin only')->guard('auth', 'role:admin');
 ```
+
+## Policies por convencao
+
+Para autorizacao mais expressiva, crie uma policy com o nome do model + `Policy`:
+
+```php
+class PostPolicy
+{
+    public function view(?User $actor, Post $post): bool
+    {
+        return $post->published || ($actor?->id === $post->user_id);
+    }
+
+    public function update(?User $actor, Post $post): bool
+    {
+        return $actor?->id === $post->user_id;
+    }
+}
+```
+
+Na rota:
+
+```php
+// app/routes/posts.[id].php
+get(function (Post $post) {
+    authorize('view', $post);
+    return $post;
+});
+
+put(function (Post $post) {
+    authorize('update', $post);
+    $post->update(input());
+    return $post;
+});
+```
+
+### `can()` e `authorize()`
+
+```php
+if (can('update', $post)) {
+    // ...
+}
+
+authorize('delete', $post);
+```
+
+Em jobs, seeds, CLI ou testes, voce pode informar o ator explicitamente:
+
+```php
+authorize('view', $post, $user);
+can('create', Post::class, $admin);
+```
+
+> Se nao houver actor explicito, o Spark usa `auth()` por padrao.
 
 ## Registro de usuario
 

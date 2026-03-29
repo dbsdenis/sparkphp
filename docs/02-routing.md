@@ -59,6 +59,58 @@ delete(fn(int $id) => User::findOrFail($id)->delete());
 
 O nome do parametro na closure **deve coincidir** com o nome no arquivo (`$id` para `[id]`). O Container faz a injecao automatica e a conversao de tipo (`int`, `string`, etc.).
 
+### Route model binding implicito
+
+Quando o handler recebe um `Model`, o Spark tenta resolver automaticamente esse
+model a partir do parametro da URL:
+
+```php
+// app/routes/users.[id].php
+
+get(fn(User $user) => $user);
+
+put(function (User $user) {
+    $user->update(input());
+    return $user;
+});
+```
+
+O binding usa `Model::resolveRouteBinding()` por convencao. No caso padrao, isso
+equivale a um `findOrFail()` pelo ID.
+
+O Spark tenta casar o model nesta ordem:
+
+- nome exato do parametro (`$user` ← `[user]`)
+- variantes com ID (`$user` ← `[userId]` ou `[user_id]`)
+- nome do model (`User $user` ← `[user]` ou `[userId]`)
+- fallback para `id` quando fizer sentido (`User $user` ← `[id]`)
+
+Isso permite migrar de:
+
+```php
+get(fn(int $id) => User::findOrFail($id));
+```
+
+para:
+
+```php
+get(fn(User $user) => $user);
+```
+
+#### Customizando a chave da rota
+
+Se quiser binding por slug ou outra coluna, defina `routeKey` no model:
+
+```php
+class Post extends Model
+{
+    protected string $routeKey = 'slug';
+}
+
+// app/routes/posts.[slug].php
+get(fn(Post $post) => $post);
+```
+
 ### Multiplos parametros
 
 ```php
@@ -97,6 +149,25 @@ get(fn(int $id, Request $request) => [
     'format' => $request->query('format', 'json'),
 ]);
 ```
+
+Com route model binding, models vindos da URL e services do Container ficam
+claramente separados:
+
+```php
+get(function (User $user, Request $request, AuditTrail $audit) {
+    return [
+        'user' => $user,
+        'trace' => $request->query('trace'),
+        'audit' => $audit->label,
+    ];
+});
+```
+
+Regra pratica:
+
+- `Model` vindo da URL: binding automatico por convencao
+- classes que nao sao `Model`: resolvidas pelo Container
+- tipos primitivos (`int`, `string`, etc.): preenchidos por params da rota ou input/query
 
 ## Path alias (redefinir URL)
 

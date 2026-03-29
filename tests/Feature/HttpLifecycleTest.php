@@ -145,6 +145,53 @@ final class HttpLifecycleTest extends TestCase
         $this->assertSame('Spark', $payload['data']['attributes']['display_name']);
     }
 
+    public function testImplicitRouteModelBindingAndServiceInjectionWorkTogether(): void
+    {
+        $port = $this->startServer();
+
+        $response = $this->request($port, 'GET', '/api/users/1?trace=bind-test', [
+            'Accept: application/json',
+        ]);
+
+        $payload = json_decode($response['body'], true);
+
+        $this->assertSame(200, $response['status']);
+        $this->assertSame([
+            'user' => [
+                'id' => 1,
+                'display_name' => 'Spark',
+            ],
+            'trace' => 'bind-test',
+            'audit' => 'route-audit',
+        ], $payload);
+    }
+
+    public function testAuthorizeUsesPolicyConventionAndReturns403WhenDenied(): void
+    {
+        $port = $this->startServer();
+
+        $allowed = $this->request($port, 'GET', '/api/user-access/1?actor=1', [
+            'Accept: application/json',
+        ]);
+
+        $denied = $this->request($port, 'GET', '/api/user-access/1?actor=2', [
+            'Accept: application/json',
+        ]);
+
+        $this->assertSame(200, $allowed['status']);
+        $this->assertSame([
+            'id' => 1,
+            'display_name' => 'Spark',
+        ], json_decode($allowed['body'], true));
+
+        $this->assertSame(403, $denied['status']);
+        $this->assertSame([
+            'error' => 'This action is unauthorized.',
+            'status' => 403,
+            'code' => 'forbidden',
+        ], json_decode($denied['body'], true));
+    }
+
     public function testSparkInspectorTracksJsonRequestsAndInternalInspectorRoutes(): void
     {
         $port = $this->startServer();
@@ -304,6 +351,8 @@ final class HttpLifecycleTest extends TestCase
         mkdir($this->basePath . '/app/jobs', 0777, true);
         mkdir($this->basePath . '/app/middleware', 0777, true);
         mkdir($this->basePath . '/app/models', 0777, true);
+        mkdir($this->basePath . '/app/policies', 0777, true);
+        mkdir($this->basePath . '/app/services', 0777, true);
         mkdir($this->basePath . '/app/routes/api', 0777, true);
         mkdir($this->basePath . '/app/routes/api/[mw_dir]', 0777, true);
         mkdir($this->basePath . '/app/routes/api/users', 0777, true);
@@ -354,6 +403,29 @@ class ApiUser extends Model
 PHP
         );
 
+        file_put_contents($this->basePath . '/app/policies/ApiUserPolicy.php', <<<'PHP'
+<?php
+
+class ApiUserPolicy
+{
+    public function view(?ApiUser $actor, ApiUser $subject): bool
+    {
+        return (int) ($actor?->id ?? 0) === (int) $subject->id;
+    }
+}
+PHP
+        );
+
+        file_put_contents($this->basePath . '/app/services/AuditTrail.php', <<<'PHP'
+<?php
+
+class AuditTrail
+{
+    public string $label = 'route-audit';
+}
+PHP
+        );
+
         file_put_contents($this->basePath . '/app/routes/index.php', <<<'PHP'
 <?php
 get(function () {
@@ -400,6 +472,29 @@ PHP
         file_put_contents($this->basePath . '/app/routes/api/users/json_api.php', <<<'PHP'
 <?php
 get(fn() => ApiUser::api(ApiUser::findOrFail(1), ['json_api' => true]));
+PHP
+        );
+
+        file_put_contents($this->basePath . '/app/routes/api/users.[id].php', <<<'PHP'
+<?php
+get(function (ApiUser $user, Request $request, AuditTrail $audit) {
+    return [
+        'user' => $user,
+        'trace' => $request->query('trace'),
+        'audit' => $audit->label,
+    ];
+});
+PHP
+        );
+
+        file_put_contents($this->basePath . '/app/routes/api/user-access.[id].php', <<<'PHP'
+<?php
+get(function (ApiUser $user) {
+    $actor = ApiUser::findOrFail((int) query('actor'));
+    authorize('view', $user, $actor);
+
+    return $user;
+});
 PHP
         );
 

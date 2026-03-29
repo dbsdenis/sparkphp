@@ -158,6 +158,9 @@ abstract class Model implements \JsonSerializable
     /** Primary key column. */
     protected string $primaryKey = 'id';
 
+    /** Route binding key. Empty = use primary key. */
+    protected string $routeKey = '';
+
     /** Whether to auto-manage created_at / updated_at. */
     protected bool $timestamps   = true;
 
@@ -1341,6 +1344,28 @@ abstract class Model implements \JsonSerializable
     public function getPrimaryKey(): string
     {
         return $this->primaryKey;
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return $this->routeKey !== '' ? $this->routeKey : $this->primaryKey;
+    }
+
+    public static function resolveRouteBinding(mixed $value): static
+    {
+        $instance = new static();
+        $routeKey = $instance->getRouteKeyName();
+
+        if ($routeKey === $instance->getPrimaryKey()) {
+            return static::findOrFail($value);
+        }
+
+        $model = static::where($routeKey, $value)->first();
+        if (!$model instanceof static) {
+            abort(404, 'Resource not found');
+        }
+
+        return $model;
     }
 
     // ─────────────────────────────────────────────
