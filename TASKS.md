@@ -194,7 +194,7 @@ Sempre analise os seguintes documentos (vão criar uma orientação melhor do pr
 
 ## Fase 8 — Ecossistema e Diferenciais Competitivos (longo prazo)
 
-- [ ] Task 8.1 — CLI de produto
+- [x] Task 8.1 — CLI de produto
   - Adicionar comandos como `spark doctor`, `spark new`, `spark upgrade` e geração de spec
   - Tornar o CLI a interface principal de setup, diagnóstico e evolução do projeto
 

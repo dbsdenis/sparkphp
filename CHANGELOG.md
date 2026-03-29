@@ -2,6 +2,21 @@
 
 Todas as mudancas publicas relevantes do SparkPHP passam a ser registradas aqui.
 
+## [0.7.0] - 2026-03-29
+
+### Added
+
+- `php spark new` para scaffold de projetos novos a partir do runtime atual do SparkPHP.
+- `php spark upgrade` com modo auditoria (`check`) e sincronizacao segura (`--sync`) do scaffold local.
+- auditoria de upgrade para diretorios faltantes, arquivos essenciais e drift de chaves entre `.env.example` e `.env`.
+- sincronizacao nao destrutiva de chaves ausentes do `.env` a partir do `.env.example`.
+
+### Changed
+
+- `ProjectScaffolder` passou a concentrar create-project, audit e sync do scaffold de produto.
+- help do CLI e documentacao oficial agora tratam o `spark` como interface principal de setup, diagnostico e evolucao.
+- versao publicada do framework avancou para `0.7.0`.
+
 ## [0.6.0] - 2026-03-29
 
 ### Added

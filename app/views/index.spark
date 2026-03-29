@@ -650,8 +650,8 @@
             <a href="{{ route('docs.show', ['slug' => '13-cli']) }}" class="capability-card-link">
             <article class="capability-card">
                 <strong>CLI útil de verdade</strong>
-                <p>Servidor local versionado, generators (<code>make:model</code>, <code>make:migration</code>, <code>make:job</code>…), diagnosticos e benchmarks reais.</p>
-                <code>php spark serve</code>
+                <p>Servidor local versionado, <code>spark new</code>, <code>spark upgrade</code>, generators, diagnosticos e benchmarks reais.</p>
+                <code>php spark new ../meu-app</code>
             </article>
             </a>
 

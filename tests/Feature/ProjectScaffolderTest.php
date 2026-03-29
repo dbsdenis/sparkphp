@@ -19,8 +19,18 @@ final class ProjectScaffolderTest extends TestCase
 APP_NAME=SparkPHP
 APP_ENV=dev
 APP_KEY=change-me-to-a-random-secret-32-chars
+AI_DRIVER=fake
+SPARK_AI_MASK=true
 ENV
         );
+        file_put_contents($this->basePath . '/composer.json', '{"name":"sparkphp/test"}');
+        file_put_contents($this->basePath . '/VERSION', '0.6.0');
+        file_put_contents($this->basePath . '/CHANGELOG.md', '# Changelog');
+        file_put_contents($this->basePath . '/spark', "#!/usr/bin/env php\n<?php\n");
+        mkdir($this->basePath . '/docs', 0777, true);
+        file_put_contents($this->basePath . '/docs/README.md', '# Docs');
+        mkdir($this->basePath . '/public', 0777, true);
+        file_put_contents($this->basePath . '/public/index.php', '<?php echo "ok";');
     }
 
     protected function tearDown(): void
@@ -72,6 +82,63 @@ ENV
         $this->assertFileDoesNotExist($this->basePath . '/storage/sessions/sess_test');
     }
 
+    public function testCreateProjectCopiesRuntimeSkeletonAndInitializesTarget(): void
+    {
+        $source = sys_get_temp_dir() . '/sparkphp-scaffold-source-' . bin2hex(random_bytes(6));
+        mkdir($source, 0777, true);
+
+        $this->writeFile($source . '/.env.example', "APP_NAME=SparkPHP\nAPP_ENV=dev\nAPP_KEY=change-me-to-a-random-secret-32-chars\nAI_DRIVER=fake\n");
+        $this->writeFile($source . '/.gitignore', "/vendor\n/.env\n");
+        $this->writeFile($source . '/composer.json', '{"name":"sparkphp/test"}');
+        $this->writeFile($source . '/VERSION', '0.6.0');
+        $this->writeFile($source . '/CHANGELOG.md', '# Changelog');
+        $this->writeFile($source . '/spark', "#!/usr/bin/env php\n<?php echo 'spark';\n");
+        $this->writeFile($source . '/public/index.php', '<?php echo "hello";');
+        $this->writeFile($source . '/docs/README.md', '# Docs');
+        $this->writeFile($source . '/app/routes/index.php', '<?php get(fn() => "ok");');
+        $this->writeFile($source . '/core/Bootstrap.php', '<?php class Bootstrap {}');
+        $this->writeFile($source . '/database/migrations/.gitkeep', '');
+        $this->writeFile($source . '/tests/README.md', '# Tests');
+
+        $target = sys_get_temp_dir() . '/sparkphp-created-project-' . bin2hex(random_bytes(6));
+        $result = (new ProjectScaffolder($source))->createProject($target);
+
+        $this->assertSame($target, $result['target']);
+        $this->assertFileExists($target . '/.env');
+        $this->assertFileExists($target . '/spark');
+        $this->assertFileExists($target . '/public/index.php');
+        $this->assertFileExists($target . '/docs/README.md');
+        $this->assertDirectoryExists($target . '/app/ai/agents');
+        $this->assertDirectoryExists($target . '/storage/cache/views');
+        $this->assertStringContainsString('root file(s) copied', implode("\n", $result['messages']));
+        $this->assertMatchesRegularExpression('/^APP_KEY=[a-f0-9]{32}$/m', (string) file_get_contents($target . '/.env'));
+
+        $this->deleteDirectory($source);
+        $this->deleteDirectory($target);
+    }
+
+    public function testAuditAndSyncUpgradeDetectAndRepairMissingScaffoldParts(): void
+    {
+        $scaffolder = new ProjectScaffolder($this->basePath);
+        $scaffolder->initialize();
+
+        rmdir($this->basePath . '/app/ai/tools');
+        file_put_contents($this->basePath . '/.env', "APP_NAME=SparkPHP\nAPP_ENV=dev\nAPP_KEY=test-key-1234567890123456789012\n");
+
+        $audit = $scaffolder->audit();
+
+        $this->assertContains('app/ai/tools', $audit['missing_directories']);
+        $this->assertContains('AI_DRIVER', $audit['missing_env_keys']);
+        $this->assertFalse($audit['ready']);
+
+        $sync = $scaffolder->syncUpgrade();
+
+        $this->assertDirectoryExists($this->basePath . '/app/ai/tools');
+        $this->assertContains('AI_DRIVER', $sync['synced_env_keys']);
+        $this->assertStringContainsString('AI_DRIVER=fake', (string) file_get_contents($this->basePath . '/.env'));
+        $this->assertTrue($sync['audit']['ready']);
+    }
+
     private function deleteDirectory(string $path): void
     {
         if (!is_dir($path)) {
@@ -92,5 +159,15 @@ ENV
         }
 
         rmdir($path);
+    }
+
+    private function writeFile(string $path, string $contents): void
+    {
+        $directory = dirname($path);
+        if (!is_dir($directory)) {
+            mkdir($directory, 0777, true);
+        }
+
+        file_put_contents($path, $contents);
     }
 }

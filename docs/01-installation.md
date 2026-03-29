@@ -40,6 +40,13 @@ cp .env.example .env
 php spark serve
 ```
 
+Se voce ja esta dentro de uma instalacao do SparkPHP e quer scaffoldar outro app
+rapidamente, tambem pode usar o CLI:
+
+```bash
+php spark new ../meu-novo-projeto
+```
+
 Acesse `http://localhost:8000` e voce vera a pagina inicial do SparkPHP.
 Ao subir com `php spark serve`, o banner do servidor tambem mostra a versao atual
 publicada do framework lida de `VERSION`.

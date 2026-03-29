@@ -20,6 +20,9 @@ php spark <comando> [opcoes]
 | `php spark serve --port=3000` | Com porta customizada                         |
 | `php spark serve --dry-run` | Mostra o banner/configuracao sem abrir o servidor |
 | `php spark init`     | Inicializa um novo projeto (copia .env, cria diretorios, inclui `app/ai/*`) |
+| `php spark new ../meu-app` | Cria um projeto novo a partir do scaffold atual do SparkPHP |
+| `php spark upgrade`  | Audita o scaffold do projeto atual                     |
+| `php spark upgrade --sync` | Sincroniza partes seguras do scaffold e do `.env` |
 | `php spark version`  | Exibe a versao atual do framework e a release line     |
 | `php spark about`    | Exibe diagnosticos do ambiente, PHP, extensoes, banco  |
 | `php spark benchmark`| Roda benchmark de performance do framework             |
@@ -132,6 +135,33 @@ Ao subir o servidor, o banner mostra a versao atual do SparkPHP lida de `VERSION
 O mesmo bootstrap ja prepara a estrutura `app/ai/agents`, `app/ai/prompts` e
 `app/ai/tools` para a camada file-based de AI.
 
+### Criando um projeto novo pelo CLI
+
+Quando voce ja esta dentro de uma instalacao do SparkPHP e quer abrir outro projeto
+rapidamente, o CLI pode scaffoldar um app inteiro:
+
+```bash
+php spark new ../meu-novo-app
+```
+
+O comando:
+
+- copia o scaffold publico do runtime atual
+- cria `.env` a partir de `.env.example`
+- gera `APP_KEY`
+- prepara `storage/`, `app/ai/*` e `DatabaseSeeder`
+
+Variantes:
+
+```bash
+php spark new ../meu-novo-app --force
+php spark new ../meu-novo-app --no-init
+php spark new ../meu-novo-app --json
+```
+
+Use `--no-init` quando quiser apenas copiar o scaffold e decidir depois quando gerar
+`.env`, `APP_KEY` e diretorios de runtime.
+
 ### Fluxo de desenvolvimento
 
 ```bash
@@ -156,6 +186,15 @@ php spark version
 
 # Testar o banner do servidor sem abrir a porta
 php spark serve --dry-run
+
+# Criar um projeto novo a partir do scaffold atual
+php spark new ../cliente-acme
+
+# Auditar o projeto atual contra o scaffold publicado
+php spark upgrade
+
+# Aplicar sincronizacao segura de dirs/.env
+php spark upgrade --sync
 
 # Gerar spec OpenAPI da API
 php spark api:spec
@@ -304,13 +343,40 @@ php spark --version
 php spark -V
 
 # Saida:
-#   SparkPHP v0.6.0 (0.6.x)
-#   SparkPHP environment report  v0.6.0
+#   SparkPHP v0.7.0 (0.7.x)
+#   SparkPHP environment report  v0.7.0
 #   PHP 8.3.0
 #   Environment: production
 #   Database: mysql (sparkphp@localhost)
 #   ...
 ```
+
+### Upgrade assistido
+
+```bash
+# Auditar sem alterar arquivos
+php spark upgrade
+
+# Formato JSON para automacao/CI local
+php spark upgrade --json
+
+# Aplicar sincronizacao segura
+php spark upgrade --sync
+```
+
+O `upgrade` checa:
+
+- diretorios esperados do scaffold
+- arquivos essenciais do produto
+- estado do `.env`
+- drift de chaves entre `.env.example` e `.env`
+
+No modo `--sync`, o CLI aplica apenas mudancas seguras:
+
+- cria `.env` se faltar
+- gera `APP_KEY` se estiver ausente ou placeholder
+- recria diretorios e `DatabaseSeeder` esperados
+- adiciona no `.env` chaves que existem no `.env.example` mas ainda nao foram copiadas
 
 ### AI status e smoke test
 

@@ -17,9 +17,16 @@ final class SparkCliDatabaseTest extends TestCase
         $this->basePath = sys_get_temp_dir() . '/sparkphp-cli-' . bin2hex(random_bytes(6));
         mkdir($this->basePath, 0777, true);
 
+        $this->copyDirectory(__DIR__ . '/../../app', $this->basePath . '/app');
         $this->copyDirectory(__DIR__ . '/../../core', $this->basePath . '/core');
+        $this->copyDirectory(__DIR__ . '/../../docs', $this->basePath . '/docs');
+        $this->copyDirectory(__DIR__ . '/../../public', $this->basePath . '/public');
         copy(__DIR__ . '/../../spark', $this->basePath . '/spark');
         copy(__DIR__ . '/../../VERSION', $this->basePath . '/VERSION');
+        copy(__DIR__ . '/../../CHANGELOG.md', $this->basePath . '/CHANGELOG.md');
+        copy(__DIR__ . '/../../composer.json', $this->basePath . '/composer.json');
+        copy(__DIR__ . '/../../phpunit.xml', $this->basePath . '/phpunit.xml');
+        copy(__DIR__ . '/../../.gitignore', $this->basePath . '/.gitignore');
         chmod($this->basePath . '/spark', 0755);
 
         file_put_contents($this->basePath . '/.env.example', <<<'ENV'
@@ -253,6 +260,59 @@ PHP
         $this->assertStringContainsString('Press Ctrl+C to stop.', $result['output']);
     }
 
+    public function testNewCommandScaffoldsFreshProjectFromCurrentRuntime(): void
+    {
+        $result = $this->runSpark(['new', 'sandbox-app', '--json']);
+        $payload = json_decode($result['output'], true);
+        $target = $this->basePath . '/sandbox-app';
+
+        $this->assertSame(0, $result['exit_code'], $result['output']);
+        $this->assertIsArray($payload);
+        $this->assertSame($target, $payload['target']);
+        $this->assertFileExists($target . '/.env');
+        $this->assertFileExists($target . '/spark');
+        $this->assertDirectoryExists($target . '/app/ai/agents');
+        $this->assertDirectoryExists($target . '/storage/cache/views');
+        $this->assertMatchesRegularExpression('/^APP_KEY=[a-f0-9]{32}$/m', (string) file_get_contents($target . '/.env'));
+    }
+
+    public function testUpgradeCommandAuditsAndSyncsCurrentProjectScaffold(): void
+    {
+        $this->deleteDirectory($this->basePath . '/app/ai/tools');
+        file_put_contents($this->basePath . '/.env.example', <<<'ENV'
+APP_NAME=SparkPHP
+APP_ENV=dev
+APP_KEY=change-me-to-a-random-secret-32-chars
+DB=sqlite
+DB_NAME=
+AI_DRIVER=fake
+SPARK_AI_MASK=true
+ENV
+        );
+        file_put_contents($this->basePath . '/.env', "APP_NAME=SparkPHP\nAPP_ENV=dev\nAPP_KEY=test-key-1234567890123456789012\n");
+
+        $audit = $this->runSpark(['upgrade', '--json']);
+        $auditPayload = json_decode($audit['output'], true);
+
+        $this->assertSame(0, $audit['exit_code'], $audit['output']);
+        $this->assertIsArray($auditPayload);
+        $this->assertSame('check', $auditPayload['mode']);
+        $this->assertContains('app/ai/tools', $auditPayload['audit']['missing_directories']);
+        $this->assertContains('AI_DRIVER', $auditPayload['audit']['missing_env_keys']);
+        $this->assertFalse($auditPayload['audit']['ready']);
+
+        $sync = $this->runSpark(['upgrade', '--sync', '--json']);
+        $syncPayload = json_decode($sync['output'], true);
+
+        $this->assertSame(0, $sync['exit_code'], $sync['output']);
+        $this->assertIsArray($syncPayload);
+        $this->assertSame('sync', $syncPayload['mode']);
+        $this->assertDirectoryExists($this->basePath . '/app/ai/tools');
+        $this->assertContains('AI_DRIVER', $syncPayload['synced_env_keys']);
+        $this->assertTrue($syncPayload['audit']['ready']);
+        $this->assertStringContainsString('AI_DRIVER=fake', (string) file_get_contents($this->basePath . '/.env'));
+    }
+
     public function testBenchmarkCommandOutputsVersionedRealProjectSuite(): void
     {
         $result = $this->runSpark(['benchmark', '--json', '--iterations=1', '--warmup=0', '--no-save']);
@@ -303,7 +363,9 @@ PHP
 
     public function testApiSpecCommandGeneratesOpenApiFromRoutesValidationAndResponses(): void
     {
-        mkdir($this->basePath . '/app/routes/api', 0777, true);
+        if (!is_dir($this->basePath . '/app/routes/api')) {
+            mkdir($this->basePath . '/app/routes/api', 0777, true);
+        }
 
         file_put_contents($this->basePath . '/app/models/ApiUser.php', <<<'PHP'
 <?php
@@ -370,7 +432,9 @@ PHP
 
     public function testQueueCommandsSupportRoutingInspectRetryAndSelectiveClear(): void
     {
-        mkdir($this->basePath . '/app/jobs', 0777, true);
+        if (!is_dir($this->basePath . '/app/jobs')) {
+            mkdir($this->basePath . '/app/jobs', 0777, true);
+        }
 
         file_put_contents($this->basePath . '/app/jobs/_queue.php', <<<'PHP'
 <?php

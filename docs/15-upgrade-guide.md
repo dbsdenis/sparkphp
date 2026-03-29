@@ -31,6 +31,12 @@ composer dump-autoload
 
 Se o seu projeto usa o Spark sem Composer para runtime, ainda assim mantenha as dependencias de desenvolvimento atualizadas para preservar a suite e a CLI.
 
+Se quiser um diagnostico rapido antes de seguir manualmente, rode:
+
+```bash
+php spark upgrade
+```
+
 ### 3. Revise convencoes do framework
 
 Cheque especialmente:
@@ -49,6 +55,13 @@ php spark cache:clear
 php spark routes:clear
 php spark views:clear
 php spark optimize
+```
+
+Se voce quiser que o Spark sincronize partes seguras do scaffold atual antes desse
+passo, rode:
+
+```bash
+php spark upgrade --sync
 ```
 
 ### 5. Verifique banco e migrations

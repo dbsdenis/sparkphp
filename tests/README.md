@@ -35,6 +35,7 @@ Os seguintes componentes são tratados como fronteira de estabilidade do framewo
 Algumas frentes agora sao tratadas como contratos publicos do produto:
 
 - benchmark versionado via `php spark benchmark`
+- CLI de produto (`php spark new`, `php spark upgrade`, `php spark version`)
 - observabilidade profunda do `SparkInspector` (pipelines, gargalos, queue/cache/request)
 - surfaces publicas de versao (`VERSION`, CLI e relatorios gerados)
 - AI file-based (`app/ai/*`), prompts nomeados, structured output e helpers publicos

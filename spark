@@ -24,6 +24,8 @@ try {
     match (true) {
         // ── Project bootstrap ─────────────────────────────────────────────────
         $command === 'init' => sparkInit($rest),
+        $command === 'new' => sparkNew($rest),
+        $command === 'upgrade' => sparkUpgrade($rest),
 
         // ── Server ────────────────────────────────────────────────────────────
         $command === 'serve' => sparkServe($rest),
@@ -240,6 +242,118 @@ function sparkInit(array $args): void
     echo "\n";
 
     success('Project is ready.');
+}
+
+function sparkNew(array $args): void
+{
+    require_once SPARK_BASE . '/core/ProjectScaffolder.php';
+
+    $target = null;
+    $force = in_array('--force', $args, true);
+    $initialize = !in_array('--no-init', $args, true);
+    $json = in_array('--json', $args, true);
+
+    foreach ($args as $arg) {
+        if (!str_starts_with($arg, '--') && $target === null) {
+            $target = $arg;
+        }
+    }
+
+    if ($target === null) {
+        throw new RuntimeException('Usage: php spark new <directory> [--force] [--no-init] [--json]');
+    }
+
+    $absoluteTarget = sparkResolvePath($target, SPARK_BASE);
+    $result = (new ProjectScaffolder(SPARK_BASE))->createProject($absoluteTarget, $force, $initialize);
+
+    if ($json) {
+        echo json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . PHP_EOL;
+        return;
+    }
+
+    echo "\n";
+    out(color('  ⚡ SparkPHP', 'cyan') . color(' new project', 'dim') . color('  v' . SPARK_VERSION, 'white'));
+    out('  ' . color('Target: ', 'yellow') . color($absoluteTarget, 'cyan'));
+    echo "\n";
+
+    foreach ($result['messages'] as $message) {
+        out('  ' . color('• ', 'dim') . $message);
+    }
+
+    echo "\n";
+    out('  ' . color('Next steps', 'yellow'));
+    out('    ' . color('1.', 'dim') . ' ' . color('cd ' . $absoluteTarget, 'green'));
+    out('    ' . color('2.', 'dim') . ' ' . color('composer install', 'green'));
+    if ($initialize) {
+        out('    ' . color('3.', 'dim') . ' ' . color('php spark serve', 'green'));
+    } else {
+        out('    ' . color('3.', 'dim') . ' ' . color('php spark init', 'green'));
+    }
+    echo "\n";
+
+    success('Project scaffolded successfully.');
+}
+
+function sparkUpgrade(array $args): void
+{
+    require_once SPARK_BASE . '/core/ProjectScaffolder.php';
+
+    $json = in_array('--json', $args, true);
+    $sync = in_array('--sync', $args, true);
+
+    $scaffolder = new ProjectScaffolder(SPARK_BASE);
+
+    if ($sync) {
+        $result = $scaffolder->syncUpgrade();
+        $audit = $result['audit'];
+    } else {
+        $result = ['messages' => []];
+        $audit = $scaffolder->audit();
+    }
+
+    $payload = [
+        'spark_version' => SPARK_VERSION,
+        'spark_release_line' => SparkVersion::releaseLine(SPARK_VERSION),
+        'mode' => $sync ? 'sync' : 'check',
+        'messages' => $result['messages'] ?? [],
+        'synced_env_keys' => $result['synced_env_keys'] ?? [],
+        'audit' => $audit,
+    ];
+
+    if ($json) {
+        echo json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . PHP_EOL;
+        return;
+    }
+
+    echo "\n";
+    out(color('  ⚡ SparkPHP', 'cyan') . color(' upgrade assistant', 'dim') . color('  v' . SPARK_VERSION, 'white'));
+    out('  ' . color('Mode: ', 'yellow') . color($sync ? 'sync' : 'check', $sync ? 'green' : 'cyan'));
+    echo "\n";
+
+    sparkAboutSection('Upgrade Status', [
+        ['Version', $audit['spark_version']],
+        ['Release Line', $audit['spark_release_line']],
+        ['Environment File', sparkStatusLabel($audit['env_exists'], $audit['env_exists'] ? 'present' : 'missing')],
+        ['APP_KEY', $audit['app_key_status']],
+        ['DatabaseSeeder', sparkStatusLabel($audit['database_seeder_exists'], $audit['database_seeder_exists'] ? 'present' : 'missing')],
+        ['Project Ready', sparkStatusLabel($audit['ready'], $audit['ready'] ? 'aligned' : 'attention needed')],
+    ]);
+
+    sparkPrintAuditList('Missing Directories', $audit['missing_directories']);
+    sparkPrintAuditList('Missing Files', $audit['missing_files']);
+    sparkPrintAuditList('Missing .env Keys', $audit['missing_env_keys']);
+
+    if (($payload['messages'] ?? []) !== []) {
+        echo "\n";
+        out('  ' . color('Applied', 'yellow'));
+        foreach ($payload['messages'] as $message) {
+            out('  ' . color('• ', 'dim') . $message);
+        }
+    }
+
+    echo "\n";
+    out('  ' . color('Guide: ', 'yellow') . color('docs/15-upgrade-guide.md', 'cyan'));
+    echo "\n";
 }
 
 // ─── Database CLI v2 ────────────────────────────────────────────────────────
@@ -1918,6 +2032,35 @@ function sparkFormatDuration(int $seconds): string
     return $parts !== [] ? implode(' ', $parts) : '0m';
 }
 
+function sparkResolvePath(string $path, string $basePath): string
+{
+    $trimmed = trim($path);
+    if ($trimmed === '') {
+        return rtrim($basePath, '/\\');
+    }
+
+    if ($trimmed[0] === '/' || preg_match('/^[A-Za-z]:[\/\\\\]/', $trimmed) === 1) {
+        return rtrim($trimmed, '/\\');
+    }
+
+    return rtrim($basePath, '/\\') . '/' . ltrim($trimmed, '/\\');
+}
+
+function sparkPrintAuditList(string $title, array $items): void
+{
+    echo "\n";
+    out('  ' . color($title, 'yellow'));
+
+    if ($items === []) {
+        out('  ' . color('• ', 'dim') . color('none', 'green'));
+        return;
+    }
+
+    foreach ($items as $item) {
+        out('  ' . color('• ', 'dim') . color((string) $item, 'white'));
+    }
+}
+
 function sparkHelp(): void
 {
     $v = SPARK_VERSION;
@@ -1943,6 +2086,8 @@ ASCII;
     $sections = [
         ['Server', [
             ['init', '[--force] [--quiet]', 'Prepare a fresh project skeleton'],
+            ['new', '<directory> [--force] [--no-init]', 'Scaffold a fresh SparkPHP project'],
+            ['upgrade', '[--sync] [--json]', 'Audit or sync the current project scaffold'],
             ['serve', '--port=8000 [--dry-run]', 'Start development server'],
             ['version', '', 'Show framework version and release line'],
             ['about', '', 'Show environment, system and database diagnostics'],

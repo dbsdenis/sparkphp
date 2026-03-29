@@ -4,7 +4,7 @@
 
 Baseline atual: PHP 8.3+, SQLite 3.35+, MySQL 8.0+ e PostgreSQL 13+.
 
-Versao publicada atual: `0.6.0` (`0.6.x`). O historico de releases fica em
+Versao publicada atual: `0.7.0` (`0.7.x`). O historico de releases fica em
 `CHANGELOG.md` na raiz do projeto.
 
 ---
