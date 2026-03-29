@@ -214,6 +214,20 @@ Todas as convenções do SparkPHP seguem o mesmo padrão mental:
 
 ---
 
+## Critério permanente: melhor que Laravel
+
+Toda feature nova do SparkPHP deve passar por este filtro antes de ser aceita:
+
+1. **Mais curta** — menos código para o mesmo resultado, sem sacrificar clareza.
+2. **Mais clara** — intenção óbvia sem consultar documentação.
+3. **Mais observável** — visível no Inspector, no CLI ou em headers sem configuração extra.
+
+Se a feature exige providers, registries, ou configuração que o Laravel também exigiria, ela não está pronta. O SparkPHP rejeita complexidade que existe para conectar partes do framework entre si — a convenção deve resolver isso.
+
+O sucesso é medido por: redução de boilerplate, previsibilidade e velocidade de entrega.
+
+---
+
 ## Resumo em uma frase
 
 > SparkPHP é um framework PHP onde o sistema de arquivos é a configuração, o type-hint é o container, e o desenvolvedor só escreve o código que importa.

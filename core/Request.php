@@ -101,8 +101,7 @@ class Request
 
     public function url(): string
     {
-        $scheme = $this->isSecure() ? 'https' : 'http';
-        return $scheme . '://' . ($this->header('Host') ?? 'localhost') . ($_SERVER['REQUEST_URI'] ?? '/');
+        return sparkRequestScheme() . '://' . sparkRequestHost() . ($_SERVER['REQUEST_URI'] ?? '/');
     }
 
     public function fullUrl(): string
@@ -154,10 +153,7 @@ class Request
 
     public function ip(): string
     {
-        return $_SERVER['HTTP_X_FORWARDED_FOR']
-            ?? $_SERVER['HTTP_CLIENT_IP']
-            ?? $_SERVER['REMOTE_ADDR']
-            ?? '127.0.0.1';
+        return sparkRequestClientIp();
     }
 
     public function cookie(string $key, mixed $default = null): mixed
@@ -199,8 +195,7 @@ class Request
 
     public function isSecure(): bool
     {
-        return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-            || ($_SERVER['SERVER_PORT'] ?? 80) == 443;
+        return sparkRequestScheme() === 'https';
     }
 
     public function isGet(): bool    { return $this->method() === 'GET'; }

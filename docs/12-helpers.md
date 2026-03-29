@@ -95,7 +95,8 @@ O SparkPHP fornece dezenas de funcoes globais para que voce nao precise importar
 | Funcao              | Descricao                           |
 |---------------------|-------------------------------------|
 | `csrf()`            | Token CSRF atual                    |
-| `verifyCsrf()`      | Verifica token (aborta se invalido)|
+| `preventRequestForgery()` | Retorna `Response` 419 ou `null` |
+| `verifyCsrf()`      | Alias legado que envia 419 se invalido |
 | `e($string)`        | `htmlspecialchars` (XSS protection) |
 | `uuid()`            | Gera UUID v4                        |
 

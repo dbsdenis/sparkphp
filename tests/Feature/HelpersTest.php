@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 final class HelpersTest extends TestCase
 {
     private string $basePath;
+    private array $envBackup = [];
     private array $serverBackup = [];
     private array $getBackup = [];
     private array $postBackup = [];
@@ -16,6 +17,7 @@ final class HelpersTest extends TestCase
     {
         parent::setUp();
 
+        $this->envBackup = $_ENV;
         $_ENV['APP_KEY'] = 'test-secret-key-for-encryption';
         $_ENV['APP_URL'] = 'http://localhost:8000';
         $_ENV['CACHE'] = 'memory';
@@ -61,6 +63,7 @@ PHP
 
     protected function tearDown(): void
     {
+        $_ENV = $this->envBackup;
         $_SERVER = $this->serverBackup;
         $_GET = $this->getBackup;
         $_POST = $this->postBackup;
@@ -150,8 +153,9 @@ PHP
     public function testRequestAndIpHelpersProxyCurrentRequestObject(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['REMOTE_ADDR'] = '10.0.0.8';
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
         $_SERVER['HTTP_X_FORWARDED_FOR'] = '203.0.113.10';
+        $_ENV['TRUSTED_PROXIES'] = '127.0.0.1';
 
         $request = request();
 

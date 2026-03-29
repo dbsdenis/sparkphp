@@ -7,8 +7,24 @@ Configuracao no `.env`:
 ```env
 SESSION=file                # driver: file
 SESSION_LIFETIME=7200       # tempo de vida em segundos (2 horas)
-SESSION_SECURE=false        # true = cookie so via HTTPS
+SESSION_SECURE=auto         # auto | true | false
+SESSION_HTTP_ONLY=true
+SESSION_SAME_SITE=Lax       # Lax | Strict | None
+
+# Lista separada por virgula: IP, CIDR ou *
+TRUSTED_PROXIES=
+
+# Endurecimento opcional do CSRF
+CSRF_REQUIRE_ORIGIN=false
+CSRF_TRUSTED_ORIGINS=
 ```
+
+Defaults seguros do core:
+
+- `SESSION_SECURE=auto` liga cookie seguro automaticamente em HTTPS
+- `SESSION_HTTP_ONLY=true` protege contra leitura via JavaScript
+- `SESSION_SAME_SITE=Lax` reduz CSRF cross-site sem quebrar fluxos comuns
+- `SESSION_SAME_SITE=None` força cookie `secure=true`
 
 ### Leitura e escrita
 
@@ -121,11 +137,29 @@ Ou organizando rotas em diretorios como `app/routes/[csrf]/users.php`.
 
 ### Como funciona por baixo
 
-O middleware `csrf.php` chama `verifyCsrf()` que:
+O middleware `csrf.php` chama `preventRequestForgery()` / `verifyCsrf()` e:
 
 1. Verifica se o metodo e mutavel (POST, PUT, PATCH, DELETE)
-2. Compara `$_POST['_csrf']` ou header `X-CSRF-TOKEN` com o token da sessao
-3. Se nao bate, retorna 419 (Token Expired)
+2. Compara `_csrf`, `X-CSRF-TOKEN` ou `X-XSRF-TOKEN` com o token da sessao
+3. Valida `Origin` ou `Referer` quando o cliente envia esses headers
+4. Retorna `419` em HTML ou JSON estruturado (`error` + `reason`) para API/AJAX
+
+Os motivos retornados no JSON sao:
+
+- `token_mismatch`
+- `origin_mismatch`
+- `missing_origin`
+
+### Proxies confiaveis
+
+O Spark so confia em headers encaminhados (`X-Forwarded-*`) quando `TRUSTED_PROXIES` contem o IP/CIDR do proxy atual. Isso afeta:
+
+- `ip()` e `request()->ip()`
+- `request()->url()` e `request()->isSecure()`
+- cookies seguros com `SESSION_SECURE=auto`
+- comparacao de origem no CSRF
+
+Sem `TRUSTED_PROXIES`, o framework ignora headers encaminhados para evitar spoofing.
 
 ---
 

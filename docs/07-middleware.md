@@ -7,7 +7,7 @@ Middlewares no SparkPHP sao **arquivos PHP simples** em `app/middleware/`. O nom
 | Arquivo          | Alias      | O que faz                                    |
 |------------------|------------|----------------------------------------------|
 | `auth.php`       | `auth`     | Redireciona para `/login` se nao autenticado |
-| `csrf.php`       | `csrf`     | Verifica token CSRF em POST/PUT/PATCH/DELETE |
+| `csrf.php`       | `csrf`     | Verifica token + origem (`Origin` / `Referer`) em metodos mutaveis |
 | `cors.php`       | `cors`     | Define headers CORS e trata preflight        |
 | `throttle.php`   | `throttle` | Rate limiting por IP (default: 60 req/min)   |
 
@@ -123,6 +123,28 @@ Uso:
 get(fn() => 'ok')->guard('throttle:30');   // 30 req/min
 get(fn() => 'ok')->guard('throttle:120');  // 120 req/min
 ```
+
+## CSRF / Request Forgery Protection
+
+O middleware `csrf` agora usa `PreventRequestForgery`, que combina:
+
+- token da sessao
+- header `Origin` ou `Referer` quando presentes
+- suporte consistente para HTML, JSON e AJAX
+- proxies confiaveis via `TRUSTED_PROXIES`
+
+Fontes aceitas para o token:
+
+- campo `_csrf`
+- header `X-CSRF-TOKEN`
+- header `X-XSRF-TOKEN`
+
+Comportamento padrao:
+
+- requests HTML recebem `419`
+- requests JSON/AJAX recebem JSON com `error` e `reason`
+- `Origin` ausente continua aceito por default para manter compatibilidade
+- `CSRF_REQUIRE_ORIGIN=true` endurece a politica e exige origem explicita
 
 ## Middleware com role
 

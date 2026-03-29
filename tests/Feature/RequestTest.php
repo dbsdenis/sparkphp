@@ -6,6 +6,7 @@ use PHPUnit\Framework\TestCase;
 
 final class RequestTest extends TestCase
 {
+    private array $envBackup = [];
     private array $serverBackup = [];
     private array $getBackup = [];
     private array $postBackup = [];
@@ -16,12 +17,14 @@ final class RequestTest extends TestCase
     {
         parent::setUp();
 
+        $this->envBackup = $_ENV;
         $this->serverBackup = $_SERVER;
         $this->getBackup = $_GET;
         $this->postBackup = $_POST;
         $this->filesBackup = $_FILES;
         $this->cookieBackup = $_COOKIE;
 
+        $_ENV = [];
         $_SERVER = [];
         $_GET = [];
         $_POST = [];
@@ -31,6 +34,7 @@ final class RequestTest extends TestCase
 
     protected function tearDown(): void
     {
+        $_ENV = $this->envBackup;
         $_SERVER = $this->serverBackup;
         $_GET = $this->getBackup;
         $_POST = $this->postBackup;
@@ -83,13 +87,29 @@ final class RequestTest extends TestCase
         $this->assertTrue($request->acceptsJson());
     }
 
-    public function testIpUsesForwardedAddressPriority(): void
+    public function testIpIgnoresForwardedHeadersWhenProxyIsUntrusted(): void
     {
         $_SERVER['HTTP_X_FORWARDED_FOR'] = '10.10.10.1';
+        $_SERVER['REMOTE_ADDR'] = '203.0.113.5';
+
+        $request = new Request();
+
+        $this->assertSame('203.0.113.5', $request->ip());
+    }
+
+    public function testTrustedProxyCanForwardIpSchemeAndHost(): void
+    {
+        $_ENV['TRUSTED_PROXIES'] = '127.0.0.1';
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_URI'] = '/dashboard';
+        $_SERVER['HTTP_X_FORWARDED_FOR'] = '10.10.10.1';
+        $_SERVER['HTTP_X_FORWARDED_PROTO'] = 'https';
+        $_SERVER['HTTP_X_FORWARDED_HOST'] = 'sparkphp.test';
 
         $request = new Request();
 
         $this->assertSame('10.10.10.1', $request->ip());
+        $this->assertTrue($request->isSecure());
+        $this->assertSame('https://sparkphp.test/dashboard', $request->url());
     }
 }

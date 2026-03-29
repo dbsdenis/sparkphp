@@ -29,15 +29,21 @@ class Session
 
         session_name('spark_session');
 
-        $secure   = !empty($_ENV['SESSION_SECURE']) && $_ENV['SESSION_SECURE'] !== 'false';
+        $secure   = $this->resolveSecureCookieFlag();
         $lifetime = (int) ($_ENV['SESSION_LIFETIME'] ?? 7200);
+        $httpOnly = $this->resolveHttpOnlyFlag();
+        $sameSite = $this->resolveSameSite();
+
+        if ($sameSite === 'None' && !$secure) {
+            $secure = true;
+        }
 
         session_set_cookie_params([
             'lifetime' => $lifetime,
             'path'     => '/',
             'secure'   => $secure,
-            'httponly' => true,
-            'samesite' => 'Lax',
+            'httponly' => $httpOnly,
+            'samesite' => $sameSite,
         ]);
 
         session_start();
@@ -46,6 +52,33 @@ class Session
         // Rotate flash: move 'flash_new' → 'flash', remove old flash
         $_SESSION['flash']     = $_SESSION['flash_new'] ?? [];
         $_SESSION['flash_new'] = [];
+    }
+
+    private function resolveSecureCookieFlag(): bool
+    {
+        $setting = strtolower(trim((string) ($_ENV['SESSION_SECURE'] ?? 'auto')));
+
+        return match ($setting) {
+            '1', 'true', 'on', 'yes' => true,
+            '0', 'false', 'off', 'no' => false,
+            default => sparkRequestScheme() === 'https',
+        };
+    }
+
+    private function resolveHttpOnlyFlag(): bool
+    {
+        $setting = strtolower(trim((string) ($_ENV['SESSION_HTTP_ONLY'] ?? 'true')));
+
+        return !in_array($setting, ['0', 'false', 'off', 'no'], true);
+    }
+
+    private function resolveSameSite(): string
+    {
+        $sameSite = ucfirst(strtolower(trim((string) ($_ENV['SESSION_SAME_SITE'] ?? 'Lax'))));
+
+        return in_array($sameSite, ['Lax', 'Strict', 'None'], true)
+            ? $sameSite
+            : 'Lax';
     }
 
     // ─────────────────────────────────────────────

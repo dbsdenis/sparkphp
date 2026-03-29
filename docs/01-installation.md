@@ -62,7 +62,7 @@ meu-projeto/
 │   └── views/
 │       ├── layouts/    ← layouts (.spark)
 │       ├── partials/   ← partials e componentes (.spark)
-│       └── errors/     ← paginas de erro (404.spark, 500.spark)
+│       └── errors/     ← paginas de erro (404.spark, 419.spark, 500.spark)
 ├── core/               ← engine do framework (nao edite)
 ├── database/
 │   ├── migrations/     ← migrations class-based com timestamp
@@ -102,7 +102,16 @@ DB_PASS=
 # Sessao
 SESSION=file                             # file
 SESSION_LIFETIME=7200
-SESSION_SECURE=false
+SESSION_SECURE=auto                      # auto | true | false
+SESSION_HTTP_ONLY=true
+SESSION_SAME_SITE=Lax                   # Lax | Strict | None
+
+# HTTP / proxies confiaveis
+TRUSTED_PROXIES=                        # ex: 127.0.0.1,10.0.0.0/8
+
+# CSRF / Request Forgery Protection
+CSRF_REQUIRE_ORIGIN=false
+CSRF_TRUSTED_ORIGINS=                   # ex: https://admin.exemplo.com
 
 # Cache
 CACHE=file                               # file | memory
@@ -148,6 +157,17 @@ config('app.missing', 'x');  // 'x' (default)
 ```
 
 Esses arquivos sao uma camada de conveniencia da aplicacao. Eles nao substituem o `.env` e nao funcionam como um diretorio central de wiring do framework.
+
+## Producao e proxies
+
+Se o projeto roda atras de Nginx, Traefik, Cloudflare, load balancer ou outra camada reversa, configure `TRUSTED_PROXIES` corretamente. O Spark so passa a confiar em `X-Forwarded-For`, `X-Forwarded-Proto` e `X-Forwarded-Host` quando o `REMOTE_ADDR` bate com essa allowlist.
+
+Isso afeta diretamente:
+
+- `request()->ip()` / `ip()`
+- `request()->url()` / `request()->isSecure()`
+- cookies de sessao com `SESSION_SECURE=auto`
+- validacao de origem do `PreventRequestForgery`
 
 ## Ambientes
 

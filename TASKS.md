@@ -118,7 +118,7 @@ Sempre analise os seguintes documentos (vão criar uma orientação melhor do pr
 
 ## Fase 5 — Segurança, HTTP e APIs (médio prazo)
 
-- [ ] Task 5.1 — `PreventRequestForgery` nativo
+- [x] Task 5.1 — `PreventRequestForgery` nativo
   - Evoluir o CSRF atual para validação por token + `Origin`/`Referer`
   - Padronizar comportamento para HTML, JSON, AJAX e proxies confiáveis
   - Adicionar opções seguras por default para cookie/session
@@ -128,20 +128,20 @@ Sempre analise os seguintes documentos (vão criar uma orientação melhor do pr
   - Padronizar envelopes de erro, redirects, downloads e respostas vazias
   - Preparar a base para responses mais avançadas, inclusive streaming
 
-- [ ] Task 5.3 — Resources first-party e JSON:API opcional
-  - Criar camada de serializers/resources para responses HTTP
-  - Suportar paginação, `links`, `meta`, relacionamento e sparse fields
-  - Oferecer compliance JSON:API sem obrigar o projeto inteiro a usar o padrão
+- [ ] Task 5.3 — Serialização de API por convenção no Model
+  - Controlar visibilidade e transformação de campos via atributos no Model (`#[Hidden]`, `#[Rename]`, `toApi()`)
+  - Suportar paginação, `links`, `meta` e sparse fields sem exigir classes de Resource dedicadas
+  - Oferecer compliance JSON:API opcional sem obrigar o projeto inteiro a usar o padrão
 
 - [ ] Task 5.4 — Route model binding implícito e autorização mais inteligente
-  - Resolver modelos automaticamente a partir de parâmetros file-based
-  - Reduzir boilerplate em handlers como `fn(User $user)`
+  - Se o type-hint de um handler é um Model e existe parâmetro de URL correspondente, resolver com `findOrFail()` automaticamente
+  - Separar claramente route model binding (Model da URL) da resolução de services (DI do Container)
   - Definir base para policies/authorize sem perder a simplicidade do Spark
 
-- [ ] Task 5.5 — Geração de contratos de API
-  - Extrair spec OpenAPI a partir de rotas, validação e resources
-  - Expor comando CLI para gerar/atualizar a spec
-  - Preparar terreno para SDKs e documentação automática
+- [ ] Task 5.5 — Geração de spec OpenAPI
+  - Extrair spec OpenAPI a partir de rotas file-based, regras de validação e retornos dos handlers
+  - Expor comando CLI `php spark api:spec` para gerar/atualizar a spec
+  - Documentação automática a partir da spec gerada
 
 ## Fase 6 — Runtime, Dados e Filas (médio prazo)
 
@@ -158,14 +158,8 @@ Sempre analise os seguintes documentos (vão criar uma orientação melhor do pr
 - [ ] Task 6.3 — Query Builder / ORM v2
   - Expandir operadores modernos de banco e ergonomia do Query Builder
   - Melhorar relacionamentos, eager loading e serialização
-  - Preparar a base para features semânticas e vetoriais
 
-- [ ] Task 6.4 — Semantic / Vector Search nativo
-  - Criar suporte first-party para embeddings e consulta por similaridade
-  - Integrar PostgreSQL + `pgvector` como alvo inicial
-  - Expor APIs simples no Query Builder e no fluxo de AI
-
-- [ ] Task 6.5 — Observabilidade profunda
+- [ ] Task 6.4 — Observabilidade profunda
   - Evoluir o Inspector para mostrar pipelines completos de request, queue e cache
   - Adicionar visibilidade melhor para jobs, falhas, retries e bottlenecks
   - Consolidar benchmarks comparativos do SparkPHP em cenários reais
@@ -182,8 +176,9 @@ Sempre analise os seguintes documentos (vão criar uma orientação melhor do pr
   - Descoberta automática de agentes e ferramentas por convenção
   - Integrar tool-calling e structured output com a mesma filosofia do framework
 
-- [ ] Task 7.3 — AI + Search + Data
-  - Conectar embeddings, vector search e retrieval ao core do framework
+- [ ] Task 7.3 — AI + Search + Data (inclui Vector Search nativo)
+  - Criar suporte first-party para embeddings e consulta por similaridade (PostgreSQL + `pgvector` como alvo inicial)
+  - Conectar vector search e retrieval ao Query Builder e ao fluxo de AI
   - Facilitar RAG sem transformar o Spark em uma colagem de pacotes
   - Oferecer APIs curtas para casos comuns e extensibilidade para casos avançados
 
@@ -207,7 +202,7 @@ Sempre analise os seguintes documentos (vão criar uma orientação melhor do pr
   - Publicar guias de adoção, benchmark e migração
   - Consolidar narrativa: mais simples, mais previsível, mais observável
 
-- [ ] Task 8.4 — Critério permanente de “melhor que Laravel”
-  - Toda nova feature deve ser mais curta, mais clara ou mais observável que a alternativa do Laravel
-  - Rejeitar complexidade que exija providers, registries ou configuração desnecessária
-  - Medir sucesso por redução de boilerplate, previsibilidade e velocidade de entrega
+- [ ] Task 8.4 — Checklist de review “melhor que Laravel”
+  - Criar checklist prático para PRs que valide se a feature é mais curta, mais clara ou mais observável que a alternativa do Laravel
+  - Integrar como gate de qualidade no processo de contribuição
+  - Documentar exemplos concretos de aprovação e rejeição

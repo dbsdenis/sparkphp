@@ -152,6 +152,123 @@ function config(string $key, mixed $default = null): mixed
 // Request helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
+function sparkTrustedProxies(): array
+{
+    $raw = trim((string) ($_ENV['TRUSTED_PROXIES'] ?? ''));
+    if ($raw === '') {
+        return [];
+    }
+
+    return array_values(array_filter(array_map(
+        static fn(string $value): string => trim($value),
+        explode(',', $raw)
+    )));
+}
+
+function sparkIpMatchesTrustedProxy(string $ip, string $rule): bool
+{
+    if ($rule === '*') {
+        return true;
+    }
+
+    if (!str_contains($rule, '/')) {
+        return strcasecmp($ip, $rule) === 0;
+    }
+
+    [$subnet, $bits] = explode('/', $rule, 2);
+    $ipBinary = inet_pton($ip);
+    $subnetBinary = inet_pton($subnet);
+
+    if ($ipBinary === false || $subnetBinary === false || strlen($ipBinary) !== strlen($subnetBinary)) {
+        return false;
+    }
+
+    $bits = (int) $bits;
+    $bytes = intdiv($bits, 8);
+    $remainder = $bits % 8;
+
+    if ($bytes > 0 && substr($ipBinary, 0, $bytes) !== substr($subnetBinary, 0, $bytes)) {
+        return false;
+    }
+
+    if ($remainder === 0) {
+        return true;
+    }
+
+    $mask = (~((1 << (8 - $remainder)) - 1)) & 0xFF;
+
+    return (ord($ipBinary[$bytes]) & $mask) === (ord($subnetBinary[$bytes]) & $mask);
+}
+
+function sparkRequestUsesTrustedProxy(): bool
+{
+    $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '';
+    if ($remoteAddr === '') {
+        return false;
+    }
+
+    foreach (sparkTrustedProxies() as $rule) {
+        if (sparkIpMatchesTrustedProxy($remoteAddr, $rule)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function sparkForwardedHeader(string $name): ?string
+{
+    if (!sparkRequestUsesTrustedProxy()) {
+        return null;
+    }
+
+    $key = 'HTTP_' . strtoupper(str_replace('-', '_', $name));
+    $value = trim((string) ($_SERVER[$key] ?? ''));
+    if ($value === '') {
+        return null;
+    }
+
+    foreach (explode(',', $value) as $part) {
+        $part = trim($part);
+        if ($part !== '') {
+            return $part;
+        }
+    }
+
+    return null;
+}
+
+function sparkRequestScheme(): string
+{
+    $forwardedProto = sparkForwardedHeader('X-Forwarded-Proto');
+    if ($forwardedProto !== null) {
+        return strtolower($forwardedProto) === 'https' ? 'https' : 'http';
+    }
+
+    return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (string) ($_SERVER['SERVER_PORT'] ?? '') === '443'
+            ? 'https'
+            : 'http';
+}
+
+function sparkRequestHost(): string
+{
+    return sparkForwardedHeader('X-Forwarded-Host')
+        ?? ($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost');
+}
+
+function sparkRequestClientIp(): string
+{
+    $forwardedFor = sparkForwardedHeader('X-Forwarded-For');
+    if ($forwardedFor !== null) {
+        return $forwardedFor;
+    }
+
+    return $_SERVER['HTTP_CLIENT_IP']
+        ?? $_SERVER['REMOTE_ADDR']
+        ?? '127.0.0.1';
+}
+
 function request(): Request
 {
     try {
@@ -754,15 +871,16 @@ function copyable(array $langs): array
 // CSRF verification middleware helper
 // ─────────────────────────────────────────────────────────────────────────────
 
+function preventRequestForgery(): ?Response
+{
+    return new PreventRequestForgery(request(), session())->handle();
+}
+
 function verifyCsrf(): void
 {
-    $methods = ['POST', 'PUT', 'PATCH', 'DELETE'];
-    if (!in_array(method(), $methods, true)) {
-        return;
-    }
-
-    $token = input('_csrf') ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
-    if (!session()?->verifyCsrf((string) $token)) {
-        abort(419, 'CSRF token mismatch');
+    $response = preventRequestForgery();
+    if ($response instanceof Response) {
+        $response->send();
+        exit;
     }
 }

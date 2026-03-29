@@ -16,6 +16,7 @@ require_once __DIR__ . '/../core/Middleware.php';
 require_once __DIR__ . '/../core/Relation.php';
 require_once __DIR__ . '/../core/Model.php';
 require_once __DIR__ . '/../core/ProjectScaffolder.php';
+require_once __DIR__ . '/../core/PreventRequestForgery.php';
 require_once __DIR__ . '/../core/Request.php';
 require_once __DIR__ . '/../core/Response.php';
 require_once __DIR__ . '/../core/Router.php';
