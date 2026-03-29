@@ -2,6 +2,19 @@
 
 Todas as mudancas publicas relevantes do SparkPHP passam a ser registradas aqui.
 
+## [0.10.0] - 2026-03-29
+
+### Added
+
+- `CONTRIBUTING.md` com o fluxo oficial de contribuicao e o gate "melhor que Laravel".
+- template de PR em `.github/PULL_REQUEST_TEMPLATE.md` exigindo evidencia de que a mudanca ficou mais curta, mais clara ou mais observavel.
+- guia dedicado do checklist de review em `docs/25-review-checklist.md`, com criterios, evidencias e exemplos concretos de aprovacao e rejeicao.
+
+### Changed
+
+- documentacao publica e narrativa do produto agora tratam o checklist como parte do processo oficial de contribuicao.
+- versao publicada do framework avancou para `0.10.0`.
+
 ## [0.9.0] - 2026-03-29
 
 ### Added

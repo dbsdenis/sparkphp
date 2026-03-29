@@ -4,7 +4,7 @@
 
 Baseline atual: PHP 8.3+, SQLite 3.35+, MySQL 8.0+ e PostgreSQL 13+.
 
-Versao publicada atual: `0.9.0` (`0.9.x`). O historico de releases fica em
+Versao publicada atual: `0.10.0` (`0.10.x`). O historico de releases fica em
 `CHANGELOG.md` na raiz do projeto.
 
 Narrativa publica atual do produto: **mais simples, mais previsivel, mais observavel**.
@@ -39,6 +39,7 @@ Narrativa publica atual do produto: **mais simples, mais previsivel, mais observ
 | 22 | [Guia de Adoção](22-adoption-guide.md)         | Como validar, pilotar e adotar SparkPHP com risco controlado  |
 | 23 | [Benchmarks](23-benchmarking.md)               | Como medir Spark com honestidade e usar o CLI de benchmark    |
 | 24 | [Migração do Laravel](24-migrating-from-laravel.md) | Quando migrar, quando nao migrar e como fazer com segurança |
+| 25 | [Review Checklist](25-review-checklist.md)    | Gate oficial de review: mais curta, mais clara ou mais observavel |
 
 ---
 
@@ -116,3 +117,4 @@ comece por aqui:
 - [Guia de Adoção](22-adoption-guide.md)
 - [Benchmarks](23-benchmarking.md)
 - [Migração do Laravel](24-migrating-from-laravel.md)
+- [Review Checklist](25-review-checklist.md)

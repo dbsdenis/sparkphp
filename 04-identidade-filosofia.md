@@ -226,6 +226,9 @@ Se a feature exige providers, registries, ou configuração que o Laravel també
 
 O sucesso é medido por: redução de boilerplate, previsibilidade e velocidade de entrega.
 
+Esse criterio agora tambem faz parte do processo oficial de contribuicao em
+`CONTRIBUTING.md`, no template de PR e em `docs/25-review-checklist.md`.
+
 ---
 
 ## Resumo em uma frase

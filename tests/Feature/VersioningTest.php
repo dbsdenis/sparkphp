@@ -14,7 +14,7 @@ final class VersioningTest extends TestCase
 
         $this->basePath = sys_get_temp_dir() . '/sparkphp-version-' . bin2hex(random_bytes(6));
         mkdir($this->basePath . '/app/config', 0777, true);
-        file_put_contents($this->basePath . '/VERSION', "0.9.3\n");
+        file_put_contents($this->basePath . '/VERSION', "0.10.3\n");
 
         new Bootstrap($this->basePath);
     }
@@ -27,14 +27,14 @@ final class VersioningTest extends TestCase
 
     public function testCurrentVersionAndReleaseLineComeFromVersionFile(): void
     {
-        $this->assertSame('0.9.3', SparkVersion::current($this->basePath));
-        $this->assertSame('0.9.x', SparkVersion::releaseLine('0.9.3'));
+        $this->assertSame('0.10.3', SparkVersion::current($this->basePath));
+        $this->assertSame('0.10.x', SparkVersion::releaseLine('0.10.3'));
     }
 
     public function testHelpersExposeFrameworkVersionConsistently(): void
     {
-        $this->assertSame('0.9.3', spark_version());
-        $this->assertSame('0.9.x', spark_release_line());
+        $this->assertSame('0.10.3', spark_version());
+        $this->assertSame('0.10.x', spark_release_line());
     }
 
     private function deleteDirectory(string $path): void

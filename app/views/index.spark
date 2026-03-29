@@ -759,6 +759,14 @@
                 <code>docs/24-migrating-from-laravel.md</code>
             </article>
             </a>
+
+            <a href="{{ route('docs.show', ['slug' => '25-review-checklist']) }}" class="capability-card-link">
+            <article class="capability-card">
+                <strong>Gate de review</strong>
+                <p>Checklist oficial para PRs: a mudanca precisa deixar o Spark mais curto, mais claro ou mais observavel do que a alternativa.</p>
+                <code>docs/25-review-checklist.md</code>
+            </article>
+            </a>
         </div>
     </section>
 

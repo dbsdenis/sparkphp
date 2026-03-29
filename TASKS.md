@@ -207,7 +207,7 @@ Sempre analise os seguintes documentos (vão criar uma orientação melhor do pr
   - Publicar guias de adoção, benchmark e migração
   - Consolidar narrativa: mais simples, mais previsível, mais observável
 
-- [ ] Task 8.4 — Checklist de review “melhor que Laravel”
+- [x] Task 8.4 — Checklist de review “melhor que Laravel”
   - Criar checklist prático para PRs que valide se a feature é mais curta, mais clara ou mais observável que a alternativa do Laravel
   - Integrar como gate de qualidade no processo de contribuição
   - Documentar exemplos concretos de aprovação e rejeição

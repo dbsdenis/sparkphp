@@ -2,7 +2,7 @@
 
 Esta pagina define a politica publica de versionamento, compatibilidade, suporte e deprecacoes do SparkPHP.
 
-Linha publicada atual: `0.9.0` (`0.9.x`).
+Linha publicada atual: `0.10.0` (`0.10.x`).
 
 ## Estado atual do projeto
 

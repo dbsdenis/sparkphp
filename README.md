@@ -6,7 +6,7 @@ SparkPHP e um framework PHP file-based, zero-config e observavel por default.
 Ele existe para reduzir wiring, cortar boilerplate e deixar o comportamento da
 aplicacao visivel no CLI, no Inspector e na propria estrutura de arquivos.
 
-Versao publicada atual: `0.9.0` (`0.9.x`).
+Versao publicada atual: `0.10.0` (`0.10.x`).
 
 ## O que o Spark otimiza
 
@@ -36,6 +36,7 @@ Guia honesto de comparacao:
 - [Guia de Adoção](docs/22-adoption-guide.md)
 - [Benchmarks](docs/23-benchmarking.md)
 - [Migração a partir do Laravel](docs/24-migrating-from-laravel.md)
+- [Review Checklist](docs/25-review-checklist.md)
 
 ## Quick Start
 
@@ -108,3 +109,4 @@ Mais detalhes:
 
 - [Releases & Compatibilidade](docs/14-releases.md)
 - [Upgrade Guide](docs/15-upgrade-guide.md)
+- [Contributing](CONTRIBUTING.md)
