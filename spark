@@ -2272,13 +2272,13 @@ function sparkRenderBenchmarkReport(array $report, bool $saved): void
     out('  ' . color("Fixture: {$profile}", 'dim'));
     echo "\n";
 
-    out('  ' . color(str_pad('Scenario', 28), 'yellow')
+    out('  ' . color(str_pad('Scenario', 38), 'yellow')
         . color(str_pad('Avg ms', 12), 'yellow')
         . color(str_pad('Median', 12), 'yellow')
         . color(str_pad('P95', 12), 'yellow')
         . color(str_pad('Ops/s', 12), 'yellow')
         . color('Compare', 'yellow'));
-    out('  ' . color(str_repeat('─', 88), 'dim'));
+    out('  ' . color(str_repeat('─', 98), 'dim'));
 
     foreach ($report['scenarios'] as $scenario) {
         $comparison = '—';
@@ -2293,7 +2293,7 @@ function sparkRenderBenchmarkReport(array $report, bool $saved): void
 
         out(
             '  '
-            . color(str_pad($scenarioName, 28), 'green')
+            . color(str_pad($scenarioName, 38), 'green')
             . color(str_pad(number_format($scenario['avg_ms'], 3), 12), 'white')
             . color(str_pad(number_format($scenario['median_ms'], 3), 12), 'white')
             . color(str_pad(number_format($scenario['p95_ms'], 3), 12), 'white')
