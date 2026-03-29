@@ -142,7 +142,7 @@ Fontes aceitas para o token:
 Comportamento padrao:
 
 - requests HTML recebem `419`
-- requests JSON/AJAX recebem JSON com `error` e `reason`
+- requests JSON/AJAX recebem envelope JSON padrao com `error`, `status`, `code` e `reason`
 - `Origin` ausente continua aceito por default para manter compatibilidade
 - `CSRF_REQUIRE_ORIGIN=true` endurece a politica e exige origem explicita
 

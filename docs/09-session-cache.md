@@ -150,6 +150,17 @@ Os motivos retornados no JSON sao:
 - `origin_mismatch`
 - `missing_origin`
 
+Exemplo:
+
+```json
+{
+  "error": "Request forgery protection failed.",
+  "status": 419,
+  "code": "request_forgery",
+  "reason": "token_mismatch"
+}
+```
+
 ### Proxies confiaveis
 
 O Spark so confia em headers encaminhados (`X-Forwarded-*`) quando `TRUSTED_PROXIES` contem o IP/CIDR do proxy atual. Isso afeta:

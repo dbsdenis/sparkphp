@@ -132,11 +132,10 @@ final class PreventRequestForgery
 
     private function reject(string $message, string $reason): Response
     {
-        if ($this->request->acceptsJson()) {
-            return Response::json([
-                'error' => $message,
+        if ($this->request->wantsJson()) {
+            return Response::error($message, 419, 'request_forgery', [
                 'reason' => $reason,
-            ], 419);
+            ]);
         }
 
         $basePath = null;

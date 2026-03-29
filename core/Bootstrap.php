@@ -156,11 +156,17 @@ class Bootstrap
             ? $this->container->make(Request::class)
             : null;
 
-        if ($request && $request->acceptsJson()) {
-            Response::json([
-                'error' => $this->isDev() ? $e->getMessage() : 'Server Error',
-                'exception' => $this->isDev() ? get_class($e) : null,
-            ], $code)->send();
+        if ($request && $request->wantsJson()) {
+            $extra = $this->isDev()
+                ? ['exception' => get_class($e)]
+                : [];
+
+            Response::error(
+                $this->isDev() ? $e->getMessage() : 'Server Error',
+                $code,
+                Response::statusCodeAsSlug($code),
+                $extra
+            )->send();
             exit;
         }
 
@@ -297,8 +303,8 @@ class Bootstrap
     {
         require_once __DIR__ . '/Response.php';
 
-        $response = $request->acceptsJson()
-            ? Response::json(['error' => 'Method Not Allowed'], 405)
+        $response = $request->wantsJson()
+            ? Response::error('Method Not Allowed', 405, 'method_not_allowed')
             : Response::html($this->render405View(), 405);
 
         if (!empty($allowed)) {

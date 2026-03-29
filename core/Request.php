@@ -5,6 +5,7 @@ class Request
     private array $input   = [];
     private array $files   = [];
     private ?string $rawBody = null;
+    private ?array $acceptableContentTypes = null;
 
     public function __construct()
     {
@@ -183,19 +184,224 @@ class Request
 
     public function acceptsJson(): bool
     {
-        $accept = $this->header('Accept') ?? '';
-        return str_contains($accept, 'application/json') || $this->isAjax();
+        return $this->isAjax() || $this->accepts(['application/json', 'application/*+json']);
     }
 
     public function acceptsHtml(): bool
     {
-        $accept = $this->header('Accept') ?? '';
-        return str_contains($accept, 'text/html') || $accept === '*/*' || $accept === '';
+        return $this->accepts(['text/html', 'application/xhtml+xml']);
+    }
+
+    public function accepts(string|array $types): bool
+    {
+        $types = array_values(array_filter(array_map(
+            static fn(string $type): string => strtolower(trim($type)),
+            (array) $types
+        )));
+
+        if ($types === []) {
+            return false;
+        }
+
+        $accepted = $this->acceptableContentTypes();
+        if ($accepted === []) {
+            return false;
+        }
+
+        foreach ($accepted as $candidate) {
+            foreach ($types as $type) {
+                if ($this->mimeMatches($candidate, $type)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public function prefers(array $types): ?string
+    {
+        $types = array_values(array_filter(array_map(
+            static fn(string $type): string => strtolower(trim($type)),
+            $types
+        )));
+
+        if ($types === []) {
+            return null;
+        }
+
+        foreach ($this->acceptableContentTypes() as $candidate) {
+            foreach ($types as $type) {
+                if ($this->mimeMatches($candidate, $type)) {
+                    return $type;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public function preferredFormat(array $available = ['html', 'json']): ?string
+    {
+        $available = array_values(array_filter(array_map(
+            static fn(string $format): string => strtolower(trim($format)),
+            $available
+        )));
+
+        if ($available === []) {
+            return null;
+        }
+
+        if ($this->isAjax() && in_array('json', $available, true)) {
+            return 'json';
+        }
+
+        $map = [
+            'html' => ['text/html', 'application/xhtml+xml'],
+            'json' => ['application/json', 'application/*+json'],
+            'text' => ['text/plain'],
+            'xml' => ['application/xml', 'text/xml'],
+        ];
+
+        $types = [];
+        foreach ($available as $format) {
+            foreach ($map[$format] ?? [$format] as $mime) {
+                $types[] = $mime;
+            }
+        }
+
+        $preferred = $this->prefers($types);
+        if ($preferred !== null) {
+            foreach ($available as $format) {
+                foreach ($map[$format] ?? [$format] as $mime) {
+                    if ($mime === $preferred) {
+                        return $format;
+                    }
+                }
+            }
+        }
+
+        $accept = trim((string) ($this->header('Accept') ?? ''));
+        if (($accept === '' || $accept === '*/*') && in_array('html', $available, true)) {
+            return 'html';
+        }
+
+        return $available[0];
+    }
+
+    public function wantsJson(): bool
+    {
+        return $this->preferredFormat(['json', 'html']) === 'json';
+    }
+
+    public function wantsHtml(): bool
+    {
+        return $this->preferredFormat(['html', 'json']) === 'html';
     }
 
     public function isSecure(): bool
     {
         return sparkRequestScheme() === 'https';
+    }
+
+    private function acceptableContentTypes(): array
+    {
+        if ($this->acceptableContentTypes !== null) {
+            return $this->acceptableContentTypes;
+        }
+
+        $accept = trim((string) ($this->header('Accept') ?? ''));
+        if ($accept === '') {
+            return $this->acceptableContentTypes = ['text/html', '*/*'];
+        }
+
+        $parsed = [];
+        foreach (explode(',', $accept) as $index => $part) {
+            $part = trim($part);
+            if ($part === '') {
+                continue;
+            }
+
+            $segments = array_map('trim', explode(';', $part));
+            $type = strtolower(array_shift($segments) ?? '');
+            if ($type === '') {
+                continue;
+            }
+
+            $quality = 1.0;
+            foreach ($segments as $segment) {
+                if (str_starts_with(strtolower($segment), 'q=')) {
+                    $quality = (float) substr($segment, 2);
+                    break;
+                }
+            }
+
+            $parsed[] = [
+                'type' => $type,
+                'q' => $quality,
+                'index' => $index,
+            ];
+        }
+
+        usort($parsed, static function (array $a, array $b): int {
+            if ($a['q'] === $b['q']) {
+                return $a['index'] <=> $b['index'];
+            }
+
+            return $a['q'] < $b['q'] ? 1 : -1;
+        });
+
+        return $this->acceptableContentTypes = array_values(array_map(
+            static fn(array $item): string => $item['type'],
+            $parsed
+        ));
+    }
+
+    private function mimeMatches(string $accepted, string $candidate): bool
+    {
+        [$acceptedType, $acceptedSubtype] = $this->splitMime($accepted);
+        [$candidateType, $candidateSubtype] = $this->splitMime($candidate);
+
+        if ($acceptedType === null || $candidateType === null) {
+            return false;
+        }
+
+        if ($acceptedType !== '*' && $candidateType !== '*' && $acceptedType !== $candidateType) {
+            return false;
+        }
+
+        return $this->mimeSubtypeMatches($acceptedSubtype, $candidateSubtype);
+    }
+
+    private function splitMime(string $value): array
+    {
+        $value = strtolower(trim($value));
+        if (!str_contains($value, '/')) {
+            return [null, null];
+        }
+
+        [$type, $subtype] = explode('/', $value, 2);
+
+        return [$type, $subtype];
+    }
+
+    private function mimeSubtypeMatches(?string $accepted, ?string $candidate): bool
+    {
+        if ($accepted === null || $candidate === null) {
+            return false;
+        }
+
+        if ($accepted === '*' || $candidate === '*' || $accepted === $candidate) {
+            return true;
+        }
+
+        foreach ([[$accepted, $candidate], [$candidate, $accepted]] as [$actual, $pattern]) {
+            if (str_starts_with($pattern, '*+')) {
+                return str_ends_with($actual, substr($pattern, 1));
+            }
+        }
+
+        return false;
     }
 
     public function isGet(): bool    { return $this->method() === 'GET'; }

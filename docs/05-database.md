@@ -262,15 +262,29 @@ db('users')->where('id', 42)->delete();
 // Pagina 1, 15 por pagina
 $result = db('users')->paginate(15);
 
-// $result retorna:
+// Para uso interno / views:
+$result->data;
+$result->current_page;
+$result->last_page;
+
+// Quando serializado para JSON:
 // [
-//     'data'         => [...],
-//     'current_page' => 1,
-//     'per_page'     => 15,
-//     'total'        => 150,
-//     'last_page'    => 10,
-//     'from'         => 1,
-//     'to'           => 15,
+//     'data'  => [...],
+//     'links' => [
+//         'self'  => 'https://app.test/users?page=1',
+//         'first' => 'https://app.test/users?page=1',
+//         'last'  => 'https://app.test/users?page=10',
+//         'prev'  => null,
+//         'next'  => 'https://app.test/users?page=2',
+//     ],
+//     'meta'  => [
+//         'total'        => 150,
+//         'per_page'     => 15,
+//         'current_page' => 1,
+//         'last_page'    => 10,
+//         'from'         => 1,
+//         'to'           => 15,
+//     ],
 // ]
 ```
 
@@ -417,9 +431,13 @@ $user->birthday;  // DateTime object
 
 ### Hidden (ocultar do JSON/array)
 
-Campos em `$hidden` sao omitidos de `toArray()` e `toJson()` — ideal para senhas e tokens:
+Campos em `$hidden` e `#[Hidden]` sao omitidos de serializacao. Use `$hidden`
+quando quiser a regra mais simples, e `#[Hidden]` quando quiser deixar a intencao
+colada na declaracao da classe:
 
 ```php
+#[Hidden('password')]
+#[Hidden('remember_token')]
 class User extends Model
 {
     protected array $hidden = ['password', 'remember_token'];
@@ -427,6 +445,91 @@ class User extends Model
 
 $user->toArray();  // Sem 'password' e 'remember_token'
 $user->toJson();   // Sem 'password' e 'remember_token'
+$user->toApi();    // Sem 'password' e 'remember_token'
+```
+
+### API por convencao no Model
+
+O Spark nao exige classes de `Resource` para a maioria das APIs. O proprio model
+pode definir o contrato de saida por convencao com `toApi()` e atributos:
+
+```php
+#[Hidden('email')]
+#[Rename('name', 'display_name')]
+#[Rename('full_name', 'display_name_upper')]
+class User extends Model
+{
+    #[Accessor]
+    public function fullName(): string
+    {
+        return strtoupper($this->name);
+    }
+}
+
+$user->toArray();
+// ['id' => 1, 'name' => 'Ana', 'email' => 'ana@mail.com', 'full_name' => 'ANA']
+
+$user->toApi();
+// ['id' => 1, 'display_name' => 'Ana', 'display_name_upper' => 'ANA']
+```
+
+#### `toArray()` vs `toApi()`
+
+- `toArray()` e `toJson()` continuam sendo a visao "interna" do model, boa para views,
+  debug e uso geral.
+- `toApi()` aplica `#[Hidden]`, `#[Rename]`, sparse fields e o formato esperado para
+  respostas JSON.
+- Quando voce retorna um `Model` diretamente de uma rota JSON, o Spark usa `toApi()`
+  automaticamente.
+
+#### Sparse fields
+
+Use `fields` para pedir apenas parte dos campos sem criar uma resource dedicada:
+
+```php
+// GET /api/users/1?fields[users]=id,display_name
+
+$user->toApi();
+// ['id' => 1, 'display_name' => 'Ana']
+```
+
+Isso tambem funciona em relacionamentos carregados:
+
+```php
+// GET /api/users/1?fields[users]=id,posts&fields[posts]=id,title
+
+$user = User::with('posts')->findOrFail(1);
+
+$user->toApi();
+// [
+//   'id' => 1,
+//   'posts' => [
+//     ['id' => 10, 'title' => 'Primeiro post'],
+//   ],
+// ]
+```
+
+#### JSON:API opcional
+
+Se quiser um documento compativel com JSON:API, voce pode optar por isso apenas
+na resposta que precisar:
+
+```php
+return User::api(User::findOrFail(1), ['json_api' => true]);
+```
+
+Saida:
+
+```php
+[
+    'data' => [
+        'type' => 'users',
+        'id' => '1',
+        'attributes' => [
+            'display_name' => 'Ana',
+        ],
+    ],
+]
 ```
 
 ### Soft Deletes
@@ -641,6 +744,9 @@ $total = $user->orders()->count();
 
 // Paginar
 $page = $user->posts()->paginate(10);
+
+// Em rotas JSON, o paginador sai como:
+// ['data' => [...], 'links' => [...], 'meta' => [...]]
 
 // Atualizar em massa
 $user->orders()->where('status', 'pending')->update(['status' => 'cancelled']);

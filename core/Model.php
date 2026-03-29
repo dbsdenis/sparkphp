@@ -92,6 +92,40 @@ class Mutator
     ) {}
 }
 
+/**
+ * Hide one or more fields from model serialization.
+ *
+ * ```php
+ * #[Hidden('password')]
+ * #[Hidden('remember_token')]
+ * class User extends Model {}
+ * ```
+ */
+#[\Attribute(\Attribute::TARGET_CLASS | \Attribute::IS_REPEATABLE)]
+class Hidden
+{
+    public function __construct(
+        public string $field,
+    ) {}
+}
+
+/**
+ * Rename a field for API serialization.
+ *
+ * ```php
+ * #[Rename('email_verified_at', 'verified_at')]
+ * class User extends Model {}
+ * ```
+ */
+#[\Attribute(\Attribute::TARGET_CLASS | \Attribute::IS_REPEATABLE)]
+class Rename
+{
+    public function __construct(
+        public string $from,
+        public string $to,
+    ) {}
+}
+
 // ─────────────────────────────────────────────────────
 // Model
 // ─────────────────────────────────────────────────────
@@ -112,7 +146,7 @@ class Mutator
  * - Eager loading via with()
  * - Lifecycle events via EventEmitter
  */
-abstract class Model
+abstract class Model implements \JsonSerializable
 {
     // ─────────────────────────────────────────────
     // Configuration (override in subclass if needed)
@@ -169,6 +203,12 @@ abstract class Model
 
     /** Static cache of attribute-defined mutators per class: property name => method name. */
     private static array $attributeMutatorsCache = [];
+
+    /** Static cache of attribute-defined hidden fields per class. */
+    private static array $attributeHiddenCache = [];
+
+    /** Static cache of attribute-defined API renames per class: original => renamed. */
+    private static array $attributeRenamesCache = [];
 
     // ─────────────────────────────────────────────
     // Attribute scanning (PHP 8+)
@@ -263,6 +303,56 @@ abstract class Model
 
         self::$attributeMutatorsCache[$class] = $mutators;
         return $mutators;
+    }
+
+    /**
+     * Scan class-level #[Hidden] attributes.
+     *
+     * @return array<int, string>
+     */
+    private static function resolveAttributeHidden(): array
+    {
+        $class = static::class;
+
+        if (isset(self::$attributeHiddenCache[$class])) {
+            return self::$attributeHiddenCache[$class];
+        }
+
+        $hidden = [];
+        $ref = new \ReflectionClass($class);
+
+        foreach ($ref->getAttributes(Hidden::class) as $attr) {
+            $instance = $attr->newInstance();
+            $hidden[] = $instance->field;
+        }
+
+        self::$attributeHiddenCache[$class] = array_values(array_unique($hidden));
+        return self::$attributeHiddenCache[$class];
+    }
+
+    /**
+     * Scan class-level #[Rename] attributes.
+     *
+     * @return array<string, string>
+     */
+    private static function resolveAttributeRenames(): array
+    {
+        $class = static::class;
+
+        if (isset(self::$attributeRenamesCache[$class])) {
+            return self::$attributeRenamesCache[$class];
+        }
+
+        $renames = [];
+        $ref = new \ReflectionClass($class);
+
+        foreach ($ref->getAttributes(Rename::class) as $attr) {
+            $instance = $attr->newInstance();
+            $renames[$instance->from] = $instance->to;
+        }
+
+        self::$attributeRenamesCache[$class] = $renames;
+        return $renames;
     }
 
     /**
@@ -411,6 +501,56 @@ abstract class Model
     public static function with(string ...$relations): QueryBuilder
     {
         return static::query()->with(...$relations);
+    }
+
+    /**
+     * Serialize a model, model collection, or paginator for API responses.
+     *
+     * ```php
+     * return User::api(User::findOrFail(1));
+     * return User::api(User::query()->paginate(15));
+     * return User::api(User::all(), ['json_api' => true]);
+     * ```
+     */
+    public static function api(mixed $value, array $options = []): mixed
+    {
+        if ($value instanceof self) {
+            return $value->toApi($options);
+        }
+
+        if (is_object($value) && method_exists($value, 'toApi')) {
+            return $value->toApi($options);
+        }
+
+        if (is_array($value)) {
+            $data = array_map(function (mixed $item) use ($options): mixed {
+                if ($item instanceof self) {
+                    return ($options['json_api'] ?? false) === true
+                        ? $item->toJsonApiResource($options)
+                        : $item->toApi($options);
+                }
+
+                return $item;
+            }, $value);
+
+            if (($options['json_api'] ?? false) === true) {
+                $document = ['data' => array_values($data)];
+
+                if (!empty($options['links'])) {
+                    $document['links'] = $options['links'];
+                }
+
+                if (!empty($options['meta'])) {
+                    $document['meta'] = $options['meta'];
+                }
+
+                return $document;
+            }
+
+            return $data;
+        }
+
+        return $value;
     }
 
     /**
@@ -856,36 +996,51 @@ abstract class Model
      */
     public function toArray(): array
     {
-        $data = $this->attributes;
+        $data = $this->baseArrayData();
 
-        // Apply #[Accessor] attributes
-        foreach (static::resolveAttributeAccessors() as $propName => $methodName) {
-            $data[$propName] = $this->$methodName();
-        }
-
-        // Apply classic accessors: getXxxAttribute()
-        foreach ($this->attributes as $key => $value) {
-            $accessor = 'get' . str_replace('_', '', ucwords($key, '_')) . 'Attribute';
-            if (method_exists($this, $accessor)) {
-                $data[$key] = $this->$accessor();
-            }
-        }
-
-        // Include loaded relations
         foreach ($this->relations as $name => $relation) {
-            if ($relation instanceof Model) {
-                $data[$name] = $relation->toArray();
-            } elseif (is_array($relation)) {
-                $data[$name] = array_map(
-                    fn($item) => $item instanceof Model ? $item->toArray() : (array) $item,
-                    $relation
-                );
-            }
+            $data[$name] = $this->serializeRelation($relation, false);
         }
 
-        // Remove hidden fields
-        foreach ($this->hidden as $field) {
-            unset($data[$field]);
+        return $this->applyHiddenFields($data);
+    }
+
+    /**
+     * Convert the model to an API-friendly array.
+     *
+     * Options:
+     * - fields: sparse fieldset as string, list, or ['users' => 'id,name']
+     * - json_api: return a JSON:API document instead of a plain array
+     * - links/meta: optional document-level metadata
+     */
+    public function toApi(array $options = []): array
+    {
+        $data = $this->baseArrayData();
+
+        foreach ($this->relations as $name => $relation) {
+            $data[$name] = $this->serializeRelation($relation, true);
+        }
+
+        $data = $this->applyHiddenFields($data);
+        $data = $this->applyRenamedFields($data);
+        $data = $this->applySparseFields($data, $this->resolveSparseFields($options['fields'] ?? null));
+
+        if (($options['json_api'] ?? false) === true) {
+            return $this->toJsonApiDocument($data, $options);
+        }
+
+        if (!empty($options['links']) || !empty($options['meta']) || ($options['wrap'] ?? false) === true) {
+            $document = ['data' => $data];
+
+            if (!empty($options['links'])) {
+                $document['links'] = $options['links'];
+            }
+
+            if (!empty($options['meta'])) {
+                $document['meta'] = $options['meta'];
+            }
+
+            return $document;
         }
 
         return $data;
@@ -901,6 +1056,11 @@ abstract class Model
     public function toJson(): string
     {
         return json_encode($this->toArray(), JSON_UNESCAPED_UNICODE);
+    }
+
+    public function jsonSerialize(): mixed
+    {
+        return $this->toApi();
     }
 
     // ─────────────────────────────────────────────
@@ -1190,5 +1350,193 @@ abstract class Model
     protected static function resolveTable(): string
     {
         return (new static())->getTable();
+    }
+
+    protected function apiType(): string
+    {
+        return $this->getTable();
+    }
+
+    private function baseArrayData(): array
+    {
+        $data = $this->attributes;
+
+        foreach (static::resolveAttributeAccessors() as $propName => $methodName) {
+            $data[$propName] = $this->$methodName();
+        }
+
+        foreach ($this->attributes as $key => $value) {
+            $accessor = 'get' . str_replace('_', '', ucwords($key, '_')) . 'Attribute';
+            if (method_exists($this, $accessor)) {
+                $data[$key] = $this->$accessor();
+            }
+        }
+
+        return $data;
+    }
+
+    private function serializeRelation(mixed $relation, bool $api): mixed
+    {
+        if ($relation instanceof self) {
+            return $api ? $relation->toApi() : $relation->toArray();
+        }
+
+        if (is_array($relation)) {
+            return array_map(
+                fn($item) => $item instanceof self
+                    ? ($api ? $item->toApi() : $item->toArray())
+                    : (is_object($item) ? (array) $item : $item),
+                $relation
+            );
+        }
+
+        return $relation;
+    }
+
+    private function applyHiddenFields(array $data): array
+    {
+        foreach (array_merge($this->hidden, static::resolveAttributeHidden()) as $field) {
+            unset($data[$field]);
+        }
+
+        return $data;
+    }
+
+    private function applyRenamedFields(array $data): array
+    {
+        $renamed = [];
+        $map = static::resolveAttributeRenames();
+
+        foreach ($data as $key => $value) {
+            $renamed[$map[$key] ?? $key] = $value;
+        }
+
+        return $renamed;
+    }
+
+    private function resolveSparseFields(mixed $fields = null): ?array
+    {
+        if ($fields === null) {
+            $fields = query('fields');
+        }
+
+        if (is_string($fields)) {
+            return $this->normalizeSparseFieldList($fields);
+        }
+
+        if (!is_array($fields) || $fields === []) {
+            return null;
+        }
+
+        if (array_is_list($fields)) {
+            return $this->normalizeSparseFieldList($fields);
+        }
+
+        $scoped = $fields[$this->apiType()] ?? null;
+
+        return $scoped !== null ? $this->normalizeSparseFieldList($scoped) : null;
+    }
+
+    private function normalizeSparseFieldList(string|array $fields): ?array
+    {
+        $list = is_string($fields) ? explode(',', $fields) : $fields;
+        $list = array_values(array_unique(array_filter(array_map(
+            static fn(mixed $field): string => trim((string) $field),
+            $list
+        ))));
+
+        return $list === [] ? null : $list;
+    }
+
+    private function applySparseFields(array $data, ?array $fields): array
+    {
+        if ($fields === null) {
+            return $data;
+        }
+
+        return array_intersect_key($data, array_flip($fields));
+    }
+
+    private function toJsonApiDocument(array $data, array $options = []): array
+    {
+        $document = [
+            'data' => $this->toJsonApiResource($options, $data),
+        ];
+
+        if (!empty($options['links'])) {
+            $document['links'] = $options['links'];
+        }
+
+        if (!empty($options['meta'])) {
+            $document['meta'] = $options['meta'];
+        }
+
+        return $document;
+    }
+
+    public function toJsonApiResource(array $options = [], ?array $apiData = null): array
+    {
+        $apiData ??= $this->toApi(array_merge($options, ['json_api' => false]));
+
+        $primaryKey = static::resolveAttributeRenames()[$this->primaryKey] ?? $this->primaryKey;
+        $resource = [
+            'type' => $this->apiType(),
+        ];
+
+        if (array_key_exists($primaryKey, $apiData) && $apiData[$primaryKey] !== null) {
+            $resource['id'] = (string) $apiData[$primaryKey];
+            unset($apiData[$primaryKey]);
+        }
+
+        $relationships = [];
+        foreach ($this->relations as $name => $relation) {
+            $apiName = static::resolveAttributeRenames()[$name] ?? $name;
+
+            if (!array_key_exists($apiName, $apiData)) {
+                continue;
+            }
+
+            unset($apiData[$apiName]);
+            $relationships[$apiName] = [
+                'data' => $this->jsonApiRelationshipData($relation),
+            ];
+        }
+
+        if ($apiData !== []) {
+            $resource['attributes'] = $apiData;
+        }
+
+        if ($relationships !== []) {
+            $resource['relationships'] = $relationships;
+        }
+
+        return $resource;
+    }
+
+    private function jsonApiRelationshipData(mixed $relation): mixed
+    {
+        if ($relation instanceof self) {
+            return $relation->toJsonApiIdentifier();
+        }
+
+        if (is_array($relation)) {
+            return array_values(array_map(
+                fn(mixed $item): mixed => $item instanceof self ? $item->toJsonApiIdentifier() : $item,
+                $relation
+            ));
+        }
+
+        return $relation;
+    }
+
+    private function toJsonApiIdentifier(): array
+    {
+        $key = $this->getPrimaryKey();
+        $id = $this->getAttribute($key);
+
+        return array_filter([
+            'type' => $this->apiType(),
+            'id' => $id !== null ? (string) $id : null,
+        ], static fn(mixed $value): bool => $value !== null);
     }
 }

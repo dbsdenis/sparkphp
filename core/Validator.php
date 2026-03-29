@@ -43,8 +43,8 @@ class Validator
 
         if (!empty($this->errors)) {
             $request = new Request();
-            if ($request->acceptsJson()) {
-                Response::json(['errors' => $this->errors], 422)->send();
+            if ($request->wantsJson()) {
+                Response::validationError($this->errors)->send();
                 exit;
             }
             // Flash errors + old input and redirect back

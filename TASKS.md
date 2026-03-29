@@ -123,12 +123,12 @@ Sempre analise os seguintes documentos (vão criar uma orientação melhor do pr
   - Padronizar comportamento para HTML, JSON, AJAX e proxies confiáveis
   - Adicionar opções seguras por default para cookie/session
 
-- [ ] Task 5.2 — Request / Response v2
+- [x] Task 5.2 — Request / Response v2
   - Melhorar content negotiation além de HTML/JSON básico
   - Padronizar envelopes de erro, redirects, downloads e respostas vazias
   - Preparar a base para responses mais avançadas, inclusive streaming
 
-- [ ] Task 5.3 — Serialização de API por convenção no Model
+- [x] Task 5.3 — Serialização de API por convenção no Model
   - Controlar visibilidade e transformação de campos via atributos no Model (`#[Hidden]`, `#[Rename]`, `toApi()`)
   - Suportar paginação, `links`, `meta` e sparse fields sem exigir classes de Resource dedicadas
   - Oferecer compliance JSON:API opcional sem obrigar o projeto inteiro a usar o padrão

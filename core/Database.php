@@ -154,6 +154,68 @@ class Database
     }
 }
 
+class SparkPaginator implements \JsonSerializable
+{
+    public function __construct(
+        public array $data,
+        public int $total,
+        public int $per_page,
+        public int $current_page,
+        public int $last_page,
+        public int $from,
+        public int $to,
+        public array $links = [],
+        public array $meta = [],
+    ) {}
+
+    public function toArray(): array
+    {
+        return [
+            'data' => $this->data,
+            'total' => $this->total,
+            'per_page' => $this->per_page,
+            'current_page' => $this->current_page,
+            'last_page' => $this->last_page,
+            'from' => $this->from,
+            'to' => $this->to,
+            'links' => $this->links,
+            'meta' => $this->meta,
+        ];
+    }
+
+    public function toApi(array $options = []): array
+    {
+        $jsonApi = ($options['json_api'] ?? false) === true;
+
+        $data = array_map(function (mixed $item) use ($jsonApi, $options): mixed {
+            if (!$item instanceof Model) {
+                return $item;
+            }
+
+            return $jsonApi
+                ? $item->toJsonApiResource($options)
+                : $item->toApi($options);
+        }, $this->data);
+
+        $document = [
+            'data' => $data,
+            'links' => $this->links,
+            'meta' => array_merge($this->meta, $options['meta'] ?? []),
+        ];
+
+        if (!empty($options['links'])) {
+            $document['links'] = array_merge($this->links, $options['links']);
+        }
+
+        return $document;
+    }
+
+    public function jsonSerialize(): mixed
+    {
+        return $this->toApi();
+    }
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Query Builder
@@ -855,23 +917,57 @@ class QueryBuilder
      * // $page->data, $page->total, $page->current_page, $page->last_page, ...
      * ```
      */
-    public function paginate(int $perPage = 15): object
+    public function paginate(int $perPage = 15, ?int $page = null): SparkPaginator
     {
-        $page    = max(1, (int) ($_GET['page'] ?? 1));
-        $total   = $this->count();
+        $page = max(1, $page ?? (int) ($_GET['page'] ?? 1));
+        $total = $this->count();
         $lastPage = max(1, (int) ceil($total / $perPage));
 
         $items = $this->limit($perPage)->offset(($page - 1) * $perPage)->get();
+        $itemCount = count($items);
+        $from = $itemCount > 0 ? (($page - 1) * $perPage) + 1 : 0;
+        $to = $itemCount > 0 ? $from + $itemCount - 1 : 0;
 
-        return (object) [
-            'data'        => $items,
-            'total'       => $total,
-            'per_page'    => $perPage,
-            'current_page'=> $page,
-            'last_page'   => $lastPage,
-            'from'        => $total > 0 ? ($page - 1) * $perPage + 1 : 0,
-            'to'          => min($page * $perPage, $total),
+        return new SparkPaginator(
+            data: $items,
+            total: $total,
+            per_page: $perPage,
+            current_page: $page,
+            last_page: $lastPage,
+            from: $from,
+            to: $to,
+            links: $this->paginationLinks($page, $lastPage),
+            meta: [
+                'total' => $total,
+                'per_page' => $perPage,
+                'current_page' => $page,
+                'last_page' => $lastPage,
+                'from' => $from,
+                'to' => $to,
+            ],
+        );
+    }
+
+    private function paginationLinks(int $page, int $lastPage): array
+    {
+        $path = sparkRequestScheme() . '://' . sparkRequestHost() . strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
+        $query = $_GET ?? [];
+
+        return [
+            'self' => $this->paginationUrl($path, $query, $page),
+            'first' => $this->paginationUrl($path, $query, 1),
+            'last' => $this->paginationUrl($path, $query, $lastPage),
+            'prev' => $page > 1 ? $this->paginationUrl($path, $query, $page - 1) : null,
+            'next' => $page < $lastPage ? $this->paginationUrl($path, $query, $page + 1) : null,
         ];
+    }
+
+    private function paginationUrl(string $path, array $query, int $page): string
+    {
+        $query['page'] = max(1, $page);
+        $queryString = http_build_query($query);
+
+        return $queryString === '' ? $path : $path . '?' . $queryString;
     }
 
     // ─────────────────────────────────────────────

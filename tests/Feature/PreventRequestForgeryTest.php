@@ -101,6 +101,8 @@ final class PreventRequestForgeryTest extends TestCase
         $this->assertSame('application/json; charset=UTF-8', $response->getHeaders()['Content-Type']);
         $this->assertSame([
             'error' => 'Request forgery protection failed.',
+            'status' => 419,
+            'code' => 'request_forgery',
             'reason' => 'token_mismatch',
         ], json_decode((string) $response->getBody(), true));
     }
@@ -121,6 +123,8 @@ final class PreventRequestForgeryTest extends TestCase
         $this->assertSame(419, $response->getStatus());
         $this->assertSame([
             'error' => 'Request forgery protection failed.',
+            'status' => 419,
+            'code' => 'request_forgery',
             'reason' => 'origin_mismatch',
         ], json_decode((string) $response->getBody(), true));
     }
@@ -155,6 +159,8 @@ final class PreventRequestForgeryTest extends TestCase
         $this->assertSame(419, $response->getStatus());
         $this->assertSame([
             'error' => 'Request forgery protection failed.',
+            'status' => 419,
+            'code' => 'request_forgery',
             'reason' => 'missing_origin',
         ], json_decode((string) $response->getBody(), true));
     }

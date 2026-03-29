@@ -35,6 +35,7 @@ O SparkPHP fornece dezenas de funcoes globais para que voce nao precise importar
 | Funcao                          | Descricao                          |
 |---------------------------------|------------------------------------|
 | `json($data, $status)`         | Response JSON                      |
+| `stream($callback, $status)`   | Response streamed                  |
 | `redirect('/url')`             | Redirect 302                       |
 | `redirect('/url', 301)`        | Redirect com status customizado    |
 | `back()`                       | Redirect para HTTP_REFERER         |

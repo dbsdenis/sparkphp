@@ -430,4 +430,23 @@ final class QueryBuilderTest extends TestCase
         $this->assertSame(1, $page->last_page);
         $this->assertSame(0, $page->from);
     }
+
+    public function testPaginateReturnsLinksAndMetaWhenSerialized(): void
+    {
+        $_SERVER['HTTP_HOST'] = 'sparkphp.test';
+        $_SERVER['HTTPS'] = 'on';
+        $_SERVER['SERVER_PORT'] = '443';
+        $_SERVER['REQUEST_URI'] = '/orders?status=pending';
+        $_GET = ['status' => 'pending'];
+
+        $page = db('orders')->paginate(2, 2);
+        $data = $page->jsonSerialize();
+
+        $this->assertSame('https://sparkphp.test/orders?status=pending&page=2', $data['links']['self']);
+        $this->assertSame('https://sparkphp.test/orders?status=pending&page=1', $data['links']['first']);
+        $this->assertSame('https://sparkphp.test/orders?status=pending&page=1', $data['links']['prev']);
+        $this->assertNull($data['links']['next']);
+        $this->assertSame(4, $data['meta']['total']);
+        $this->assertSame(2, $data['meta']['current_page']);
+    }
 }

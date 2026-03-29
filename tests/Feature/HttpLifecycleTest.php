@@ -87,6 +87,64 @@ final class HttpLifecycleTest extends TestCase
         $this->assertSame(['name' => 'Denilson'], json_decode($created['body'], true));
     }
 
+    public function testWeightedAcceptHeaderCanPreferJsonOverHtmlEndToEnd(): void
+    {
+        $port = $this->startServer();
+
+        $response = $this->request($port, 'GET', '/', [
+            'Accept: application/json;q=1, text/html;q=0.5',
+        ]);
+
+        $this->assertSame(200, $response['status']);
+        $this->assertSame(['message' => 'Hello SparkPHP'], json_decode($response['body'], true));
+    }
+
+    public function testModelsAndPaginatorsSerializeByConventionInJsonRoutes(): void
+    {
+        $port = $this->startServer();
+
+        $user = $this->request($port, 'GET', '/api/users/show', [
+            'Accept: application/json',
+        ]);
+
+        $page = $this->request($port, 'GET', '/api/users/page?fields[users]=id,display_name', [
+            'Accept: application/json',
+        ]);
+
+        $this->assertSame(200, $user['status']);
+        $this->assertSame([
+            'id' => 1,
+            'display_name' => 'Spark',
+        ], json_decode($user['body'], true));
+
+        $pagePayload = json_decode($page['body'], true);
+
+        $this->assertSame(200, $page['status']);
+        $this->assertCount(1, $pagePayload['data']);
+        $this->assertSame([
+            'id' => 1,
+            'display_name' => 'Spark',
+        ], $pagePayload['data'][0]);
+        $this->assertArrayHasKey('self', $pagePayload['links']);
+        $this->assertSame(2, $pagePayload['meta']['total']);
+    }
+
+    public function testJsonApiSerializationIsOptInPerResponse(): void
+    {
+        $port = $this->startServer();
+
+        $response = $this->request($port, 'GET', '/api/users/json_api', [
+            'Accept: application/json',
+        ]);
+
+        $payload = json_decode($response['body'], true);
+
+        $this->assertSame(200, $response['status']);
+        $this->assertSame('users', $payload['data']['type']);
+        $this->assertSame('1', $payload['data']['id']);
+        $this->assertSame('Spark', $payload['data']['attributes']['display_name']);
+    }
+
     public function testSparkInspectorTracksJsonRequestsAndInternalInspectorRoutes(): void
     {
         $port = $this->startServer();
@@ -148,7 +206,42 @@ final class HttpLifecycleTest extends TestCase
         ]);
 
         $this->assertSame(405, $notAllowed['status']);
-        $this->assertSame(['error' => 'Method Not Allowed'], json_decode($notAllowed['body'], true));
+        $this->assertSame([
+            'error' => 'Method Not Allowed',
+            'status' => 405,
+            'code' => 'method_not_allowed',
+        ], json_decode($notAllowed['body'], true));
+    }
+
+    public function testAbortAndValidationUseStandardJsonErrorEnvelope(): void
+    {
+        $port = $this->startServer();
+
+        $forbidden = $this->request($port, 'GET', '/api/forbidden', [
+            'Accept: application/json',
+        ]);
+
+        $invalid = $this->request($port, 'POST', '/api/validate', [
+            'Accept: application/json',
+            'Content-Type: application/json',
+        ], json_encode(['name' => 'ab'], JSON_THROW_ON_ERROR));
+
+        $this->assertSame(403, $forbidden['status']);
+        $this->assertSame([
+            'error' => 'Acesso negado',
+            'status' => 403,
+            'code' => 'forbidden',
+        ], json_decode($forbidden['body'], true));
+
+        $this->assertSame(422, $invalid['status']);
+        $this->assertSame([
+            'error' => 'The given data was invalid.',
+            'status' => 422,
+            'code' => 'validation_error',
+            'errors' => [
+                'name' => 'Name deve ter no mínimo 3 caracteres.',
+            ],
+        ], json_decode($invalid['body'], true));
     }
 
     public function testInspectorRoutesReturn404OutsideDevelopment(): void
@@ -210,8 +303,10 @@ final class HttpLifecycleTest extends TestCase
         mkdir($this->basePath . '/app/events', 0777, true);
         mkdir($this->basePath . '/app/jobs', 0777, true);
         mkdir($this->basePath . '/app/middleware', 0777, true);
+        mkdir($this->basePath . '/app/models', 0777, true);
         mkdir($this->basePath . '/app/routes/api', 0777, true);
         mkdir($this->basePath . '/app/routes/api/[mw_dir]', 0777, true);
+        mkdir($this->basePath . '/app/routes/api/users', 0777, true);
         mkdir($this->basePath . '/app/views/layouts', 0777, true);
         mkdir($this->basePath . '/app/views/errors', 0777, true);
         mkdir($this->basePath . '/public', 0777, true);
@@ -242,8 +337,22 @@ PHP
         touch($databasePath);
 
         $pdo = new PDO('sqlite:' . $databasePath);
-        $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)');
+        $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, email TEXT)');
         $pdo->exec("INSERT INTO users (name) VALUES ('Spark')");
+        $pdo->exec("INSERT INTO users (name, email) VALUES ('Taylor', 'taylor@example.com')");
+
+        file_put_contents($this->basePath . '/app/models/ApiUser.php', <<<'PHP'
+<?php
+
+#[Hidden('email')]
+#[Rename('name', 'display_name')]
+class ApiUser extends Model
+{
+    protected string $table = 'users';
+    protected bool $timestamps = false;
+}
+PHP
+        );
 
         file_put_contents($this->basePath . '/app/routes/index.php', <<<'PHP'
 <?php
@@ -276,6 +385,24 @@ get(fn() => ['ok' => true]);
 PHP
         );
 
+        file_put_contents($this->basePath . '/app/routes/api/users/show.php', <<<'PHP'
+<?php
+get(fn() => ApiUser::find(1));
+PHP
+        );
+
+        file_put_contents($this->basePath . '/app/routes/api/users/page.php', <<<'PHP'
+<?php
+get(fn() => ApiUser::query()->paginate(1));
+PHP
+        );
+
+        file_put_contents($this->basePath . '/app/routes/api/users/json_api.php', <<<'PHP'
+<?php
+get(fn() => ApiUser::api(ApiUser::findOrFail(1), ['json_api' => true]));
+PHP
+        );
+
         file_put_contents($this->basePath . '/app/routes/api/inspector.php', <<<'PHP'
 <?php
 get(function () {
@@ -296,6 +423,24 @@ get(function () {
     }
 
     return ['ok' => true, 'count' => db('users')->count()];
+});
+PHP
+        );
+
+        file_put_contents($this->basePath . '/app/routes/api/forbidden.php', <<<'PHP'
+<?php
+get(fn() => abort(403, 'Acesso negado'));
+PHP
+        );
+
+        file_put_contents($this->basePath . '/app/routes/api/validate.php', <<<'PHP'
+<?php
+post(function () {
+    validate([
+        'name' => 'required|min:3',
+    ]);
+
+    return ['ok' => true];
 });
 PHP
         );

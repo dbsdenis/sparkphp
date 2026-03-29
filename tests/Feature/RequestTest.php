@@ -87,6 +87,41 @@ final class RequestTest extends TestCase
         $this->assertTrue($request->acceptsJson());
     }
 
+    public function testAcceptNegotiationHonorsQualityWeights(): void
+    {
+        $_SERVER['HTTP_ACCEPT'] = 'text/html;q=0.4, application/json;q=0.9';
+
+        $request = new Request();
+
+        $this->assertTrue($request->acceptsHtml());
+        $this->assertTrue($request->acceptsJson());
+        $this->assertTrue($request->wantsJson());
+        $this->assertFalse($request->wantsHtml());
+        $this->assertSame('json', $request->preferredFormat(['html', 'json']));
+    }
+
+    public function testVendorJsonMediaTypesAreNegotiatedAsJson(): void
+    {
+        $_SERVER['HTTP_ACCEPT'] = 'application/problem+json';
+
+        $request = new Request();
+
+        $this->assertTrue($request->accepts('application/*+json'));
+        $this->assertTrue($request->acceptsJson());
+        $this->assertTrue($request->wantsJson());
+        $this->assertSame('json', $request->preferredFormat(['html', 'json']));
+    }
+
+    public function testMissingAcceptHeaderDefaultsToHtmlPreference(): void
+    {
+        $request = new Request();
+
+        $this->assertTrue($request->acceptsHtml());
+        $this->assertFalse($request->wantsJson());
+        $this->assertTrue($request->wantsHtml());
+        $this->assertSame('html', $request->preferredFormat(['html', 'json']));
+    }
+
     public function testIpIgnoresForwardedHeadersWhenProxyIsUntrusted(): void
     {
         $_SERVER['HTTP_X_FORWARDED_FOR'] = '10.10.10.1';

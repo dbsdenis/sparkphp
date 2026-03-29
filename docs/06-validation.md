@@ -21,7 +21,8 @@ post(function () {
 
 Se a validacao falhar:
 
-- **Request JSON** (API): retorna `422` com `{"errors": {"campo": ["mensagem"]}}`
+- **Request JSON** (API): retorna `422` com envelope padrao:
+  `{"error":"The given data was invalid.","status":422,"code":"validation_error","errors":{"campo":"mensagem"}}`
 - **Request HTML** (formulario): redireciona `back()` com erros e `old()` input na sessao
 
 ---

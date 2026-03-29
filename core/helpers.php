@@ -433,17 +433,21 @@ function json(mixed $data, int $status = 200): Response
     return Response::json($data, $status);
 }
 
+function stream(callable $callback, int $status = 200, array $headers = []): Response
+{
+    return Response::stream($callback, $status, $headers);
+}
+
 function abort(int $code, string $message = ''): never
 {
-    http_response_code($code);
-    if ($message) {
-        $req = app()->getContainer()->has(Request::class)
-            ? app()->getContainer()->make(Request::class)
-            : null;
+    $message = $message !== '' ? $message : Response::statusText($code);
+    $req = app()->getContainer()->has(Request::class)
+        ? app()->getContainer()->make(Request::class)
+        : null;
 
-        if ($req && $req->acceptsJson()) {
-            json(['error' => $message], $code);
-        }
+    if ($req && $req->wantsJson()) {
+        Response::error($message, $code)->send();
+        exit;
     }
 
     // Try to render error view
@@ -451,11 +455,12 @@ function abort(int $code, string $message = ''): never
     if (file_exists($viewFile)) {
         try {
             $view = new View(app()->getBasePath());
-            echo $view->render("errors/{$code}", ['message' => $message, 'code' => $code]);
+            Response::html($view->render("errors/{$code}", ['message' => $message, 'code' => $code]), $code)->send();
             exit;
         } catch (\Throwable) {}
     }
 
+    http_response_code($code);
     echo "<h1>HTTP {$code}</h1>" . ($message ? "<p>" . htmlspecialchars($message) . "</p>" : '');
     exit;
 }

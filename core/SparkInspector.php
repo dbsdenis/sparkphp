@@ -185,6 +185,9 @@ class SparkInspector
                 'ip' => $request->ip(),
                 'ajax' => $request->isAjax(),
                 'accepts_json' => $request->acceptsJson(),
+                'accepts_html' => $request->acceptsHtml(),
+                'wants_json' => $request->wantsJson(),
+                'preferred_format' => $request->preferredFormat(['html', 'json']),
             ],
             'response' => [
                 'status' => null,
@@ -262,7 +265,7 @@ class SparkInspector
         if ($request->method() === 'GET' && preg_match('#^api/requests/([a-f0-9]+)$#', $relativePath, $matches)) {
             $entry = $this->storage->find($matches[1]);
             if ($entry === null) {
-                Response::json(['error' => 'Not Found'], 404)->send();
+                Response::notFound()->send();
                 return true;
             }
 
@@ -273,7 +276,7 @@ class SparkInspector
         if ($request->method() === 'POST' && $relativePath === 'clear') {
             $cleared = $this->storage->clear();
 
-            if ($request->acceptsJson()) {
+            if ($request->wantsJson()) {
                 Response::json(['cleared' => $cleared])->send();
                 return true;
             }

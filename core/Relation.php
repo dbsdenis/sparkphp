@@ -289,7 +289,7 @@ abstract class Relation
         return $this->query->delete();
     }
 
-    public function paginate(int $perPage = 15, ?int $page = null): array
+    public function paginate(int $perPage = 15, ?int $page = null): SparkPaginator
     {
         return $this->query->paginate($perPage, $page);
     }

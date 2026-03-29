@@ -204,7 +204,7 @@ O que voce retorna da closure define a response automaticamente:
 
 | Retorno                  | Comportamento                                              |
 |--------------------------|------------------------------------------------------------|
-| `array` ou `object`     | JSON se `Accept: application/json`, senao busca view espelho |
+| `array` ou `object`     | Negocia `Accept` com peso (`q=`): JSON ou view espelho |
 | `string`                | HTML direto                                                |
 | `Response`              | Enviado como esta                                          |
 | `null` em GET           | 404                                                        |
@@ -215,8 +215,12 @@ O que voce retorna da closure define a response automaticamente:
 ### Exemplos praticos
 
 ```php
-// Retorna JSON para APIs, view para browsers
+// Retorna JSON se o cliente preferir JSON, view se preferir HTML
 get(fn() => ['users' => User::all()]);
+
+// Exemplo: Accept com peso
+// application/json;q=1, text/html;q=0.5 → JSON
+// text/html;q=1, application/json;q=0.5 → HTML
 
 // Retorna HTML direto
 get(fn() => '<h1>Hello</h1>');

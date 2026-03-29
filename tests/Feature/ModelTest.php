@@ -156,12 +156,37 @@ class TestAttrAccessorUser extends Model
     }
 }
 
+#[Hidden('email')]
+#[Rename('name', 'display_name')]
+#[Rename('full_name', 'display_name_upper')]
+#[Rename('orders', 'purchases')]
+class TestApiUser extends Model
+{
+    protected string $table   = 'users';
+    protected array $fillable = ['name', 'email', 'role', 'age', 'active', 'password'];
+    protected array $hidden   = ['password'];
+    protected bool $timestamps = false;
+
+    #[Accessor]
+    public function fullName(): string
+    {
+        return mb_strtoupper($this->getAttribute('name') ?? '');
+    }
+
+    public function orders(): HasManyRelation
+    {
+        return $this->hasMany(TestOrder::class, 'user_id');
+    }
+}
+
 // ─── Test suite ──────────────────────────────────────────────────────────────
 
 final class ModelTest extends TestCase
 {
     protected function setUp(): void
     {
+        $_GET = [];
+        $_POST = [];
         $_ENV['DB']      = 'sqlite';
         $_ENV['DB_NAME'] = ':memory:';
 
@@ -789,6 +814,87 @@ final class ModelTest extends TestCase
             'password' => 'mypass',
         ]);
         $this->assertSame(sha1('mypass'), $user->getAttribute('password'));
+    }
+
+    public function testToApiAppliesHiddenAndRenamedFields(): void
+    {
+        $user = TestApiUser::find(1);
+
+        $data = $user->toApi();
+
+        $this->assertSame('João', $data['display_name']);
+        $this->assertSame('JOÃO', $data['display_name_upper']);
+        $this->assertArrayNotHasKey('name', $data);
+        $this->assertArrayNotHasKey('email', $data);
+        $this->assertArrayNotHasKey('password', $data);
+    }
+
+    public function testToApiSupportsSparseFieldsFromQueryString(): void
+    {
+        $_GET['fields'] = [
+            'users' => 'id,display_name',
+        ];
+
+        $user = TestApiUser::find(1);
+        $data = $user->toApi();
+
+        $this->assertSame([
+            'id' => 1,
+            'display_name' => 'João',
+        ], $data);
+    }
+
+    public function testToApiAppliesSparseFieldsToLoadedRelationsByType(): void
+    {
+        $_GET['fields'] = [
+            'users' => 'id,purchases',
+            'orders' => 'id,status',
+        ];
+
+        $user = TestApiUser::with('orders')->find(1);
+        $data = $user->toApi();
+
+        $this->assertSame(1, $data['id']);
+        $this->assertCount(2, $data['purchases']);
+        $this->assertSame([
+            'id' => 1,
+            'status' => 'completed',
+        ], $data['purchases'][0]);
+    }
+
+    public function testJsonSerializeUsesApiSerializationByDefault(): void
+    {
+        $user = TestApiUser::find(1);
+
+        $data = json_decode(json_encode($user, JSON_UNESCAPED_UNICODE), true);
+
+        $this->assertSame('João', $data['display_name']);
+        $this->assertArrayNotHasKey('name', $data);
+        $this->assertArrayNotHasKey('email', $data);
+    }
+
+    public function testToApiCanReturnJsonApiDocument(): void
+    {
+        $user = TestApiUser::with('orders')->find(1);
+
+        $document = $user->toApi(['json_api' => true]);
+
+        $this->assertSame('users', $document['data']['type']);
+        $this->assertSame('1', $document['data']['id']);
+        $this->assertSame('João', $document['data']['attributes']['display_name']);
+        $this->assertArrayHasKey('purchases', $document['data']['relationships']);
+        $this->assertSame('orders', $document['data']['relationships']['purchases']['data'][0]['type']);
+    }
+
+    public function testApiHelperCanSerializeCollectionsAsJsonApi(): void
+    {
+        $users = TestApiUser::where('active', 1)->get();
+
+        $document = TestApiUser::api($users, ['json_api' => true]);
+
+        $this->assertCount(2, $document['data']);
+        $this->assertSame('users', $document['data'][0]['type']);
+        $this->assertSame('João', $document['data'][0]['attributes']['display_name']);
     }
 
 }
