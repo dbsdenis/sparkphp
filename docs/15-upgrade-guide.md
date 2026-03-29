@@ -74,6 +74,37 @@ Os `skipped` aceitaveis hoje sao apenas integrações externas opcionais de MySQ
 
 ## Mudancas importantes desta linha
 
+### SDK de AI unificado
+
+O Spark agora inclui uma entrada unica `ai()` para texto, embeddings, imagem, audio
+e agentes, com driver fake por default em desenvolvimento.
+
+Impacto:
+
+- projetos que tinham wrappers proprios de AI podem migrar gradualmente para `ai()`
+- novas configuracoes opcionais apareceram no `.env`, como `AI_DRIVER`,
+  `AI_TEXT_MODEL`, `AI_EMBEDDING_MODEL`, `AI_IMAGE_MODEL`, `AI_AUDIO_MODEL`
+  e `AI_AGENT_MODEL`
+- o driver `fake` vira a base oficial para testes e smoke tests locais
+
+### Convencoes file-based de AI e structured output
+
+A linha atual tambem oficializa a camada `app/ai/*`:
+
+- `app/ai/prompts`
+- `app/ai/tools`
+- `app/ai/agents`
+
+Impacto:
+
+- `php spark init` agora cria esses diretorios no bootstrap do projeto
+- prompts nomeados podem migrar para `ai_prompt()` ou `->usingPrompt(...)`
+- agentes podem centralizar defaults, tools e schema em arquivos de `app/ai/agents`
+- responses estruturadas agora podem ser pedidas via `schema([...])` em `text()` e `agent()`
+
+Se o projeto ja tinha convencoes proprias para AI, a migracao recomendada e mover
+primeiro prompts e tools reutilizaveis para `app/ai/*`, depois consolidar os agentes.
+
 ### Baseline moderna do framework
 
 A baseline oficial do Spark passou a ser:

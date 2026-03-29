@@ -435,6 +435,7 @@ ENV
         require_once __DIR__ . '/Autoloader.php';
         require_once __DIR__ . '/Container.php';
         require_once __DIR__ . '/Cache.php';
+        require_once __DIR__ . '/Ai.php';
         require_once __DIR__ . '/Request.php';
         require_once __DIR__ . '/Response.php';
         require_once __DIR__ . '/Router.php';

@@ -225,7 +225,7 @@ class Bootstrap
     public function run(): void
     {
         // Load remaining core components
-        foreach (['Request','Response','Router','Middleware','View','Cache','Database','Schema','Migration','Seeder','Relation','Model','EventEmitter','Validator','Mailer','Queue','Markdown','PreventRequestForgery','SparkInspectorStorage','SparkInspector'] as $class) {
+        foreach (['Request','Response','Router','Middleware','View','Cache','Database','Schema','Migration','Seeder','Relation','Model','EventEmitter','Validator','Mailer','Queue','Ai','Markdown','PreventRequestForgery','SparkInspectorStorage','SparkInspector'] as $class) {
             require_once __DIR__ . "/{$class}.php";
         }
 
@@ -241,6 +241,7 @@ class Bootstrap
         $this->container->singleton(Cache::class, fn() => $cache);
 
         $this->container->singleton(Queue::class, fn() => new Queue($this->basePath));
+        $this->container->singleton(AiManager::class, fn(Container $container) => new AiManager($container, $this->basePath));
         $this->container->bind(Mailer::class, fn() => new Mailer());
 
         if (SparkInspector::isInspectorPath($request->path())) {

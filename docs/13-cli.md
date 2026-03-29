@@ -19,7 +19,7 @@ php spark <comando> [opcoes]
 | `php spark serve`    | Inicia o servidor de desenvolvimento com banner de versao |
 | `php spark serve --port=3000` | Com porta customizada                         |
 | `php spark serve --dry-run` | Mostra o banner/configuracao sem abrir o servidor |
-| `php spark init`     | Inicializa um novo projeto (copia .env, cria diretorios) |
+| `php spark init`     | Inicializa um novo projeto (copia .env, cria diretorios, inclui `app/ai/*`) |
 | `php spark version`  | Exibe a versao atual do framework e a release line     |
 | `php spark about`    | Exibe diagnosticos do ambiente, PHP, extensoes, banco  |
 | `php spark benchmark`| Roda benchmark de performance do framework             |
@@ -119,6 +119,8 @@ php spark serve
 ```
 
 Ao subir o servidor, o banner mostra a versao atual do SparkPHP lida de `VERSION`.
+O mesmo bootstrap ja prepara a estrutura `app/ai/agents`, `app/ai/prompts` e
+`app/ai/tools` para a camada file-based de AI.
 
 ### Fluxo de desenvolvimento
 
@@ -283,8 +285,8 @@ php spark --version
 php spark -V
 
 # Saida:
-#   SparkPHP v0.2.0 (0.2.x)
-#   SparkPHP environment report  v0.2.0
+#   SparkPHP v0.4.0 (0.4.x)
+#   SparkPHP environment report  v0.4.0
 #   PHP 8.3.0
 #   Environment: production
 #   Database: mysql (sparkphp@localhost)

@@ -132,6 +132,58 @@ function spark_release_line(): string
     return SparkVersion::releaseLine(spark_version());
 }
 
+function ai(?string $driver = null): AiClient
+{
+    require_once __DIR__ . '/Ai.php';
+
+    try {
+        $manager = app()->getContainer()->make(AiManager::class);
+    } catch (\Throwable) {
+        $manager = new AiManager(null, base_path());
+    }
+
+    return $manager->driver($driver);
+}
+
+function ai_prompt(string $name, array $data = []): string
+{
+    require_once __DIR__ . '/Ai.php';
+
+    try {
+        $manager = app()->getContainer()->make(AiManager::class);
+    } catch (\Throwable) {
+        $manager = new AiManager(null, base_path());
+    }
+
+    return $manager->prompt($name, $data);
+}
+
+function ai_tool(string $name): AiTool
+{
+    require_once __DIR__ . '/Ai.php';
+
+    try {
+        $manager = app()->getContainer()->make(AiManager::class);
+    } catch (\Throwable) {
+        $manager = new AiManager(null, base_path());
+    }
+
+    return $manager->tool($name);
+}
+
+function ai_tools(array $names = []): array
+{
+    require_once __DIR__ . '/Ai.php';
+
+    try {
+        $manager = app()->getContainer()->make(AiManager::class);
+    } catch (\Throwable) {
+        $manager = new AiManager(null, base_path());
+    }
+
+    return $manager->tools($names);
+}
+
 function config(string $key, mixed $default = null): mixed
 {
     static $configs = [];

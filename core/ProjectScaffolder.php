@@ -102,6 +102,9 @@ class ProjectScaffolder
     private function ensureDirectories(): int
     {
         $directories = [
+            'app/ai/agents',
+            'app/ai/prompts',
+            'app/ai/tools',
             'app/events',
             'app/models',
             'app/services',

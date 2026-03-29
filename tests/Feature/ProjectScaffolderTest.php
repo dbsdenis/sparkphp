@@ -39,6 +39,9 @@ ENV
 
         $this->assertMatchesRegularExpression('/^APP_KEY=[a-f0-9]{32}$/m', $env);
         $this->assertStringContainsString('.env created from .env.example', implode("\n", $result['messages']));
+        $this->assertDirectoryExists($this->basePath . '/app/ai/agents');
+        $this->assertDirectoryExists($this->basePath . '/app/ai/prompts');
+        $this->assertDirectoryExists($this->basePath . '/app/ai/tools');
         $this->assertDirectoryExists($this->basePath . '/database/migrations');
         $this->assertFileExists($this->basePath . '/database/seeds/DatabaseSeeder.php');
         $this->assertDirectoryExists($this->basePath . '/storage/cache/views');

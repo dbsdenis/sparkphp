@@ -15,8 +15,51 @@ O SparkPHP fornece dezenas de funcoes globais para que voce nao precise importar
 | `storage_path('x')` | Caminho absoluto para `storage/x`               |
 | `public_path('x')`  | Caminho absoluto para `public/x`                |
 | `spark_version()`   | Versao atual do framework lida de `VERSION`     |
-| `spark_release_line()` | Linha de release atual (`0.2.x`, `1.2.x`)   |
+| `spark_release_line()` | Linha de release atual (`0.4.x`, `1.2.x`)   |
 | `url('/path')`      | URL completa: `APP_URL` + `/path`               |
+
+## AI
+
+| Funcao              | Descricao                                                |
+|---------------------|----------------------------------------------------------|
+| `ai()`              | Cliente AI usando o driver configurado em `AI_DRIVER`    |
+| `ai('fake')`        | Forca um driver especifico                               |
+| `ai_prompt()`       | Renderiza um prompt nomeado de `app/ai/prompts`          |
+| `ai_tool()`         | Resolve um tool file-based de `app/ai/tools`             |
+| `ai_tools()`        | Resolve varios tools por nome ou descobre todos          |
+
+Exemplos:
+
+```php
+$text = ai()->text('Resuma esta release.')->generate();
+
+$vectors = ai()->embeddings(['SparkPHP', 'Laravel'])->generate();
+
+$agent = ai()->agent('support')
+    ->instructions('Responda de forma objetiva.')
+    ->prompt('Como configuro cache?')
+    ->run();
+
+$prompt = ai_prompt('support/reply', ['topic' => 'cache']);
+
+$tool = ai_tool('lookup-order');
+```
+
+Structured output:
+
+```php
+$result = ai()->text('Extraia nome e email')
+    ->schema([
+        'type' => 'object',
+        'properties' => [
+            'name' => ['type' => 'string'],
+            'email' => ['type' => 'string', 'format' => 'email'],
+        ],
+    ])
+    ->generate();
+
+$payload = $result->structured;
+```
 
 ## Request & Input
 

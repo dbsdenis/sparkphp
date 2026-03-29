@@ -15,6 +15,7 @@ require_once __DIR__ . '/../core/Logger.php';
 require_once __DIR__ . '/../core/Middleware.php';
 require_once __DIR__ . '/../core/Version.php';
 require_once __DIR__ . '/../core/Queue.php';
+require_once __DIR__ . '/../core/Ai.php';
 require_once __DIR__ . '/../core/Relation.php';
 require_once __DIR__ . '/../core/Model.php';
 require_once __DIR__ . '/../core/ProjectScaffolder.php';

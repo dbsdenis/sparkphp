@@ -171,12 +171,12 @@ Sempre analise os seguintes documentos (vão criar uma orientação melhor do pr
 
 ## Fase 7 — AI-Native SparkPHP (longo prazo)
 
-- [ ] Task 7.1 — SDK de AI unificado do SparkPHP
+- [x] Task 7.1 — SDK de AI unificado do SparkPHP
   - Criar API única para texto, embeddings, imagem, áudio e agentes
   - Evitar fragmentação de conceitos e manter uma DX coesa
   - Projetar adaptadores provider-agnostic desde o início
 
-- [ ] Task 7.2 — Convenções file-based para AI
+- [x] Task 7.2 — Convenções file-based para AI
   - Estruturar `app/ai/agents`, `app/ai/tools` e `app/ai/prompts`
   - Descoberta automática de agentes e ferramentas por convenção
   - Integrar tool-calling e structured output com a mesma filosofia do framework

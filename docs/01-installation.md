@@ -54,6 +54,10 @@ php spark serve --port=3000
 ```
 meu-projeto/
 ├── app/
+│   ├── ai/
+│   │   ├── agents/      ← agentes por convencao
+│   │   ├── prompts/     ← prompts nomeados/templates
+│   │   └── tools/       ← tools file-based para agentes
 │   ├── config/         ← arquivos de configuracao (retornam arrays)
 │   ├── events/         ← handlers de eventos (nome = evento)
 │   ├── jobs/           ← classes de jobs para filas
@@ -87,6 +91,10 @@ O arquivo `VERSION` na raiz e a fonte de verdade da versao publicada do SparkPHP
 projeto. Ele alimenta `php spark version`, `php spark about`, a rota raiz padrao e a
 spec OpenAPI gerada pelo CLI. O `CHANGELOG.md` registra o historico humano de produto
 da linha publicada.
+
+Ao rodar `php spark init`, essa estrutura tambem prepara `app/ai/agents`,
+`app/ai/prompts` e `app/ai/tools`, deixando a camada de AI pronta para seguir a
+mesma filosofia file-based do restante do framework.
 
 ## Configuracao (.env)
 
@@ -137,6 +145,14 @@ MAIL_FROM_NAME="${APP_NAME}"
 
 # Fila
 QUEUE=sync                               # sync | file
+
+# AI
+AI_DRIVER=fake                           # fake
+AI_TEXT_MODEL=spark-text
+AI_EMBEDDING_MODEL=spark-embedding
+AI_IMAGE_MODEL=spark-image
+AI_AUDIO_MODEL=spark-audio
+AI_AGENT_MODEL=spark-agent
 
 # Log
 LOG_LEVEL=debug
