@@ -1,5 +1,6 @@
 {
   "recommendations": [
-    "sparkphp.sparkphp-language"
+    "sparkphp.sparkphp-language",
+    "bmewburn.vscode-intelephense-client"
   ]
 }

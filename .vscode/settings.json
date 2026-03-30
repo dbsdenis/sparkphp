@@ -1,5 +1,170 @@
 {
   "files.associations": {
     "*.spark": "spark"
+  },
+  "editor.semanticHighlighting.enabled": true,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
+  "editor.semanticTokenColorCustomizations": {
+    "enabled": true,
+    "rules": {
+      "class:php": {
+        "foreground": "#78dce8",
+        "fontStyle": "bold"
+      },
+      "type:php": "#78dce8",
+      "enum:php": "#78dce8",
+      "namespace:php": "#c792ea",
+      "function:php": "#82aaff",
+      "method:php": "#82aaff",
+      "variable:php": "#ffb86c",
+      "parameter:php": "#ffb86c",
+      "property:php": "#ffb86c"
+    }
+  },
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "name": "Spark HTML tags",
+        "scope": [
+          "text.html.spark entity.name.tag"
+        ],
+        "settings": {
+          "foreground": "#7ee787",
+          "fontStyle": "bold"
+        }
+      },
+      {
+        "name": "Spark HTML attributes",
+        "scope": [
+          "text.html.spark entity.other.attribute-name"
+        ],
+        "settings": {
+          "foreground": "#79c0ff"
+        }
+      },
+      {
+        "name": "Spark strings",
+        "scope": [
+          "text.html.spark string.quoted.double.html",
+          "text.html.spark string.quoted.single.html",
+          "text.html.spark string.quoted.double.spark",
+          "text.html.spark string.quoted.single.spark"
+        ],
+        "settings": {
+          "foreground": "#a5d6ff"
+        }
+      },
+      {
+        "name": "Spark directives",
+        "scope": [
+          "keyword.control.directive.spark"
+        ],
+        "settings": {
+          "foreground": "#ff7ab2",
+          "fontStyle": "bold"
+        }
+      },
+      {
+        "name": "Spark directive punctuation",
+        "scope": [
+          "punctuation.definition.directive.spark"
+        ],
+        "settings": {
+          "foreground": "#ffd866",
+          "fontStyle": "bold"
+        }
+      },
+      {
+        "name": "Spark echos",
+        "scope": [
+          "punctuation.section.embedded.begin.spark",
+          "punctuation.section.embedded.end.spark"
+        ],
+        "settings": {
+          "foreground": "#ffd866",
+          "fontStyle": "bold"
+        }
+      },
+      {
+        "name": "Spark pipes and named arguments",
+        "scope": [
+          "support.function.pipe.spark",
+          "keyword.operator.pipe.spark",
+          "entity.other.attribute-name.spark"
+        ],
+        "settings": {
+          "foreground": "#c792ea"
+        }
+      },
+      {
+        "name": "Spark PHP variables",
+        "scope": [
+          "text.html.spark variable.other.php"
+        ],
+        "settings": {
+          "foreground": "#ffb86c"
+        }
+      },
+      {
+        "name": "Spark PHP classes",
+        "scope": [
+          "text.html.spark entity.name.type.class.php",
+          "text.html.spark support.class.php",
+          "text.html.spark storage.type.class.php"
+        ],
+        "settings": {
+          "foreground": "#78dce8",
+          "fontStyle": "bold"
+        }
+      },
+      {
+        "name": "Spark PHP functions",
+        "scope": [
+          "text.html.spark entity.name.function.php",
+          "text.html.spark support.function.core.php",
+          "text.html.spark support.function.construct.php",
+          "text.html.spark meta.function-call.php"
+        ],
+        "settings": {
+          "foreground": "#82aaff"
+        }
+      },
+      {
+        "name": "Spark PHP keywords and operators",
+        "scope": [
+          "text.html.spark keyword.control.php",
+          "text.html.spark keyword.operator.php"
+        ],
+        "settings": {
+          "foreground": "#ff7ab2"
+        }
+      },
+      {
+        "name": "Spark PHP constants and numbers",
+        "scope": [
+          "text.html.spark constant.language.php",
+          "text.html.spark constant.numeric.php",
+          "text.html.spark constant.language.spark",
+          "text.html.spark constant.numeric.spark"
+        ],
+        "settings": {
+          "foreground": "#f2cc60"
+        }
+      },
+      {
+        "name": "Spark comments",
+        "scope": [
+          "comment.block.spark",
+          "text.html.spark comment.block.html",
+          "text.html.spark comment.line.double-slash.php",
+          "text.html.spark comment.block.php"
+        ],
+        "settings": {
+          "foreground": "#6e7681",
+          "fontStyle": "italic"
+        }
+      }
+    ]
   }
 }
