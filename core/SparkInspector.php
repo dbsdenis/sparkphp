@@ -789,7 +789,7 @@ class SparkInspector
       </div>
       <div class="spark-inspector-controls">
         <button type="button" id="spark-inspector-toggle" class="spark-inspector-button" aria-label="Toggle compact mode">Compact</button>
-        <a href="{$href}" class="spark-inspector-open">Open</a>
+        <a href="{$href}" class="spark-inspector-open" target="_blank" rel="noopener noreferrer">Open</a>
       </div>
     </div>
     <div class="spark-inspector-body">

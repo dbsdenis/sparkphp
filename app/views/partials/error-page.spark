@@ -1,0 +1,9 @@
+<div class="error-page">
+    <div class="error-page__icon">{{ $icon }}</div>
+    <h1 class="error-page__code">{{ $code }}</h1>
+    <p class="error-page__message">{{ $message }}</p>
+    @if(!empty($hint))
+        <p class="error-page__hint">{{ $hint }}</p>
+    @endif
+    <a href="/" class="error-page__action">{{ $action ?? 'Voltar ao início' }}</a>
+</div>

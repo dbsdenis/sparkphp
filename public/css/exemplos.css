@@ -1,0 +1,280 @@
+/* ═══════════════════════════════════════════════════════
+   exemplos.css — Interactive examples page
+   ═══════════════════════════════════════════════════════ */
+
+.exemplos-page main {
+    overflow: hidden;
+}
+
+.exemplos-shell {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 5rem;
+}
+
+.exemplos-hero {
+    text-align: center;
+    padding: 3rem 0 3.5rem;
+}
+
+.exemplos-hero h1 {
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    letter-spacing: -.05em;
+    margin: 0;
+}
+
+.exemplos-hero p {
+    margin: 1rem auto 0;
+    max-width: 34rem;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+/* ── Layout ── */
+.exemplos-layout {
+    display: grid;
+    grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
+    gap: 2rem;
+    align-items: start;
+}
+
+/* ── Sidebar ── */
+.exemplos-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: .85rem;
+    position: sticky;
+    top: 5rem;
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+    padding-right: .1rem;
+    scrollbar-width: none;
+}
+
+.exemplos-sidebar::-webkit-scrollbar {
+    display: none;
+}
+
+.exemplos-tab {
+    display: flex;
+    align-items: center;
+    gap: .95rem;
+    width: 100%;
+    min-height: 5.4rem;
+    padding: 1.15rem 1.25rem;
+    border-radius: 1.35rem;
+    border: 1px solid var(--border-soft);
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--text-primary);
+    font-size: .95rem;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(27, 22, 14, 0.04);
+    transition: background .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    font-family: inherit;
+}
+
+:root[data-theme='light'] .exemplos-tab {
+    background: rgba(255, 255, 255, 0.88);
+}
+
+.exemplos-tab:hover {
+    border-color: rgba(255, 166, 58, 0.3);
+    background: rgba(255, 255, 255, 0.96);
+    transform: translateY(-1px);
+}
+
+.exemplos-tab.active {
+    border-color: transparent;
+    background: linear-gradient(180deg, #ff8b1f 0%, #ff8817 100%);
+    color: var(--button-text);
+    box-shadow: 0 14px 28px rgba(255, 136, 23, 0.2);
+}
+
+:root[data-theme='light'] .exemplos-tab.active {
+    background: linear-gradient(180deg, #ff8b1f 0%, #ff8817 100%);
+    color: var(--button-text);
+}
+
+.exemplos-tab__chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.15rem;
+    height: 1.15rem;
+    flex-shrink: 0;
+    opacity: .9;
+    transition: transform .2s ease, opacity .2s ease;
+}
+
+.exemplos-tab__chevron svg {
+    width: 1.15rem;
+    height: 1.15rem;
+}
+
+.exemplos-tab.active .exemplos-tab__chevron {
+    transform: rotate(90deg);
+    opacity: 1;
+}
+
+.exemplos-tab__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.exemplos-tab__title {
+    display: block;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: -.02em;
+}
+
+.exemplos-tab__tag {
+    display: block;
+    color: var(--brand);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    margin-top: .28rem;
+}
+
+.exemplos-tab.active .exemplos-tab__tag {
+    color: rgba(255, 255, 255, 0.72);
+}
+
+/* ── Content ── */
+.exemplos-content {
+    min-width: 0;
+}
+
+.exemplo-panel {
+    display: none;
+}
+
+.exemplo-panel.active {
+    display: block;
+}
+
+.exemplo-panel h2 {
+    margin: 0 0 .5rem;
+    font-size: 1.75rem;
+    letter-spacing: -.03em;
+}
+
+.exemplo-panel > p {
+    margin: 0 0 1.5rem;
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+
+/* ── Output button ── */
+.ex-output-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .7rem 1.4rem;
+    border-radius: .85rem;
+    border: none;
+    background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+    color: var(--button-text);
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity .2s ease, transform .2s ease;
+}
+
+.ex-output-btn:hover {
+    opacity: .9;
+    transform: translateY(-1px);
+}
+
+.ex-output-btn svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* ── Output panel ── */
+.ex-output {
+    display: none;
+    margin-top: 1rem;
+    padding: 1.25rem;
+    border-radius: 1rem;
+    border: 1px solid var(--border-soft);
+    background: var(--surface-1);
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    font-size: .85rem;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+}
+
+:root[data-theme='light'] .ex-output {
+    background: rgba(255, 255, 255, 0.84);
+}
+
+.ex-output.visible {
+    display: block;
+}
+
+.ex-output strong {
+    color: var(--text-primary);
+}
+
+.ex-output .output-status {
+    color: var(--brand);
+    font-weight: 700;
+}
+
+/* ── Responsive ── */
+@media (max-width: 820px) {
+    .exemplos-shell {
+        padding: 1.25rem 1rem 4rem;
+    }
+
+    .exemplos-layout {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .exemplos-sidebar {
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: visible;
+        position: static;
+        max-height: none;
+        gap: .65rem;
+        padding-bottom: .35rem;
+    }
+
+    .exemplos-tab {
+        width: auto;
+        min-width: 220px;
+        flex-shrink: 0;
+        min-height: auto;
+        padding: .95rem 1rem;
+        border-radius: 1rem;
+        gap: .85rem;
+    }
+
+    .exemplos-tab__chevron,
+    .exemplos-tab__chevron svg {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .exemplos-tab__title {
+        font-size: .95rem;
+    }
+
+    .exemplos-tab__tag {
+        font-size: .64rem;
+        letter-spacing: .15em;
+        margin-top: .25rem;
+    }
+}

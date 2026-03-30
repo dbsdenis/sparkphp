@@ -1,0 +1,58 @@
+/* ═══════════════════════════════════════════════════════
+   errors.css — Error pages (404, 405, 419, 500, 503)
+   ═══════════════════════════════════════════════════════ */
+
+.error-page {
+    text-align: center;
+    padding: 5rem 1.5rem;
+}
+
+.error-page__icon {
+    font-size: 6rem;
+    line-height: 1;
+}
+
+.error-page__code {
+    font-size: 5rem;
+    color: var(--text-primary);
+    margin: .5rem 0;
+    font-weight: 700;
+    letter-spacing: -.04em;
+}
+
+.error-page__message {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    max-width: 30rem;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+}
+
+.error-page__hint {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+    max-width: 30rem;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+}
+
+.error-page__action {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+    color: var(--button-text);
+    padding: .75rem 2rem;
+    border-radius: 999px;
+    font-weight: 600;
+    transition: transform .2s ease, opacity .2s ease;
+}
+
+.error-page__action:hover {
+    transform: translateY(-1px);
+    opacity: .9;
+}

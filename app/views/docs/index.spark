@@ -1,763 +1,7 @@
 @title('Documentação — SparkPHP')
 @bodyClass('docs-page')
 
-<style>
-    .docs-page main {
-        overflow: hidden;
-    }
-
-    .docs-shell {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 2rem 1.5rem 5rem;
-        display: grid;
-        gap: 4rem;
-    }
-
-    /* ── Hero ── */
-    .docs-hero {
-        text-align: center;
-        padding: 3rem 0 0;
-    }
-
-    .section-tag {
-        display: inline-block;
-        color: var(--brand);
-        font-size: .8rem;
-        font-weight: 700;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-        margin-bottom: .75rem;
-    }
-
-    .docs-hero h1 {
-        font-size: clamp(2.5rem, 6vw, 4rem);
-        letter-spacing: -.05em;
-        margin: 0;
-    }
-
-    .docs-hero p {
-        margin: 1rem auto 0;
-        max-width: 34rem;
-        color: var(--text-secondary);
-        font-size: 1.1rem;
-        line-height: 1.6;
-    }
-
-    .docs-badges {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: .75rem;
-        flex-wrap: wrap;
-        margin-top: 1.5rem;
-    }
-
-    .docs-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: .4rem;
-        padding: .5rem .9rem;
-        border-radius: .7rem;
-        border: 1px solid var(--border-soft);
-        background: var(--surface-1);
-        color: var(--text-secondary);
-        font-size: .88rem;
-        font-weight: 500;
-    }
-
-    :root[data-theme='light'] .docs-badge {
-        background: rgba(255, 255, 255, 0.84);
-    }
-
-    .docs-badge strong {
-        color: var(--text-primary);
-    }
-
-    /* ── Highlights ── */
-    .docs-highlights {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1rem;
-        margin-top: 2rem;
-    }
-
-    .docs-highlight {
-        padding: 1.25rem;
-        border-radius: 1rem;
-        border: 1px solid var(--border-soft);
-        background: var(--surface-1);
-        text-align: left;
-    }
-
-    :root[data-theme='light'] .docs-highlight {
-        background: rgba(255, 255, 255, 0.84);
-    }
-
-    .docs-highlight strong {
-        display: block;
-        margin-top: .85rem;
-        margin-bottom: .35rem;
-        font-size: .95rem;
-    }
-
-    .docs-highlight p {
-        margin: 0;
-        color: var(--text-secondary);
-        font-size: .88rem;
-        line-height: 1.6;
-    }
-
-    .docs-highlight__icon,
-    .principle-card__icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--brand);
-    }
-
-    .docs-highlight__icon {
-        width: 2rem;
-        height: 2rem;
-        border-radius: .6rem;
-        background: rgba(255, 166, 58, 0.1);
-    }
-
-    .docs-highlight__icon svg,
-    .principle-card__icon svg {
-        width: .95rem;
-        height: .95rem;
-    }
-
-    /* ── Guide Table ── */
-    .docs-guide-block {
-        opacity: 1;
-        transform: none;
-    }
-
-    .docs-guide-toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-        flex-wrap: wrap;
-    }
-
-    .docs-guide-toolbar h2 {
-        margin: 0;
-        font-size: 1.5rem;
-        letter-spacing: -.03em;
-    }
-
-    .docs-search-wrap {
-        position: relative;
-        width: 100%;
-        max-width: 20rem;
-    }
-
-    .docs-search-icon {
-        position: absolute;
-        top: 50%;
-        left: 1rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 1rem;
-        height: 1rem;
-        color: var(--text-muted);
-        transform: translateY(-50%);
-        pointer-events: none;
-    }
-
-    .docs-search-icon svg {
-        width: 1rem;
-        height: 1rem;
-    }
-
-    .docs-guide-section {
-        border-radius: 1.5rem;
-        border: 1px solid var(--border-soft);
-        background: var(--surface-1);
-        overflow: hidden;
-    }
-
-    :root[data-theme='light'] .docs-guide-section {
-        background: rgba(255, 255, 255, 0.88);
-    }
-
-    .docs-search {
-        width: 100%;
-        padding: .78rem 1rem .78rem 2.55rem;
-        border-radius: .95rem;
-        border: 1px solid var(--border-soft);
-        background: var(--surface-1);
-        color: var(--text-primary);
-        font-size: .9rem;
-        font-family: inherit;
-        transition: border-color .2s ease, box-shadow .2s ease;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
-    }
-
-    :root[data-theme='light'] .docs-search {
-        background: rgba(255, 255, 255, 0.92);
-    }
-
-    .docs-search::placeholder {
-        color: var(--text-muted);
-    }
-
-    .docs-search:focus {
-        outline: none;
-        border-color: var(--brand);
-        box-shadow: 0 0 0 4px rgba(255, 166, 58, 0.14);
-    }
-
-    .docs-table-head {
-        display: grid;
-        grid-template-columns: 3rem minmax(0, 1fr) minmax(0, 1.5fr);
-        gap: 1rem;
-        padding: .95rem 1.25rem;
-        border-bottom: 1px solid var(--border-soft);
-        background: rgba(255, 255, 255, 0.03);
-        color: var(--text-muted);
-        font-size: .72rem;
-        font-weight: 700;
-        letter-spacing: .12em;
-        text-transform: uppercase;
-    }
-
-    :root[data-theme='light'] .docs-table-head {
-        background: rgba(243, 236, 226, 0.46);
-    }
-
-    .docs-table-row {
-        display: grid;
-        grid-template-columns: 3rem minmax(0, 1fr) minmax(0, 1.5fr);
-        gap: 1rem;
-        padding: 1rem 1.25rem;
-        border-bottom: 1px solid var(--border-soft);
-        color: inherit;
-        align-items: center;
-        transition: background .18s ease, color .18s ease;
-    }
-
-    .docs-table-row:last-child {
-        border-bottom: none;
-    }
-
-    .docs-table-row:hover {
-        background: rgba(255, 166, 58, 0.05);
-    }
-
-    .docs-table-row__group {
-        display: contents;
-    }
-
-    .docs-table-row__number {
-        color: var(--brand);
-        font-family: "JetBrains Mono", "Fira Code", monospace;
-        font-size: .95rem;
-        font-weight: 700;
-    }
-
-    .docs-table-row__icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 1.65rem;
-        height: 1.65rem;
-        border-radius: .55rem;
-        background: rgba(255, 166, 58, 0.1);
-        color: var(--brand);
-        flex-shrink: 0;
-    }
-
-    .docs-table-row__icon svg {
-        width: .85rem;
-        height: .85rem;
-    }
-
-    .docs-table-row__icon--mobile {
-        display: none;
-    }
-
-    .docs-table-row__title {
-        display: inline-flex;
-        align-items: center;
-        gap: .55rem;
-        min-width: 0;
-        color: var(--text-primary);
-        font-size: .95rem;
-        font-weight: 600;
-        line-height: 1.35;
-        transition: color .18s ease;
-    }
-
-    .docs-table-row__title-label {
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .docs-table-row__desc {
-        color: var(--text-secondary);
-        font-size: .9rem;
-        line-height: 1.5;
-    }
-
-    .docs-table-row:hover .docs-table-row__title {
-        color: var(--brand);
-    }
-
-    .docs-table-row__desc code,
-    .guide-card p code,
-    .topic-link__desc code {
-        display: inline;
-        padding: .1rem .35rem;
-        border-radius: .35rem;
-        background: var(--surface-3);
-        color: var(--text-primary);
-        font-size: .85em;
-    }
-
-    /* ── Code Window ── */
-    .docs-code-window {
-        border-radius: 1rem;
-        overflow: hidden;
-        border: 1px solid var(--border-soft);
-        background: #1a1a2e;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-    }
-
-    :root[data-theme='light'] .docs-code-window {
-        background: #1e1e2e;
-    }
-
-    .docs-code-bar {
-        display: flex;
-        align-items: center;
-        gap: .6rem;
-        padding: .85rem 1.1rem;
-        background: rgba(255, 255, 255, 0.04);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .docs-code-dots {
-        display: flex;
-        gap: .4rem;
-    }
-
-    .docs-code-dots span {
-        width: .7rem;
-        height: .7rem;
-        border-radius: 50%;
-    }
-
-    .docs-code-dots span:nth-child(1) { background: #ff5f57; }
-    .docs-code-dots span:nth-child(2) { background: #febc2e; }
-    .docs-code-dots span:nth-child(3) { background: #28c840; }
-
-    .docs-code-label {
-        color: rgba(255, 255, 255, 0.4);
-        font-family: "JetBrains Mono", "Fira Code", monospace;
-        font-size: .78rem;
-    }
-
-    .docs-code-copy {
-        margin-left: auto;
-        display: inline-flex;
-        align-items: center;
-        gap: .35rem;
-        padding: .3rem .6rem;
-        border-radius: .5rem;
-        border: none;
-        background: transparent;
-        color: rgba(255, 255, 255, 0.35);
-        font-size: .78rem;
-        cursor: pointer;
-        font-family: inherit;
-        transition: color .2s ease;
-    }
-
-    .docs-code-copy:hover {
-        color: rgba(255, 255, 255, 0.7);
-    }
-
-    .docs-code-window pre {
-        margin: 0;
-        padding: 1.4rem 1.5rem;
-        color: #e2e8f0;
-        font-size: .88rem;
-        line-height: 2;
-        overflow-x: auto;
-    }
-
-    .docs-code-window .line-comment { color: #6b7394; }
-    .docs-code-window .line-keyword { color: var(--brand); font-weight: 700; }
-    .docs-code-window .line-fn { color: #7dd3fc; }
-    .docs-code-window .line-string { color: #86efac; }
-    .docs-code-window .line-var { color: #c4b5fd; }
-    .docs-code-window .line-tag { color: #f472b6; }
-
-    /* ── Section Head ── */
-    .docs-section-head {
-        max-width: 42rem;
-        margin: 0 auto 2rem;
-        text-align: center;
-    }
-
-    .docs-section-head h2 {
-        margin: .5rem 0 0;
-        font-size: clamp(1.8rem, 4vw, 2.5rem);
-        letter-spacing: -.04em;
-    }
-
-    .docs-section-head p {
-        margin: .75rem 0 0;
-        color: var(--text-secondary);
-        font-size: 1rem;
-        line-height: 1.7;
-    }
-
-    /* ── Principles ── */
-    .principles-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-    }
-
-    .principle-card {
-        display: flex;
-        align-items: flex-start;
-        gap: .85rem;
-        padding: 1.15rem 1.25rem;
-        border-radius: 1rem;
-        border: 1px solid var(--border-soft);
-        background: var(--surface-1);
-    }
-
-    :root[data-theme='light'] .principle-card {
-        background: rgba(255, 255, 255, 0.84);
-    }
-
-    .principle-card__icon {
-        flex-shrink: 0;
-        width: 2rem;
-        height: 2rem;
-        border-radius: .5rem;
-        background: rgba(255, 166, 58, 0.1);
-    }
-
-    .principle-card p {
-        margin: 0;
-        color: var(--text-secondary);
-        font-size: .92rem;
-        line-height: 1.65;
-    }
-
-    .principle-card strong {
-        color: var(--text-primary);
-    }
-
-    /* ── Product Guides ── */
-    .guides-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 1rem;
-    }
-
-    .guide-card {
-        display: flex;
-        flex-direction: column;
-        padding: 1.35rem;
-        border-radius: 1.15rem;
-        border: 1px solid var(--border-soft);
-        background: var(--surface-1);
-        color: inherit;
-        transition: transform .2s ease, border-color .2s ease;
-    }
-
-    :root[data-theme='light'] .guide-card {
-        background: rgba(255, 255, 255, 0.84);
-    }
-
-    .guide-card:hover {
-        transform: translateY(-2px);
-        border-color: var(--border-strong);
-    }
-
-    .guide-card h3 {
-        margin: 0 0 .5rem;
-        font-size: 1.05rem;
-        letter-spacing: -.02em;
-    }
-
-    .guide-card__kicker {
-        display: inline-flex;
-        margin-bottom: .65rem;
-        color: var(--brand);
-        font-size: .78rem;
-        font-weight: 700;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-    }
-
-    .guide-card p {
-        margin: 0;
-        color: var(--text-secondary);
-        font-size: .88rem;
-        line-height: 1.6;
-        flex: 1;
-    }
-
-    .guide-card__action {
-        display: inline-flex;
-        align-items: center;
-        gap: .3rem;
-        margin-top: .85rem;
-        color: var(--brand);
-        font-size: .85rem;
-        font-weight: 600;
-    }
-
-    /* ── Topics Grid ── */
-    .docs-section-head--topics {
-        margin-bottom: 2.25rem;
-    }
-
-    .docs-section-head--topics h2 {
-        margin-top: .4rem;
-    }
-
-    .topics-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 1.25rem;
-    }
-
-    .topic-link {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        min-height: 8rem;
-        padding: 1.35rem 1.6rem;
-        border-radius: 1.6rem;
-        border: 1px solid var(--border-soft);
-        background: var(--surface-1);
-        color: inherit;
-        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset;
-        transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
-    }
-
-    :root[data-theme='light'] .topic-link {
-        background: rgba(255, 255, 255, 0.88);
-    }
-
-    .topic-link:hover {
-        border-color: rgba(255, 166, 58, 0.28);
-        transform: translateY(-1px);
-        box-shadow:
-            0 14px 28px rgba(22, 22, 20, 0.06),
-            0 1px 0 rgba(255, 255, 255, 0.45) inset;
-    }
-
-    .topic-link__icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 3.25rem;
-        height: 3.25rem;
-        border-radius: 1rem;
-        background: rgba(255, 166, 58, 0.1);
-        color: var(--brand);
-        flex-shrink: 0;
-    }
-
-    .topic-link__icon svg {
-        width: 1.25rem;
-        height: 1.25rem;
-    }
-
-    .topic-link__info {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .topic-link__meta {
-        display: flex;
-        align-items: center;
-        gap: .7rem;
-        min-width: 0;
-    }
-
-    .topic-link__number {
-        color: var(--brand);
-        font-family: "JetBrains Mono", "Fira Code", monospace;
-        font-size: .95rem;
-        font-weight: 700;
-        letter-spacing: -.03em;
-        flex-shrink: 0;
-    }
-
-    .topic-link__title {
-        display: block;
-        min-width: 0;
-        font-size: 1rem;
-        font-weight: 700;
-        letter-spacing: -.02em;
-        line-height: 1.3;
-        transition: color .2s ease;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .topic-link__desc {
-        display: -webkit-box;
-        color: var(--text-secondary);
-        font-size: .9rem;
-        line-height: 1.45;
-        margin-top: .3rem;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        -webkit-line-clamp: 1;
-        -webkit-box-orient: vertical;
-    }
-
-    .topic-link__arrow {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 1rem;
-        height: 1rem;
-        color: var(--text-muted);
-        opacity: 0;
-        flex-shrink: 0;
-        margin-left: auto;
-        transform: translateX(-3px);
-        transition: opacity .2s ease, transform .2s ease;
-    }
-
-    .topic-link__arrow svg {
-        width: 1rem;
-        height: 1rem;
-    }
-
-    .topic-link:hover .topic-link__title {
-        color: var(--brand);
-    }
-
-    .topic-link:hover .topic-link__arrow {
-        opacity: 1;
-        transform: translateX(0);
-    }
-
-    /* ── CTA ── */
-    .docs-cta {
-        text-align: center;
-        padding: 3.5rem 2rem;
-        border-radius: 1.5rem;
-        background:
-            linear-gradient(135deg, rgba(255, 166, 58, 0.08), rgba(255, 166, 58, 0.02)),
-            var(--surface-1);
-        border: 1px solid var(--border-soft);
-    }
-
-    :root[data-theme='light'] .docs-cta {
-        background:
-            linear-gradient(135deg, rgba(255, 166, 58, 0.1), rgba(255, 166, 58, 0.03)),
-            rgba(255, 255, 255, 0.9);
-    }
-
-    .docs-cta h2 {
-        margin: 0 0 .75rem;
-        font-size: 1.8rem;
-        letter-spacing: -.03em;
-    }
-
-    .docs-cta p {
-        margin: 0 auto 1.5rem;
-        max-width: 30rem;
-        color: var(--text-secondary);
-        line-height: 1.6;
-    }
-
-    /* ── Responsive ── */
-    @media (max-width: 820px) {
-        .docs-shell {
-            padding: 1.25rem 1rem 4rem;
-            gap: 3rem;
-        }
-
-        .docs-highlights,
-        .principles-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .topics-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-    }
-
-    @media (max-width: 640px) {
-        .docs-guide-toolbar {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .docs-search-wrap {
-            max-width: none;
-        }
-
-        .docs-table-head {
-            display: none;
-        }
-
-        .docs-table-row {
-            grid-template-columns: 1fr;
-            gap: .4rem;
-        }
-
-        .docs-table-row__group {
-            display: flex;
-            align-items: center;
-            gap: .75rem;
-            min-width: 0;
-        }
-
-        .docs-table-row__icon--mobile {
-            display: inline-flex;
-        }
-
-        .docs-table-row__icon--desktop {
-            display: none;
-        }
-
-        .docs-table-row__title-label {
-            white-space: normal;
-        }
-
-        .docs-table-row__desc {
-            padding-left: 2.55rem;
-        }
-
-        .topics-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .topic-link {
-            min-height: auto;
-            padding: 1.2rem 1.15rem;
-            border-radius: 1.35rem;
-        }
-
-        .topic-link__title {
-            white-space: normal;
-        }
-    }
-</style>
+@css('docs')
 
 <div class="docs-shell">
 
@@ -827,16 +71,16 @@
 
     <!-- ── Quick Start ── -->
     <section>
-        <div class="docs-section-head">
+        <div class="section-head section-head--compact">
             <span class="section-tag">Começando</span>
             <h2>Quick Start</h2>
         </div>
 
-        <div class="docs-code-window">
-            <div class="docs-code-bar">
-                <div class="docs-code-dots"><span></span><span></span><span></span></div>
-                <span class="docs-code-label">terminal</span>
-                <button class="docs-code-copy" onclick="copyCode(this)">Copiar</button>
+        <div class="code-window">
+            <div class="code-window__bar">
+                <div class="code-window__dots"><span></span><span></span><span></span></div>
+                <span class="code-window__label">terminal</span>
+                <button class="code-window__copy" onclick="copyCode(this)">Copiar</button>
             </div>
             <pre><?php echo <<<'HTML'
 <span class="line-comment"># 1. Clone e instale</span>
@@ -860,16 +104,16 @@ HTML; ?></pre>
 
     <!-- ── First Route Examples ── -->
     <section>
-        <div class="docs-section-head">
+        <div class="section-head section-head--compact">
             <span class="section-tag">Primeiros passos</span>
             <h2>Sua primeira rota</h2>
         </div>
 
-        <div class="docs-code-window" style="margin-bottom: 1.5rem;">
-            <div class="docs-code-bar">
-                <div class="docs-code-dots"><span></span><span></span><span></span></div>
-                <span class="docs-code-label">app/routes/hello.php</span>
-                <button class="docs-code-copy" onclick="copyCode(this)">Copiar</button>
+        <div class="code-window code-window--spaced">
+            <div class="code-window__bar">
+                <div class="code-window__dots"><span></span><span></span><span></span></div>
+                <span class="code-window__label">app/routes/hello.php</span>
+                <button class="code-window__copy" onclick="copyCode(this)">Copiar</button>
             </div>
             <pre><?php echo <<<'HTML'
 <span class="line-comment">// app/routes/hello.php — acesse /hello</span>
@@ -880,13 +124,13 @@ HTML; ?></pre>
 HTML; ?></pre>
         </div>
 
-        <h3 style="margin: 2rem 0 1rem; font-size: 1.25rem;">Sua primeira rota com parâmetro</h3>
+        <h3 class="docs-subsection-title">Sua primeira rota com parâmetro</h3>
 
-        <div class="docs-code-window" style="margin-bottom: 1.5rem;">
-            <div class="docs-code-bar">
-                <div class="docs-code-dots"><span></span><span></span><span></span></div>
-                <span class="docs-code-label">app/routes/users.[id].php</span>
-                <button class="docs-code-copy" onclick="copyCode(this)">Copiar</button>
+        <div class="code-window code-window--spaced">
+            <div class="code-window__bar">
+                <div class="code-window__dots"><span></span><span></span><span></span></div>
+                <span class="code-window__label">app/routes/users.[id].php</span>
+                <button class="code-window__copy" onclick="copyCode(this)">Copiar</button>
             </div>
             <pre><?php echo <<<'HTML'
 <span class="line-comment">// app/routes/users.[id].php — acesse /users/42</span>
@@ -899,13 +143,13 @@ HTML; ?></pre>
 HTML; ?></pre>
         </div>
 
-        <h3 style="margin: 2rem 0 1rem; font-size: 1.25rem;">Sua primeira view</h3>
+        <h3 class="docs-subsection-title">Sua primeira view</h3>
 
-        <div class="docs-code-window">
-            <div class="docs-code-bar">
-                <div class="docs-code-dots"><span></span><span></span><span></span></div>
-                <span class="docs-code-label">app/views/hello.spark</span>
-                <button class="docs-code-copy" onclick="copyCode(this)">Copiar</button>
+        <div class="code-window">
+            <div class="code-window__bar">
+                <div class="code-window__dots"><span></span><span></span><span></span></div>
+                <span class="code-window__label">app/views/hello.spark</span>
+                <button class="code-window__copy" onclick="copyCode(this)">Copiar</button>
             </div>
             <pre><?php echo <<<'HTML'
 <span class="line-comment">&lt;!-- app/views/hello.spark --&gt;</span>
@@ -924,7 +168,7 @@ HTML; ?></pre>
 
     <!-- ── Principles ── -->
     <section>
-        <div class="docs-section-head">
+        <div class="section-head section-head--compact">
             <span class="section-tag">Filosofia</span>
             <h2>Princípios</h2>
         </div>
@@ -941,7 +185,7 @@ HTML; ?></pre>
 
     <!-- ── Product Guides ── -->
     <section>
-        <div class="docs-section-head">
+        <div class="section-head section-head--compact">
             <span class="section-tag">Indo além</span>
             <h2>Guias de produto</h2>
             <p>Se sua pergunta não é "como usar um helper" e sim "quando o Spark faz sentido?", comece por aqui.</p>
@@ -961,8 +205,8 @@ HTML; ?></pre>
 
     <!-- ── All Topics ── -->
     <section>
-        <div style="opacity: 1; transform: none;">
-            <div class="docs-section-head docs-section-head--topics">
+        <div class="docs-static-panel">
+            <div class="section-head section-head--compact section-head--topics">
                 <span class="section-tag">Referência rápida</span>
                 <h2>Todos os tópicos</h2>
             </div>
@@ -1008,12 +252,5 @@ HTML; ?></pre>
         });
     }
 
-    function copyCode(btn) {
-        const pre = btn.closest('.docs-code-window').querySelector('pre');
-        navigator.clipboard.writeText(pre.textContent).then(() => {
-            const orig = btn.textContent;
-            btn.textContent = 'Copiado!';
-            setTimeout(() => { btn.textContent = orig; }, 1500);
-        });
-    }
 </script>
+<script src="{{ asset('js/copy-code.js') }}"></script>

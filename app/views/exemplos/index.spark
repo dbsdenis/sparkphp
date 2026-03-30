@@ -1,369 +1,121 @@
 @title('Exemplos — SparkPHP')
 @bodyClass('exemplos-page')
 
-<style>
-    .exemplos-page main {
-        overflow: hidden;
-    }
-
-    .exemplos-shell {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 2rem 1.5rem 5rem;
-    }
-
-    .exemplos-hero {
-        text-align: center;
-        padding: 3rem 0 3.5rem;
-    }
-
-    .exemplos-hero .section-tag {
-        display: inline-block;
-        color: var(--brand);
-        font-size: .8rem;
-        font-weight: 700;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-        margin-bottom: .75rem;
-    }
-
-    .exemplos-hero h1 {
-        font-size: clamp(2.5rem, 6vw, 4rem);
-        letter-spacing: -.05em;
-        margin: 0;
-    }
-
-    .exemplos-hero p {
-        margin: 1rem auto 0;
-        max-width: 34rem;
-        color: var(--text-secondary);
-        font-size: 1.1rem;
-        line-height: 1.6;
-    }
-
-    /* ── Layout ── */
-    .exemplos-layout {
-        display: grid;
-        grid-template-columns: 300px 1fr;
-        gap: 2.5rem;
-        align-items: start;
-    }
-
-    /* ── Sidebar ── */
-    .exemplos-sidebar {
-        display: flex;
-        flex-direction: column;
-        gap: .35rem;
-        position: sticky;
-        top: 5rem;
-    }
-
-    .exemplos-tab {
-        display: flex;
-        align-items: center;
-        gap: .75rem;
-        padding: .85rem 1.1rem;
-        border-radius: .85rem;
-        border: none;
-        background: transparent;
-        color: var(--text-secondary);
-        font-size: 1rem;
-        font-weight: 500;
-        text-align: left;
-        cursor: pointer;
-        transition: background .2s ease, color .2s ease;
-        font-family: inherit;
-    }
-
-    .exemplos-tab:hover {
-        background: var(--surface-1);
-        color: var(--text-primary);
-    }
-
-    .exemplos-tab.active {
-        background: linear-gradient(135deg, var(--brand), var(--brand-strong));
-        color: var(--button-text);
-    }
-
-    .exemplos-tab__chevron {
-        font-size: .75rem;
-        transition: transform .2s ease;
-    }
-
-    .exemplos-tab.active .exemplos-tab__chevron {
-        transform: rotate(90deg);
-    }
-
-    .exemplos-tab__info {
-        flex: 1;
-    }
-
-    .exemplos-tab__title {
-        display: block;
-        font-weight: 600;
-    }
-
-    .exemplos-tab__tag {
-        display: block;
-        font-size: .72rem;
-        font-weight: 700;
-        letter-spacing: .06em;
-        text-transform: uppercase;
-        margin-top: .15rem;
-        opacity: .7;
-    }
-
-    .exemplos-tab.active .exemplos-tab__tag {
-        opacity: .85;
-    }
-
-    /* ── Content ── */
-    .exemplos-content {
-        min-width: 0;
-    }
-
-    .exemplo-panel {
-        display: none;
-    }
-
-    .exemplo-panel.active {
-        display: block;
-    }
-
-    .exemplo-panel h2 {
-        margin: 0 0 .5rem;
-        font-size: 1.75rem;
-        letter-spacing: -.03em;
-    }
-
-    .exemplo-panel > p {
-        margin: 0 0 1.5rem;
-        color: var(--text-secondary);
-        font-size: 1.05rem;
-        line-height: 1.6;
-    }
-
-    /* ── Code Window ── */
-    .ex-code-window {
-        border-radius: 1rem;
-        overflow: hidden;
-        border: 1px solid var(--border-soft);
-        background: #1a1a2e;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-        margin-bottom: 1.5rem;
-    }
-
-    :root[data-theme='light'] .ex-code-window {
-        background: #1e1e2e;
-    }
-
-    .ex-code-window__bar {
-        display: flex;
-        align-items: center;
-        gap: .6rem;
-        padding: .85rem 1.1rem;
-        background: rgba(255, 255, 255, 0.04);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .ex-code-window__dots {
-        display: flex;
-        gap: .4rem;
-    }
-
-    .ex-code-window__dots span {
-        width: .7rem;
-        height: .7rem;
-        border-radius: 50%;
-    }
-
-    .ex-code-window__dots span:nth-child(1) { background: #ff5f57; }
-    .ex-code-window__dots span:nth-child(2) { background: #febc2e; }
-    .ex-code-window__dots span:nth-child(3) { background: #28c840; }
-
-    .ex-code-window__label {
-        color: rgba(255, 255, 255, 0.4);
-        font-size: .82rem;
-    }
-
-    .ex-code-window__copy {
-        margin-left: auto;
-        display: inline-flex;
-        align-items: center;
-        gap: .35rem;
-        padding: .3rem .6rem;
-        border-radius: .5rem;
-        border: none;
-        background: transparent;
-        color: rgba(255, 255, 255, 0.35);
-        font-size: .78rem;
-        cursor: pointer;
-        font-family: inherit;
-        transition: color .2s ease;
-    }
-
-    .ex-code-window__copy:hover {
-        color: rgba(255, 255, 255, 0.7);
-    }
-
-    .ex-code-window pre {
-        margin: 0;
-        padding: 1.4rem 1.5rem;
-        color: #e2e8f0;
-        font-size: .88rem;
-        line-height: 2;
-        overflow-x: auto;
-    }
-
-    .ex-code-window .line-comment { color: #6b7394; }
-    .ex-code-window .line-keyword { color: var(--brand); font-weight: 700; }
-    .ex-code-window .line-fn { color: #7dd3fc; }
-    .ex-code-window .line-string { color: #86efac; }
-    .ex-code-window .line-var { color: #c4b5fd; }
-    .ex-code-window .line-tag { color: #f472b6; }
-    .ex-code-window .line-attr { color: #fbbf24; }
-
-    /* ── Output button ── */
-    .ex-output-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: .5rem;
-        padding: .7rem 1.4rem;
-        border-radius: .85rem;
-        border: none;
-        background: linear-gradient(135deg, var(--brand), var(--brand-strong));
-        color: var(--button-text);
-        font-size: .95rem;
-        font-weight: 600;
-        cursor: pointer;
-        font-family: inherit;
-        transition: opacity .2s ease, transform .2s ease;
-    }
-
-    .ex-output-btn:hover {
-        opacity: .9;
-        transform: translateY(-1px);
-    }
-
-    .ex-output-btn svg {
-        width: 1rem;
-        height: 1rem;
-    }
-
-    /* ── Output panel ── */
-    .ex-output {
-        display: none;
-        margin-top: 1rem;
-        padding: 1.25rem;
-        border-radius: 1rem;
-        border: 1px solid var(--border-soft);
-        background: var(--surface-1);
-        font-family: "JetBrains Mono", "Fira Code", monospace;
-        font-size: .85rem;
-        line-height: 1.8;
-        color: var(--text-secondary);
-        white-space: pre-wrap;
-    }
-
-    :root[data-theme='light'] .ex-output {
-        background: rgba(255, 255, 255, 0.84);
-    }
-
-    .ex-output.visible {
-        display: block;
-    }
-
-    .ex-output strong {
-        color: var(--text-primary);
-    }
-
-    .ex-output .output-status {
-        color: var(--brand);
-        font-weight: 700;
-    }
-
-    /* ── Responsive ── */
-    @media (max-width: 820px) {
-        .exemplos-shell {
-            padding: 1.25rem 1rem 4rem;
-        }
-
-        .exemplos-layout {
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-        }
-
-        .exemplos-sidebar {
-            flex-direction: row;
-            overflow-x: auto;
-            position: static;
-            gap: .5rem;
-            padding-bottom: .25rem;
-        }
-
-        .exemplos-tab {
-            white-space: nowrap;
-            padding: .65rem .9rem;
-            font-size: .9rem;
-        }
-
-        .exemplos-tab__tag {
-            display: none;
-        }
-    }
-</style>
+@css('exemplos')
 
 <div class="exemplos-shell">
     <section class="exemplos-hero">
         <span class="section-tag">Exemplos</span>
         <h1>Veja na prática</h1>
-        <p>Exemplos interativos de código SparkPHP — clique para explorar, copie para usar.</p>
+        <p>Exemplos interativos de código SparkPHP com rotas, auth, cache, filas, e-mail, busca e AI. Clique para explorar, copie e adapte no projeto.</p>
     </section>
 
     <div class="exemplos-layout">
         <div class="exemplos-sidebar" role="tablist">
-            <button class="exemplos-tab active" data-tab="hello" role="tab" aria-selected="true">
-                <span class="exemplos-tab__chevron">&#9656;</span>
+            <button type="button" class="exemplos-tab active" data-tab="hello" id="tab-hello" role="tab" aria-selected="true" aria-controls="panel-hello" tabindex="0">
+                <span class="exemplos-tab__chevron" aria-hidden="true">
+                    @partial('icon-chevron')
+                </span>
                 <span class="exemplos-tab__info">
                     <span class="exemplos-tab__title">Hello World</span>
                     <span class="exemplos-tab__tag">Básico</span>
                 </span>
             </button>
 
-            <button class="exemplos-tab" data-tab="crud" role="tab" aria-selected="false">
-                <span class="exemplos-tab__chevron">&#9656;</span>
+            <button type="button" class="exemplos-tab" data-tab="crud" id="tab-crud" role="tab" aria-selected="false" aria-controls="panel-crud" tabindex="-1">
+                <span class="exemplos-tab__chevron" aria-hidden="true">
+                    @partial('icon-chevron')
+                </span>
                 <span class="exemplos-tab__info">
                     <span class="exemplos-tab__title">CRUD completo</span>
                     <span class="exemplos-tab__tag">Rotas</span>
                 </span>
             </button>
 
-            <button class="exemplos-tab" data-tab="middleware" role="tab" aria-selected="false">
-                <span class="exemplos-tab__chevron">&#9656;</span>
+            <button type="button" class="exemplos-tab" data-tab="middleware" id="tab-middleware" role="tab" aria-selected="false" aria-controls="panel-middleware" tabindex="-1">
+                <span class="exemplos-tab__chevron" aria-hidden="true">
+                    @partial('icon-chevron')
+                </span>
                 <span class="exemplos-tab__info">
                     <span class="exemplos-tab__title">Middleware por arquivo</span>
                     <span class="exemplos-tab__tag">Middleware</span>
                 </span>
             </button>
 
-            <button class="exemplos-tab" data-tab="validation" role="tab" aria-selected="false">
-                <span class="exemplos-tab__chevron">&#9656;</span>
+            <button type="button" class="exemplos-tab" data-tab="validation" id="tab-validation" role="tab" aria-selected="false" aria-controls="panel-validation" tabindex="-1">
+                <span class="exemplos-tab__chevron" aria-hidden="true">
+                    @partial('icon-chevron')
+                </span>
                 <span class="exemplos-tab__info">
                     <span class="exemplos-tab__title">Validação integrada</span>
                     <span class="exemplos-tab__tag">Validação</span>
                 </span>
             </button>
 
-            <button class="exemplos-tab" data-tab="views" role="tab" aria-selected="false">
-                <span class="exemplos-tab__chevron">&#9656;</span>
+            <button type="button" class="exemplos-tab" data-tab="auth" id="tab-auth" role="tab" aria-selected="false" aria-controls="panel-auth" tabindex="-1">
+                <span class="exemplos-tab__chevron" aria-hidden="true">
+                    @partial('icon-chevron')
+                </span>
+                <span class="exemplos-tab__info">
+                    <span class="exemplos-tab__title">Login & auth</span>
+                    <span class="exemplos-tab__tag">Auth</span>
+                </span>
+            </button>
+
+            <button type="button" class="exemplos-tab" data-tab="session" id="tab-session" role="tab" aria-selected="false" aria-controls="panel-session" tabindex="-1">
+                <span class="exemplos-tab__chevron" aria-hidden="true">
+                    @partial('icon-chevron')
+                </span>
+                <span class="exemplos-tab__info">
+                    <span class="exemplos-tab__title">Sessão & cache</span>
+                    <span class="exemplos-tab__tag">State</span>
+                </span>
+            </button>
+
+            <button type="button" class="exemplos-tab" data-tab="jobs" id="tab-jobs" role="tab" aria-selected="false" aria-controls="panel-jobs" tabindex="-1">
+                <span class="exemplos-tab__chevron" aria-hidden="true">
+                    @partial('icon-chevron')
+                </span>
+                <span class="exemplos-tab__info">
+                    <span class="exemplos-tab__title">Jobs & queues</span>
+                    <span class="exemplos-tab__tag">Async</span>
+                </span>
+            </button>
+
+            <button type="button" class="exemplos-tab" data-tab="mail" id="tab-mail" role="tab" aria-selected="false" aria-controls="panel-mail" tabindex="-1">
+                <span class="exemplos-tab__chevron" aria-hidden="true">
+                    @partial('icon-chevron')
+                </span>
+                <span class="exemplos-tab__info">
+                    <span class="exemplos-tab__title">Mail</span>
+                    <span class="exemplos-tab__tag">Email</span>
+                </span>
+            </button>
+
+            <button type="button" class="exemplos-tab" data-tab="search" id="tab-search" role="tab" aria-selected="false" aria-controls="panel-search" tabindex="-1">
+                <span class="exemplos-tab__chevron" aria-hidden="true">
+                    @partial('icon-chevron')
+                </span>
+                <span class="exemplos-tab__info">
+                    <span class="exemplos-tab__title">Busca semântica</span>
+                    <span class="exemplos-tab__tag">Search</span>
+                </span>
+            </button>
+
+            <button type="button" class="exemplos-tab" data-tab="views" id="tab-views" role="tab" aria-selected="false" aria-controls="panel-views" tabindex="-1">
+                <span class="exemplos-tab__chevron" aria-hidden="true">
+                    @partial('icon-chevron')
+                </span>
                 <span class="exemplos-tab__info">
                     <span class="exemplos-tab__title">Spark Templates</span>
                     <span class="exemplos-tab__tag">Views</span>
                 </span>
             </button>
 
-            <button class="exemplos-tab" data-tab="ai" role="tab" aria-selected="false">
-                <span class="exemplos-tab__chevron">&#9656;</span>
+            <button type="button" class="exemplos-tab" data-tab="ai" id="tab-ai" role="tab" aria-selected="false" aria-controls="panel-ai" tabindex="-1">
+                <span class="exemplos-tab__chevron" aria-hidden="true">
+                    @partial('icon-chevron')
+                </span>
                 <span class="exemplos-tab__info">
                     <span class="exemplos-tab__title">AI SDK</span>
                     <span class="exemplos-tab__tag">AI</span>
@@ -373,15 +125,15 @@
 
         <div class="exemplos-content">
             <!-- Hello World -->
-            <div class="exemplo-panel active" data-panel="hello" role="tabpanel">
+            <div class="exemplo-panel active" id="panel-hello" data-panel="hello" role="tabpanel" aria-labelledby="tab-hello">
                 <h2>Hello World</h2>
                 <p>A rota mais simples possível — um arquivo, uma função, JSON na resposta.</p>
 
-                <div class="ex-code-window">
-                    <div class="ex-code-window__bar">
-                        <div class="ex-code-window__dots"><span></span><span></span><span></span></div>
-                        <span class="ex-code-window__label">código</span>
-                        <button class="ex-code-window__copy" onclick="copyCode(this)">&#128203; Copiar</button>
+                <div class="code-window code-window--spaced">
+                    <div class="code-window__bar">
+                        <div class="code-window__dots"><span></span><span></span><span></span></div>
+                        <span class="code-window__label">código</span>
+                        <button class="code-window__copy" onclick="copyCode(this)">&#128203; Copiar</button>
                     </div>
                     <pre><?php echo <<<'HTML'
 <span class="line-comment">// app/routes/hello.php</span>
@@ -408,15 +160,15 @@ Content-Type: application/json
             </div>
 
             <!-- CRUD -->
-            <div class="exemplo-panel" data-panel="crud" role="tabpanel">
+            <div class="exemplo-panel" id="panel-crud" data-panel="crud" role="tabpanel" aria-labelledby="tab-crud" hidden>
                 <h2>CRUD completo</h2>
                 <p>Defina GET, POST, PUT e DELETE no mesmo arquivo com tipagem automática.</p>
 
-                <div class="ex-code-window">
-                    <div class="ex-code-window__bar">
-                        <div class="ex-code-window__dots"><span></span><span></span><span></span></div>
-                        <span class="ex-code-window__label">código</span>
-                        <button class="ex-code-window__copy" onclick="copyCode(this)">&#128203; Copiar</button>
+                <div class="code-window code-window--spaced">
+                    <div class="code-window__bar">
+                        <div class="code-window__dots"><span></span><span></span><span></span></div>
+                        <span class="code-window__label">código</span>
+                        <button class="code-window__copy" onclick="copyCode(this)">&#128203; Copiar</button>
                     </div>
                     <pre><?php echo <<<'HTML'
 <span class="line-comment">// app/routes/users.[id].php</span>
@@ -453,15 +205,15 @@ HTML; ?></pre>
             </div>
 
             <!-- Middleware -->
-            <div class="exemplo-panel" data-panel="middleware" role="tabpanel">
+            <div class="exemplo-panel" id="panel-middleware" data-panel="middleware" role="tabpanel" aria-labelledby="tab-middleware" hidden>
                 <h2>Middleware por arquivo</h2>
                 <p>Crie um arquivo <code>_middleware.php</code> na pasta e ele se aplica a todas as rotas abaixo.</p>
 
-                <div class="ex-code-window">
-                    <div class="ex-code-window__bar">
-                        <div class="ex-code-window__dots"><span></span><span></span><span></span></div>
-                        <span class="ex-code-window__label">código</span>
-                        <button class="ex-code-window__copy" onclick="copyCode(this)">&#128203; Copiar</button>
+                <div class="code-window code-window--spaced">
+                    <div class="code-window__bar">
+                        <div class="code-window__dots"><span></span><span></span><span></span></div>
+                        <span class="code-window__label">código</span>
+                        <button class="code-window__copy" onclick="copyCode(this)">&#128203; Copiar</button>
                     </div>
                     <pre><?php echo <<<'HTML'
 <span class="line-comment">// app/routes/admin/_middleware.php</span>
@@ -491,15 +243,15 @@ HTTP/1.1 200 OK
             </div>
 
             <!-- Validação -->
-            <div class="exemplo-panel" data-panel="validation" role="tabpanel">
+            <div class="exemplo-panel" id="panel-validation" data-panel="validation" role="tabpanel" aria-labelledby="tab-validation" hidden>
                 <h2>Validação integrada</h2>
                 <p>Valide input com regras encadeadas. Erros voltam automaticamente para a view ou como JSON.</p>
 
-                <div class="ex-code-window">
-                    <div class="ex-code-window__bar">
-                        <div class="ex-code-window__dots"><span></span><span></span><span></span></div>
-                        <span class="ex-code-window__label">código</span>
-                        <button class="ex-code-window__copy" onclick="copyCode(this)">&#128203; Copiar</button>
+                <div class="code-window code-window--spaced">
+                    <div class="code-window__bar">
+                        <div class="code-window__dots"><span></span><span></span><span></span></div>
+                        <span class="code-window__label">código</span>
+                        <button class="code-window__copy" onclick="copyCode(this)">&#128203; Copiar</button>
                     </div>
                     <pre><?php echo <<<'HTML'
 <span class="line-comment">// app/routes/users.php</span>
@@ -538,16 +290,312 @@ HTTP/1.1 201 Created
 { <strong>"id"</strong>: 5, <strong>"name"</strong>: "João", <strong>"email"</strong>: "joao@ex.com" }</div>
             </div>
 
+            <!-- Auth -->
+            <div class="exemplo-panel" id="panel-auth" data-panel="auth" role="tabpanel" aria-labelledby="tab-auth" hidden>
+                <h2>Login & auth</h2>
+                <p>Faça login, regenere a sessão e proteja páginas com <code>guard('auth')</code> sem configurar kernel ou providers separados.</p>
+
+                <div class="code-window code-window--spaced">
+                    <div class="code-window__bar">
+                        <div class="code-window__dots"><span></span><span></span><span></span></div>
+                        <span class="code-window__label">código</span>
+                        <button class="code-window__copy" onclick="copyCode(this)">&#128203; Copiar</button>
+                    </div>
+                    <pre><?php echo <<<'HTML'
+<span class="line-comment">// app/routes/login.php</span>
+
+<span class="line-keyword">get</span>(<span class="line-fn">fn</span>() => <span class="line-fn">view</span>(<span class="line-string">'login'</span>));
+
+<span class="line-keyword">post</span>(<span class="line-fn">function</span> () {
+    <span class="line-var">$data</span> = <span class="line-keyword">validate</span>([
+        <span class="line-string">'email'</span>    => <span class="line-string">'required|email'</span>,
+        <span class="line-string">'password'</span> => <span class="line-string">'required|string'</span>,
+    ]);
+
+    <span class="line-var">$user</span> = <span class="line-var">User</span>::<span class="line-fn">where</span>(<span class="line-string">'email'</span>, <span class="line-var">$data</span>[<span class="line-string">'email'</span>])-><span class="line-fn">first</span>();
+
+    <span class="line-keyword">if</span> (!<span class="line-var">$user</span> || !<span class="line-fn">password_verify</span>(<span class="line-var">$data</span>[<span class="line-string">'password'</span>], <span class="line-var">$user</span>->password)) {
+        <span class="line-fn">flash</span>(<span class="line-string">'error'</span>, <span class="line-string">'Credenciais invalidas.'</span>);
+        <span class="line-keyword">return</span> <span class="line-fn">back</span>();
+    }
+
+    <span class="line-fn">session_regenerate</span>();
+    <span class="line-fn">login</span>(<span class="line-var">$user</span>);
+
+    <span class="line-keyword">return</span> <span class="line-fn">redirect</span>(<span class="line-string">'/dashboard'</span>);
+});
+
+<span class="line-comment">// app/routes/dashboard.php</span>
+<span class="line-keyword">get</span>(<span class="line-fn">fn</span>() => [<span class="line-string">'user'</span> => <span class="line-fn">auth</span>()])-><span class="line-fn">guard</span>(<span class="line-string">'auth'</span>);
+HTML; ?></pre>
+                </div>
+
+                <button class="ex-output-btn" onclick="toggleOutput(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Ver output
+                </button>
+
+                <div class="ex-output">
+<span class="output-status">// POST /login (credenciais invalidas)</span>
+HTTP/1.1 302 Found
+→ Redirect: /login
+→ flash('error'): "Credenciais invalidas."
+
+<span class="output-status">// POST /login (ok)</span>
+HTTP/1.1 302 Found
+→ Redirect: /dashboard
+→ Sessão autenticada
+
+<span class="output-status">// GET /dashboard</span>
+{
+  <strong>"user"</strong>: {
+    <strong>"id"</strong>: 7,
+    <strong>"name"</strong>: "Ana",
+    <strong>"email"</strong>: "ana@example.com"
+  }
+}</div>
+            </div>
+
+            <!-- Session & Cache -->
+            <div class="exemplo-panel" id="panel-session" data-panel="session" role="tabpanel" aria-labelledby="tab-session" hidden>
+                <h2>Sessão & cache</h2>
+                <p>Guarde preferências na sessão, devolva flash messages e use <code>cache_flexible()</code> para servir dados rápidos sem recalcular tudo a cada request.</p>
+
+                <div class="code-window code-window--spaced">
+                    <div class="code-window__bar">
+                        <div class="code-window__dots"><span></span><span></span><span></span></div>
+                        <span class="code-window__label">código</span>
+                        <button class="code-window__copy" onclick="copyCode(this)">&#128203; Copiar</button>
+                    </div>
+                    <pre><?php echo <<<'HTML'
+<span class="line-comment">// app/routes/settings.php</span>
+
+<span class="line-keyword">get</span>(<span class="line-fn">function</span> () {
+    <span class="line-var">$stats</span> = <span class="line-fn">cache_flexible</span>(<span class="line-string">'dashboard.stats'</span>, [30, 120], <span class="line-fn">function</span> () {
+        <span class="line-keyword">return</span> [
+            <span class="line-string">'users'</span> => <span class="line-var">User</span>::<span class="line-fn">count</span>(),
+            <span class="line-string">'sales'</span> => <span class="line-var">Order</span>::<span class="line-fn">query</span>()-><span class="line-fn">sum</span>(<span class="line-string">'total'</span>),
+        ];
+    });
+
+    <span class="line-keyword">return</span> [
+        <span class="line-string">'theme'</span> => <span class="line-fn">session</span>(<span class="line-string">'theme'</span>, <span class="line-string">'light'</span>),
+        <span class="line-string">'flash'</span> => <span class="line-fn">flash</span>(<span class="line-string">'success'</span>),
+        <span class="line-string">'stats'</span> => <span class="line-var">$stats</span>,
+    ];
+});
+
+<span class="line-keyword">post</span>(<span class="line-fn">function</span> () {
+    <span class="line-fn">session</span>([<span class="line-string">'theme'</span> => <span class="line-fn">input</span>(<span class="line-string">'theme'</span>, <span class="line-string">'dark'</span>)]);
+    <span class="line-fn">flash</span>(<span class="line-string">'success'</span>, <span class="line-string">'Preferencias salvas.'</span>);
+
+    <span class="line-keyword">return</span> <span class="line-fn">back</span>();
+});
+HTML; ?></pre>
+                </div>
+
+                <button class="ex-output-btn" onclick="toggleOutput(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Ver output
+                </button>
+
+                <div class="ex-output">
+<span class="output-status">// GET /settings</span>
+HTTP/1.1 200 OK
+{
+  <strong>"theme"</strong>: "light",
+  <strong>"flash"</strong>: null,
+  <strong>"stats"</strong>: {
+    <strong>"users"</strong>: 1280,
+    <strong>"sales"</strong>: 93210.55
+  }
+}
+
+<span class="output-status">// POST /settings</span>
+HTTP/1.1 302 Found
+→ Redirect: /settings
+→ flash('success'): "Preferencias salvas."
+
+<span class="output-status">// Requisições seguintes</span>
+→ dashboard.stats pode ser servido como stale e renovado no shutdown</div>
+            </div>
+
+            <!-- Jobs -->
+            <div class="exemplo-panel" id="panel-jobs" data-panel="jobs" role="tabpanel" aria-labelledby="tab-jobs" hidden>
+                <h2>Jobs & queues</h2>
+                <p>Despache processamento pesado para background e deixe a resposta HTTP curta, mesmo quando a tarefa for demorada.</p>
+
+                <div class="code-window code-window--spaced">
+                    <div class="code-window__bar">
+                        <div class="code-window__dots"><span></span><span></span><span></span></div>
+                        <span class="code-window__label">código</span>
+                        <button class="code-window__copy" onclick="copyCode(this)">&#128203; Copiar</button>
+                    </div>
+                    <pre><?php echo <<<'HTML'
+<span class="line-comment">// app/jobs/ProcessAvatar.php</span>
+
+<span class="line-keyword">class</span> <span class="line-var">ProcessAvatar</span>
+{
+    <span class="line-keyword">public function</span> __construct(<span class="line-keyword">private</span> mixed <span class="line-var">$data</span> = null) {}
+
+    <span class="line-keyword">public function</span> <span class="line-fn">handle</span>(): void
+    {
+        <span class="line-var">$path</span> = <span class="line-var">$this</span>->data[<span class="line-string">'path'</span>];
+
+        <span class="line-var">$img</span> = <span class="line-fn">imagecreatefromjpeg</span>(<span class="line-var">$path</span>);
+        <span class="line-var">$thumb</span> = <span class="line-fn">imagescale</span>(<span class="line-var">$img</span>, 200, 200);
+        <span class="line-fn">imagejpeg</span>(<span class="line-var">$thumb</span>, <span class="line-fn">str_replace</span>(<span class="line-string">'.jpg'</span>, <span class="line-string">'_thumb.jpg'</span>, <span class="line-var">$path</span>));
+    }
+}
+
+<span class="line-comment">// app/routes/avatar.php</span>
+<span class="line-keyword">post</span>(<span class="line-fn">function</span> () {
+    <span class="line-var">$file</span> = <span class="line-fn">request</span>()-><span class="line-fn">file</span>(<span class="line-string">'avatar'</span>);
+    <span class="line-var">$path</span> = <span class="line-string">'storage/uploads/'</span> . <span class="line-var">$file</span>[<span class="line-string">'name'</span>];
+
+    <span class="line-fn">move_uploaded_file</span>(<span class="line-var">$file</span>[<span class="line-string">'tmp_name'</span>], <span class="line-var">$path</span>);
+    <span class="line-fn">dispatch</span>(<span class="line-var">ProcessAvatar</span>::class, [<span class="line-string">'path'</span> => <span class="line-var">$path</span>]);
+
+    <span class="line-keyword">return</span> <span class="line-fn">json</span>([<span class="line-string">'message'</span> => <span class="line-string">'Upload recebido, processando...'</span>]);
+});
+HTML; ?></pre>
+                </div>
+
+                <button class="ex-output-btn" onclick="toggleOutput(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Ver output
+                </button>
+
+                <div class="ex-output">
+<span class="output-status">// POST /avatar</span>
+HTTP/1.1 200 OK
+{
+  <strong>"message"</strong>: "Upload recebido, processando..."
+}
+
+<span class="output-status">// Worker</span>
+php spark queue:work
+→ com QUEUE=file, o worker consome storage/queue/*.json e processa o thumbnail</div>
+            </div>
+
+            <!-- Mail -->
+            <div class="exemplo-panel" id="panel-mail" data-panel="mail" role="tabpanel" aria-labelledby="tab-mail" hidden>
+                <h2>Mail</h2>
+                <p>Envie e-mails com view Spark e payload dinâmico sem precisar sair do fluxo normal das rotas.</p>
+
+                <div class="code-window code-window--spaced">
+                    <div class="code-window__bar">
+                        <div class="code-window__dots"><span></span><span></span><span></span></div>
+                        <span class="code-window__label">código</span>
+                        <button class="code-window__copy" onclick="copyCode(this)">&#128203; Copiar</button>
+                    </div>
+                    <pre><?php echo <<<'HTML'
+<span class="line-comment">// app/routes/forgot-password.php</span>
+
+<span class="line-keyword">post</span>(<span class="line-fn">function</span> () {
+    <span class="line-var">$data</span> = <span class="line-keyword">validate</span>([
+        <span class="line-string">'email'</span> => <span class="line-string">'required|email|exists:users,email'</span>,
+    ]);
+
+    <span class="line-var">$user</span>  = <span class="line-var">User</span>::<span class="line-fn">where</span>(<span class="line-string">'email'</span>, <span class="line-var">$data</span>[<span class="line-string">'email'</span>])-><span class="line-fn">first</span>();
+    <span class="line-var">$token</span> = <span class="line-fn">bin2hex</span>(<span class="line-fn">random_bytes</span>(32));
+
+    <span class="line-fn">db</span>(<span class="line-string">'password_resets'</span>)-><span class="line-fn">updateOrCreate</span>(
+        [<span class="line-string">'email'</span> => <span class="line-var">$user</span>->email],
+        [
+            <span class="line-string">'token'</span> => <span class="line-var">$token</span>,
+            <span class="line-string">'created_at'</span> => <span class="line-fn">date</span>(<span class="line-string">'Y-m-d H:i:s'</span>),
+        ]
+    );
+
+    <span class="line-fn">mailer</span>()
+        -><span class="line-fn">to</span>(<span class="line-var">$user</span>->email)
+        -><span class="line-fn">subject</span>(<span class="line-string">'Redefinir sua senha'</span>)
+        -><span class="line-fn">view</span>(<span class="line-string">'emails.reset-password'</span>, [
+            <span class="line-string">'user'</span> => <span class="line-var">$user</span>,
+            <span class="line-string">'url'</span>  => <span class="line-fn">env</span>(<span class="line-string">'APP_URL'</span>) . <span class="line-string">'/reset-password?token='</span> . <span class="line-var">$token</span>,
+        ])
+        -><span class="line-fn">send</span>();
+
+    <span class="line-fn">flash</span>(<span class="line-string">'success'</span>, <span class="line-string">'E-mail de recuperacao enviado!'</span>);
+    <span class="line-keyword">return</span> <span class="line-fn">back</span>();
+});
+HTML; ?></pre>
+                </div>
+
+                <button class="ex-output-btn" onclick="toggleOutput(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Ver output
+                </button>
+
+                <div class="ex-output">
+<span class="output-status">// POST /forgot-password</span>
+HTTP/1.1 302 Found
+→ Redirect: /forgot-password
+→ flash('success'): "E-mail de recuperacao enviado!"
+
+<span class="output-status">// E-mail renderizado</span>
+Assunto: Redefinir sua senha
+Para: ana@example.com
+View: emails.reset-password</div>
+            </div>
+
+            <!-- Search -->
+            <div class="exemplo-panel" id="panel-search" data-panel="search" role="tabpanel" aria-labelledby="tab-search" hidden>
+                <h2>Busca semântica</h2>
+                <p>Faça retrieval direto no banco com embeddings já indexados, sem pipeline extra para usar ranking vetorial no produto.</p>
+
+                <div class="code-window code-window--spaced">
+                    <div class="code-window__bar">
+                        <div class="code-window__dots"><span></span><span></span><span></span></div>
+                        <span class="code-window__label">código</span>
+                        <button class="code-window__copy" onclick="copyCode(this)">&#128203; Copiar</button>
+                    </div>
+                    <pre><?php echo <<<'HTML'
+<span class="line-comment">// app/routes/search.php</span>
+
+<span class="line-keyword">get</span>(<span class="line-fn">function</span> () {
+    <span class="line-var">$q</span> = <span class="line-fn">query</span>(<span class="line-string">'q'</span>, <span class="line-string">'Como funciona o cache?'</span>);
+
+    <span class="line-var">$articles</span> = <span class="line-var">Article</span>::<span class="line-fn">semanticSearch</span>(<span class="line-string">'embedding'</span>, <span class="line-var">$q</span>)
+        -><span class="line-fn">limit</span>(5)
+        -><span class="line-fn">get</span>();
+
+    <span class="line-keyword">return</span> [
+        <span class="line-string">'query'</span> => <span class="line-var">$q</span>,
+        <span class="line-string">'items'</span> => <span class="line-var">$articles</span>,
+    ];
+});
+HTML; ?></pre>
+                </div>
+
+                <button class="ex-output-btn" onclick="toggleOutput(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Ver output
+                </button>
+
+                <div class="ex-output">
+<span class="output-status">// GET /search?q=Como+funciona+o+cache%3F</span>
+HTTP/1.1 200 OK
+{
+  <strong>"query"</strong>: "Como funciona o cache?",
+  <strong>"items"</strong>: [
+    { <strong>"id"</strong>: 18, <strong>"title"</strong>: "Session & Cache", <strong>"vector_score"</strong>: 0.94 },
+    { <strong>"id"</strong>: 7, <strong>"title"</strong>: "Request & Response", <strong>"vector_score"</strong>: 0.87 }
+  ]
+}</div>
+            </div>
+
             <!-- Spark Templates -->
-            <div class="exemplo-panel" data-panel="views" role="tabpanel">
+            <div class="exemplo-panel" id="panel-views" data-panel="views" role="tabpanel" aria-labelledby="tab-views" hidden>
                 <h2>Spark Templates</h2>
                 <p>Templates em PHP puro com layouts, slots e componentes — sem engine extra.</p>
 
-                <div class="ex-code-window">
-                    <div class="ex-code-window__bar">
-                        <div class="ex-code-window__dots"><span></span><span></span><span></span></div>
-                        <span class="ex-code-window__label">código</span>
-                        <button class="ex-code-window__copy" onclick="copyCode(this)">&#128203; Copiar</button>
+                <div class="code-window code-window--spaced">
+                    <div class="code-window__bar">
+                        <div class="code-window__dots"><span></span><span></span><span></span></div>
+                        <span class="code-window__label">código</span>
+                        <button class="code-window__copy" onclick="copyCode(this)">&#128203; Copiar</button>
                     </div>
                     <pre><?php echo <<<'HTML'
 <span class="line-comment">&lt;!-- app/views/hello.spark --&gt;</span>
@@ -582,15 +630,15 @@ HTML; ?></pre>
             </div>
 
             <!-- AI SDK -->
-            <div class="exemplo-panel" data-panel="ai" role="tabpanel">
+            <div class="exemplo-panel" id="panel-ai" data-panel="ai" role="tabpanel" aria-labelledby="tab-ai" hidden>
                 <h2>AI SDK</h2>
                 <p>API unificada para texto, embeddings e file-based structured output.</p>
 
-                <div class="ex-code-window">
-                    <div class="ex-code-window__bar">
-                        <div class="ex-code-window__dots"><span></span><span></span><span></span></div>
-                        <span class="ex-code-window__label">código</span>
-                        <button class="ex-code-window__copy" onclick="copyCode(this)">&#128203; Copiar</button>
+                <div class="code-window code-window--spaced">
+                    <div class="code-window__bar">
+                        <div class="code-window__dots"><span></span><span></span><span></span></div>
+                        <span class="code-window__label">código</span>
+                        <button class="code-window__copy" onclick="copyCode(this)">&#128203; Copiar</button>
                     </div>
                     <pre><?php echo <<<'HTML'
 <span class="line-comment">// app/routes/api/summarize.php</span>
@@ -598,12 +646,13 @@ HTML; ?></pre>
 <span class="line-keyword">post</span>(<span class="line-fn">function</span> () {
     <span class="line-var">$text</span> = <span class="line-fn">input</span>(<span class="line-string">'text'</span>);
 
-    <span class="line-var">$summary</span> = <span class="line-keyword">ai</span>()
-        -><span class="line-fn">model</span>(<span class="line-string">'claude-sonnet'</span>)
-        -><span class="line-fn">prompt</span>(<span class="line-string">"Resuma: {$text}"</span>)
+    <span class="line-var">$result</span> = <span class="line-fn">ai</span>()
+        -><span class="line-fn">text</span>(<span class="line-string">"Resuma o texto a seguir em 3 bullets:\n\n{$text}"</span>)
+        -><span class="line-fn">system</span>(<span class="line-string">'Seja objetivo.'</span>)
+        -><span class="line-fn">maxTokens</span>(300)
         -><span class="line-fn">generate</span>();
 
-    <span class="line-keyword">return</span> [<span class="line-string">'summary'</span> => <span class="line-var">$summary</span>];
+    <span class="line-keyword">return</span> [<span class="line-string">'summary'</span> => <span class="line-var">$result</span>->text];
 });
 HTML; ?></pre>
                 </div>
@@ -623,22 +672,51 @@ HTML; ?></pre>
     </div>
 </div>
 
-@js('exemplos')
-
 <script>
     function switchTab(tabId) {
         document.querySelectorAll('.exemplos-tab').forEach(t => {
-            t.classList.toggle('active', t.dataset.tab === tabId);
-            t.setAttribute('aria-selected', t.dataset.tab === tabId ? 'true' : 'false');
+            const isActive = t.dataset.tab === tabId;
+            t.classList.toggle('active', isActive);
+            t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            t.tabIndex = isActive ? 0 : -1;
         });
 
         document.querySelectorAll('.exemplo-panel').forEach(p => {
-            p.classList.toggle('active', p.dataset.panel === tabId);
+            const isActive = p.dataset.panel === tabId;
+            p.classList.toggle('active', isActive);
+            p.hidden = !isActive;
         });
     }
 
-    document.querySelectorAll('.exemplos-tab').forEach(tab => {
+    const exemploTabs = Array.from(document.querySelectorAll('.exemplos-tab'));
+
+    exemploTabs.forEach((tab, index) => {
         tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+        tab.addEventListener('keydown', event => {
+            const horizontalKeys = ['ArrowRight', 'ArrowLeft'];
+            const verticalKeys = ['ArrowDown', 'ArrowUp'];
+
+            if (![...horizontalKeys, ...verticalKeys, 'Home', 'End'].includes(event.key)) {
+                return;
+            }
+
+            event.preventDefault();
+
+            let nextIndex = index;
+
+            if (event.key === 'Home') {
+                nextIndex = 0;
+            } else if (event.key === 'End') {
+                nextIndex = exemploTabs.length - 1;
+            } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+                nextIndex = (index + 1) % exemploTabs.length;
+            } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+                nextIndex = (index - 1 + exemploTabs.length) % exemploTabs.length;
+            }
+
+            exemploTabs[nextIndex].focus();
+            switchTab(exemploTabs[nextIndex].dataset.tab);
+        });
     });
 
     function toggleOutput(btn) {
@@ -648,14 +726,5 @@ HTML; ?></pre>
             ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> Esconder output'
             : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Ver output';
     }
-
-    function copyCode(btn) {
-        const pre = btn.closest('.ex-code-window').querySelector('pre');
-        const text = pre.textContent;
-        navigator.clipboard.writeText(text).then(() => {
-            const original = btn.innerHTML;
-            btn.textContent = 'Copiado!';
-            setTimeout(() => { btn.innerHTML = original; }, 1500);
-        });
-    }
 </script>
+<script src="{{ asset('js/copy-code.js') }}"></script>

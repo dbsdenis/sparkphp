@@ -1,7 +1,5 @@
-@title('405 - Método Não Permitido')
+@layout('main')
+@title('Método não permitido')
+@css('errors')
 
-<section style="max-width:760px;margin:3rem auto;padding:2rem;background:#fff;border:1px solid #e5e7eb;border-radius:12px;">
-  <h1 style="margin-top:0;">405 - Método Não Permitido</h1>
-  <p>A rota existe, mas o método HTTP usado nesta requisição não é aceito.</p>
-  <p><a href="/">Voltar para a página inicial</a></p>
-</section>
+@partial('error-page', code: '405', icon: '🚫', message: 'A rota existe, mas o método HTTP usado nesta requisição não é aceito.')
