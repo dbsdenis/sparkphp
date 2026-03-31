@@ -1,213 +1,99 @@
-# SparkPHP — Roadmap de Tasks
+# SparkPHP — Roadmap
 
 ## Importante
 
-Sempre analise os seguintes documentos (vão criar uma orientação melhor do projeto):
-01-spark-template.md
-02-estrutura-framework.md
-03-core-engine.md
-04-identidade-filosofia.md
+Antes de abrir qualquer tarefa, leia os documentos fundacionais:
 
-## Direção do Roadmap (pós-core)
+- `01-spark-template.md`
+- `02-estrutura-framework.md`
+- `03-core-engine.md`
+- `04-identidade-filosofia.md`
 
-- Primeiro corrigir incoerências entre filosofia, documentação e runtime
-- Depois fortalecer segurança, estabilidade, APIs e observabilidade
-- Só então expandir forte em AI, search e features que disputam diretamente com o Laravel
-- Toda feature nova relevante deve nascer com docs, testes e integração no Inspector/CLI quando fizer sentido
+Filtro obrigatório para toda nova feature ou mudança:
 
-## Fase 1 — Documentação Fundacional
+1. Fica mais curto?
+2. Fica mais claro?
+3. Fica mais observável?
+4. Reduz boilerplate real?
 
-- [x] Task 1.1 — Spark Template (template engine)
-  - Documento completo com diretivas, pipes, comparativo com Blade
-  - Extensão `.spark` definida
-  - Seção de eliminação de verbosidades
+Se a resposta for não para todos os quatro, a mudança não pertence ao core.
 
-- [x] Task 1.2 — Estrutura do Framework
-  - Árvore completa de diretórios e arquivos
-  - Convenções de nomeação e resolução automática
-  - Mapa: camada → convenção → exemplo
+---
 
-- [x] Task 1.3 — Core Engine (Arquitetura)
-  - Componentes internos: Router, Autoloader, Bootstrap, Container, etc.
-  - Fluxo de request completo (boot → route → middleware → response)
-  - Estratégia de cache e compilação
+## Now — em execução
 
-- [x] Task 1.4 — Identidade e Filosofia
-  - Manifesto do SparkPHP
-  - Princípios de design
-  - Convenções gerais unificadas
+- [ ] Coerência entre docs e runtime (`docs/contract-matrix.md`)
+  - Auditar os 9 comportamentos implícitos principais (view espelho, JSON/HTML, null→404, POST→201, route model binding, fillable, relações, middleware, events)
+  - Para cada divergência: preferir reduzir promessa antes de expandir runtime
+  - Criar testes de contrato para os 5 comportamentos mais críticos
 
-## Fase 2 — Implementação do Core ✅ Concluída em 2026-03-27
+- [ ] Segurança do Inspector (`docs/inspector-security.md`)
+  - Masking de headers sensíveis: `Authorization`, `Cookie`, `X-API-Key`
+  - Masking de inputs: `password`, `password_confirmation`, `token`, `secret`
+  - Masking de AI prompts em staging/production
+  - Garantir que `APP_ENV=production` → Inspector inacessível por padrão
 
-- [x] Task 2.1 — Bootstrap + Autoloader
-- [x] Task 2.2 — Router (file-based)
-- [x] Task 2.3 — Request / Response
-- [x] Task 2.4 — Spark Template Engine (compilador)
-- [x] Task 2.5 — Database / Model
-- [x] Task 2.6 — Middleware Engine
-- [x] Task 2.7 — Container (DI)
-- [x] Task 2.8 — Validator
-- [x] Task 2.9 — Event Emitter
-- [x] Task 2.10 — Session / Cache
-- [x] Task 2.11 — CLI (`spark`)
-- [x] Task 2.12 — Helpers globais
+---
 
-## Fase 3 — Ferramentas e DX (futuro)
+## Next — próximo ciclo
 
-- [x] Task 3.1 — `composer create-project` skeleton
-- [x] Task 3.2 — Extensão VS Code para `.spark`
-  - [x] Grammar TextMate para diretivas/echos Spark
-  - [x] `language-configuration.json` com folding e auto-close
-  - [x] Snippets iniciais para blocos principais
-  - [x] Pacote `.vsix` gerado e instalado localmente no VS Code
-  - [x] Runtime ativo com autocomplete e hover para `.spark`
-- [x] Task 3.3 — Documentação pública
-  - [x] 13 guias em `docs/` cobrindo todas as funcionalidades
-  - [x] Exemplos práticos e executáveis em cada seção
-  - [x] Referência completa de helpers, CLI, diretivas e regras de validação
-  - [x] README.md com índice, quick start e princípios do framework
-- [x] Task 3.4 — Testes do core
-  - [x] Suite inicial PHPUnit configurada
-  - [x] Testes de Router (params dinâmicos, 405, rota raiz)
-  - [x] Cobertura de Request/Response/Container/Middleware
-  - [x] Cobertura inicial de View (`@cache`)
-  - [x] Cobertura de Validator (required, email, min/max, between, regex, etc.)
-  - [x] Cobertura de EventEmitter (listeners, cancelamento, off, file-based)
-  - [x] Cobertura de Cache (set/get, forget, increment, remember, flush)
-  - [x] Cobertura de Helpers (encrypt/decrypt, hash, env, url, asset, now)
-  - [x] Expandir cobertura para integração HTTP end-to-end
-- [x] Task 3.5 — Benchmarks comparativos
-  - [x] Comando CLI `php spark benchmark`
-  - [x] Relatório JSON salvo em `storage/benchmarks/latest.json`
-  - [x] Comparativos cold/warm para autoloader e views
-  - [x] Comparativos de roteamento estático/dinâmico e container
-- [x] Task 3.6 — Spark Inspector nativo
-  - [x] Toolbar HTML + painel interno em `/_spark`
-  - [x] Histórico persistido em `storage/inspector`
-  - [x] Headers `X-Spark-*` e `Server-Timing`
-  - [x] Coletores de request/response, rota, timeline, views, queries, cache, logs, events, mail, queue, dumps e exceptions
-  - [x] Helpers `inspect()` e `measure()`
-  - [x] Comandos CLI `php spark inspector:status` e `php spark inspector:clear`
+- [ ] Template DSL: core vs avançado (`docs/template-core-vs-advanced.md`)
+  - Classificar todas as diretivas em core essencial, avançado e candidato à revisão
+  - Reorganizar `docs/04-views.md` com seção "Uso básico" de 1 tela
+  - Não remover diretivas agora — apenas classificar e marcar candidatos futuros
 
-## Fase 4 — Estabilização e Coerência do Produto (curto prazo)
+- [ ] Contratos de inferência formalizados (`docs/inference-rules.md`)
+  - Documentar o que o Spark infere (com precedência explícita)
+  - Documentar o que o Spark nunca infere (garantias negativas)
+  - Adicionar opt-out para route model binding
 
-- [x] Task 4.1 — Alinhar filosofia, docs e runtime
-  - Decidir oficialmente o papel de `config()` vs `.env`
-  - Remover promessas que não existem no core ou implementar o que já foi documentado
-  - Revisar README, docs e exemplos para refletirem o comportamento real do framework
+- [ ] Maturidade por subsistema visível no README
+  - Adicionar tabela de maturidade no `README.md` (Estável / Beta / Experimental)
+  - Atualizar `docs/14-releases.md` com política por subsistema
 
-- [x] Task 4.2 — Suite 100% verde e baseline de qualidade
-  - Corrigir a falha atual do `SparkInspector` na suite end-to-end
-  - Fechar lacunas de regressão em Router, Middleware, Helpers e Inspector
-  - Definir meta mínima de cobertura para componentes críticos
+---
 
-- [x] Task 4.3 — Middleware global e por diretório de verdade
-  - Implementar `_middleware.php` global e por pasta conforme a documentação
-  - Garantir ordem previsível: global → diretório → guard inline → handler
-  - Cobrir com testes de precedência, bloqueio e composição
+## Later — planejado, não imediato
 
-- [x] Task 4.4 — Baseline moderno do framework
-  - Elevar requisito mínimo para PHP 8.3+
-  - Revisar compatibilidade com SQLite, MySQL e PostgreSQL suportados
-  - Atualizar documentação, `composer.json` e suite de testes para a nova baseline
+- [ ] Modularização do AI SDK
+  - Verificar se `core/Ai.php` pode ser carregado sob demanda no boot
+  - Proposta formal de separação como `sparkphp/ai` (pacote Composer independente)
+  - Pré-requisito: core estável, docs coerentes, maturidade publicada
 
-- [x] Task 4.5 — Política pública de releases e compatibilidade
-  - Definir versionamento semântico do SparkPHP
-  - Criar política de suporte para PHP, banco e segurança
-  - Publicar guia de upgrade e política de deprecações
+- [ ] Testes de contrato público expandidos
+  - Cobrir todos os comportamentos documentados em `docs/contract-matrix.md`
+  - Estabelecer meta mínima de cobertura para subsistemas estáveis
 
-- [x] Task 4.6 — Fonte única de versão do produto
-  - Criar o arquivo `VERSION` na raiz como source of truth da versão publicada
-  - Consumir esse valor no CLI, helpers, rota raiz, landing e OpenAPI
-  - Documentar como consultar versão e release line no runtime e no processo de release
+- [ ] Opt-out explícito para convenções sensíveis
+  - Route model binding desativável por rota
+  - Inferência de view desativável por handler
+  - Serialização automática desativável por response
 
-## Fase 5 — Segurança, HTTP e APIs (médio prazo)
+---
 
-- [x] Task 5.1 — `PreventRequestForgery` nativo
-  - Evoluir o CSRF atual para validação por token + `Origin`/`Referer`
-  - Padronizar comportamento para HTML, JSON, AJAX e proxies confiáveis
-  - Adicionar opções seguras por default para cookie/session
+## Icebox — adiado indefinidamente
 
-- [x] Task 5.2 — Request / Response v2
-  - Melhorar content negotiation além de HTML/JSON básico
-  - Padronizar envelopes de erro, redirects, downloads e respostas vazias
-  - Preparar a base para responses mais avançadas, inclusive streaming
+- Comparativos de feature com Laravel como direção de produto
+  (comparativos são material de adoção, não bússola de roadmap)
 
-- [x] Task 5.3 — Serialização de API por convenção no Model
-  - Controlar visibilidade e transformação de campos via atributos no Model (`#[Hidden]`, `#[Rename]`, `toApi()`)
-  - Suportar paginação, `links`, `meta` e sparse fields sem exigir classes de Resource dedicadas
-  - Oferecer compliance JSON:API opcional sem obrigar o projeto inteiro a usar o padrão
+- Expansão horizontal antes de estabilizar coerência e fronteira do core
 
-- [x] Task 5.4 — Route model binding implícito e autorização mais inteligente
-  - Se o type-hint de um handler é um Model e existe parâmetro de URL correspondente, resolver com `findOrFail()` automaticamente
-  - Separar claramente route model binding (Model da URL) da resolução de services (DI do Container)
-  - Definir base para policies/authorize sem perder a simplicidade do Spark
+---
 
-- [x] Task 5.5 — Geração de spec OpenAPI
-  - Extrair spec OpenAPI a partir de rotas file-based, regras de validação e retornos dos handlers
-  - Expor comando CLI `php spark api:spec` para gerar/atualizar a spec
-  - Documentação automática a partir da spec gerada
+## Decisões em aberto
 
-## Fase 6 — Runtime, Dados e Filas (médio prazo)
+| Decisão | Status | Impacto |
+|---|---|---|
+| `sparkphp/ai` como pacote separado | Em avaliação | Core menor, DX mantida |
+| Opt-out de inferência automática por convenção | Em avaliação | Previsibilidade, debugging |
+| Política de masking de dados no Inspector (staging) | Pendente | Segurança operacional |
+| Quais pipes de template pertencem ao core | Pendente | Superfície da DSL |
+| Separação de `Queue` e `Mailer` como opcionais | Em avaliação | Core mais enxuto |
 
-- [x] Task 6.1 — Queue v2
-  - Adicionar roteamento por classe/job
-  - Suportar `tries`, `backoff`, `timeout`, `failOnTimeout` e filas de falha mais ricas
-  - Melhorar comandos CLI para retry, inspect e limpeza seletiva
+---
 
-- [x] Task 6.2 — Cache v2
-  - Adicionar `touch()` como extensão de TTL sem regravar valor
-  - Considerar `stale-while-revalidate`, tags e métricas de cache
-  - Integrar melhor os eventos de cache ao Inspector
+## Histórico
 
-- [x] Task 6.3 — Query Builder / ORM v2
-  - Expandir operadores modernos de banco e ergonomia do Query Builder
-  - Melhorar relacionamentos, eager loading e serialização
+**Releases públicas:** [`CHANGELOG.md`](CHANGELOG.md) — mudanças de contrato, breaking changes e novas features por versão.
 
-- [x] Task 6.4 — Observabilidade profunda
-  - Evoluir o Inspector para mostrar pipelines completos de request, queue e cache
-  - Adicionar visibilidade melhor para jobs, falhas, retries e bottlenecks
-  - Consolidar benchmarks comparativos do SparkPHP em cenários reais
-
-## Fase 7 — AI-Native SparkPHP (longo prazo)
-
-- [x] Task 7.1 — SDK de AI unificado do SparkPHP
-  - Criar API única para texto, embeddings, imagem, áudio e agentes
-  - Evitar fragmentação de conceitos e manter uma DX coesa
-  - Projetar adaptadores provider-agnostic desde o início
-
-- [x] Task 7.2 — Convenções file-based para AI
-  - Estruturar `app/ai/agents`, `app/ai/tools` e `app/ai/prompts`
-  - Descoberta automática de agentes e ferramentas por convenção
-  - Integrar tool-calling e structured output com a mesma filosofia do framework
-
-- [x] Task 7.3 — AI + Search + Data (inclui Vector Search nativo)
-  - Criar suporte first-party para embeddings e consulta por similaridade (PostgreSQL + `pgvector` como alvo inicial)
-  - Conectar vector search e retrieval ao Query Builder e ao fluxo de AI
-  - Facilitar RAG sem transformar o Spark em uma colagem de pacotes
-  - Oferecer APIs curtas para casos comuns e extensibilidade para casos avançados
-
-- [x] Task 7.4 — AI observável por default
-  - Mostrar latência, custo, tokens, provider e tool calls no Inspector
-  - Adicionar tracing de prompts e respostas com mascaramento de dados sensíveis
-  - Criar comandos CLI de diagnóstico e smoke-test para integrações de AI
-
-## Fase 8 — Ecossistema e Diferenciais Competitivos (longo prazo)
-
-- [x] Task 8.1 — CLI de produto
-  - Adicionar comandos como `spark doctor`, `spark new`, `spark upgrade` e geração de spec
-  - Tornar o CLI a interface principal de setup, diagnóstico e evolução do projeto
-
-- [x] Task 8.2 — Starter kits first-party
-  - Criar presets para API, SaaS, painel administrativo e documentação
-  - Garantir que cada starter kit preserve a filosofia zero-config do SparkPHP
-
-- [x] Task 8.3 — Documentação pública de nível produto
-  - Criar comparativos claros contra Laravel sem cair em feature parity cega
-  - Publicar guias de adoção, benchmark e migração
-  - Consolidar narrativa: mais simples, mais previsível, mais observável
-
-- [x] Task 8.4 — Checklist de review “melhor que Laravel”
-  - Criar checklist prático para PRs que valide se a feature é mais curta, mais clara ou mais observável que a alternativa do Laravel
-  - Integrar como gate de qualidade no processo de contribuição
-  - Documentar exemplos concretos de aprovação e rejeição
+**Macrofases concluídas:** [`docs/roadmap-archive.md`](docs/roadmap-archive.md) — execução das 8 fases fundacionais até `0.10.0` (documentação, core, DX, estabilização, segurança, runtime, AI e ecossistema).

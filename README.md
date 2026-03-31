@@ -8,11 +8,50 @@ aplicacao visivel no CLI, no Inspector e na propria estrutura de arquivos.
 
 Versao publicada atual: `0.10.0` (`0.10.x`).
 
+---
+
+Dois arquivos. Sem controller. Sem service provider. Sem registro.
+
+```php
+// app/routes/users.php
+get(fn() => ['users' => User::all()]);
+```
+
+```spark
+{{-- app/views/users.spark --}}
+@title('Usuarios')
+
+@foreach($users as $user)
+  <p>{{ $user->name }}</p>
+@endforeach
+```
+
+Isso e suficiente para:
+
+- `GET /users` com browser → HTML com layout automatico
+- `GET /users` com `Accept: application/json` → JSON sem alterar uma linha
+- `php spark routes:list` → lista a rota no CLI
+- `/_spark` → mostra o request completo no Inspector
+
+---
+
 ## O que o Spark otimiza
 
-- **Mais simples**: menos arquivos de cola, menos registro manual, menos abstrações para ligar o proprio framework.
+- **Menos wiring**: nenhum arquivo de registro, nenhum service provider, nenhum Kernel.
 - **Mais previsivel**: o arquivo e a convencao dizem o que acontece.
-- **Mais observavel**: request, cache, queue, AI e benchmark fazem parte do produto.
+- **Mais observavel**: request, cache, queries, AI e benchmark fazem parte do produto.
+
+## Nucleo do Spark
+
+O runtime base carrega apenas o que e necessario para cada request:
+
+- Router · Request/Response · Middleware · Container
+- Template Engine · Database · Model · Validator
+- Session · Cache · Logger · Helpers · CLI
+
+O que e core obrigatorio, o que e first-party opcional e o que e experimental:
+
+- [Fronteira do produto](docs/00-product-scope.md)
 
 ## SparkPHP vs Laravel
 
@@ -96,6 +135,34 @@ php spark inspector:status
 
 O objetivo nao e vender microbenchmark isolado. O objetivo e medir ciclo HTTP,
 DX e operacao de forma repetivel.
+
+## Maturidade por subsistema
+
+| Subsistema | Categoria | Maturidade |
+|---|---|---|
+| Routing | Core obrigatorio | Estavel |
+| Request / Response | Core obrigatorio | Estavel |
+| Middleware | Core obrigatorio | Estavel |
+| Container (DI) | Core obrigatorio | Estavel |
+| Validator | Core obrigatorio | Estavel |
+| Template Engine | Core obrigatorio | Beta |
+| Database / Model | Core obrigatorio | Beta |
+| Session / Cache | Core obrigatorio | Beta |
+| CLI | Core obrigatorio | Beta |
+| SparkInspector | First-party opcional | Beta |
+| Queue | First-party opcional | Beta |
+| Mailer | First-party opcional | Beta |
+| AI SDK | Experimental | Experimental |
+| Vector Search | Experimental | Experimental |
+| OpenAPI Generator | First-party opcional | Experimental |
+
+- **Categoria** — onde o subsistema pertence na fronteira do produto
+- **Maturidade** — garantia de estabilidade da API publica:
+  - *Estavel*: contrato fixo; breaking changes apenas em major
+  - *Beta*: adequado para producao; API pode mudar em minors com upgrade guide
+  - *Experimental*: nao usar em producao sem avaliacao; pode mudar sem aviso
+
+Politica completa: [Releases & Compatibilidade](docs/14-releases.md) · [Fronteira do produto](docs/00-product-scope.md)
 
 ## Estado do projeto
 

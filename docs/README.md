@@ -41,6 +41,16 @@ Narrativa publica atual do produto: **mais simples, mais previsivel, mais observ
 | 24 | [Migração do Laravel](24-migrating-from-laravel.md) | Quando migrar, quando nao migrar e como fazer com segurança |
 | 25 | [Review Checklist](25-review-checklist.md)    | Gate oficial de review: mais curta, mais clara ou mais observavel |
 
+### Referências de produto e coerência
+
+| Doc | O que voce vai encontrar |
+|---|---|
+| [Fronteira do produto](00-product-scope.md) | O que e core, o que e opcional e o que e experimental |
+| [Matriz de coerencia docs vs runtime](contract-matrix.md) | Auditoria dos comportamentos prometidos vs implementados |
+| [Regras de inferencia](inference-rules.md) | O que o Spark infere e o que nunca infere |
+| [Template core vs avancado](template-core-vs-advanced.md) | 10 diretivas essenciais vs DSL avancada |
+| [Seguranca do Inspector](inspector-security.md) | Politica de masking, comportamento por ambiente, guardrails |
+
 ---
 
 ## Quick Start

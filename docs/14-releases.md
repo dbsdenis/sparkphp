@@ -123,6 +123,55 @@ Nao contam como quebra por si so:
 - melhoria interna sem mudar contrato publico
 - documentar explicitamente uma limitacao que ja existia no runtime
 
+## Maturidade por subsistema
+
+Cada subsistema do SparkPHP tem um nível de maturidade que define as garantias de estabilidade da API pública.
+
+### Níveis de maturidade
+
+**Estável** — contrato público fixo. Breaking changes apenas em versão major (a partir do `1.0`). Pode ser usado em produção com confiança.
+
+**Beta** — funciona em produção, mas a API pode mudar em versões minor. Toda mudança estrutural vem acompanhada de guia de upgrade. Adequado para produção com monitoramento.
+
+**Experimental** — a fronteira de design ainda não está clara. A API pode mudar sem aviso em versões minor. Não usar em produção sem avaliação cuidadosa.
+
+### Tabela por subsistema
+
+| Subsistema | Categoria | Maturidade | Desde |
+|---|---|---|---|
+| Routing | Core obrigatório | Estável | 0.1.0 |
+| Request / Response | Core obrigatório | Estável | 0.1.0 |
+| Middleware | Core obrigatório | Estável | 0.1.0 |
+| Container (DI) | Core obrigatório | Estável | 0.1.0 |
+| Validator | Core obrigatório | Estável | 0.1.0 |
+| Template Engine (Spark) | Core obrigatório | Beta | 0.1.0 |
+| Database / Query Builder | Core obrigatório | Beta | 0.1.0 |
+| Model (ORM) | Core obrigatório | Beta | 0.1.0 |
+| Session | Core obrigatório | Beta | 0.1.0 |
+| Cache | Core obrigatório | Beta | 0.1.0 |
+| Logger | Core obrigatório | Beta | 0.1.0 |
+| Helpers globais | Core obrigatório | Beta | 0.1.0 |
+| CLI base (`spark`) | Core obrigatório | Beta | 0.1.0 |
+| SparkInspector | First-party opcional | Beta | 0.1.0 |
+| Queue | First-party opcional | Beta | 0.2.0 |
+| Mailer | First-party opcional | Beta | 0.1.0 |
+| EventEmitter | First-party opcional | Beta | 0.1.0 |
+| Schema / Migrations | First-party opcional | Beta | 0.1.0 |
+| OpenAPI Generator | First-party opcional | Experimental | 0.2.0 |
+| Starter Kits | First-party opcional | Beta | 0.8.0 |
+| Benchmarking | First-party opcional | Experimental | 0.3.0 |
+| AI SDK (`ai()`) | Experimental | Experimental | 0.3.0 |
+| Vector Search | Experimental | Experimental | 0.5.0 |
+
+### Promoção de maturidade
+
+Um subsistema pode ser promovido de Experimental → Beta → Estável quando:
+
+1. A API pública está estável por pelo menos 2 versões minor consecutivas sem mudanças estruturais
+2. Existe cobertura de testes de contrato público
+3. A documentação reflete o comportamento real do runtime
+4. O subsistema passou pelo filtro de coerência com a filosofia do Spark
+
 ## Fonte oficial de compatibilidade
 
 Ao avaliar se algo e suportado, a ordem de referencia oficial passa a ser:

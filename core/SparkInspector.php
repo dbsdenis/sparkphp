@@ -1514,7 +1514,9 @@ HTML;
 
     private function sanitize(mixed $value, ?string $key = null): mixed
     {
-        $mask = filter_var($_ENV['SPARK_INSPECTOR_MASK'] ?? 'false', FILTER_VALIDATE_BOOLEAN);
+        $isDev = ($_ENV['APP_ENV'] ?? 'dev') === 'dev';
+        $maskDefault = $isDev ? 'false' : 'true';
+        $mask = filter_var($_ENV['SPARK_INSPECTOR_MASK'] ?? $maskDefault, FILTER_VALIDATE_BOOLEAN);
         if (!$mask) {
             return $value;
         }
@@ -1532,7 +1534,7 @@ HTML;
         }
 
         $needle = strtolower((string) $key);
-        foreach (['authorization', 'cookie', 'password', 'passwd', 'token', 'secret'] as $sensitive) {
+        foreach (['authorization', 'cookie', 'password', 'passwd', 'token', 'secret', 'x-api-key', 'api-key', 'api_key', 'passphrase'] as $sensitive) {
             if ($needle !== '' && str_contains($needle, $sensitive)) {
                 return '***';
             }
