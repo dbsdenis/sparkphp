@@ -176,17 +176,19 @@
                     <span class="code-window__file">users.[id].php</span>
                 </div>
 
-                <pre>@highlight
-// app/routes/users.[id].php
-get(fn(User $user) => $user);
+                <pre>
+                    @highlight
+                    // app/routes/users.[id].php
+                    get(fn(User $user) => $user);
 
-// O sistema de arquivos faz parte da API
-// Sem rotas extras para definir: file = rota
+                    // O sistema de arquivos faz parte da API
+                    // Sem rotas extras para definir: file = rota
 
-// Retorno IS para quêrir browser o API
-// Uma rota atende JSON, HTML ou Spark View
-// com base no accept header automaticamente
-@endhighlight</pre>
+                    // Retorno IS para quêrir browser o API
+                    // Uma rota atende JSON, HTML ou Spark View
+                    // com base no accept header automaticamente
+                    @endhighlight
+                </pre>
             </div>
         </div>
     </section>
