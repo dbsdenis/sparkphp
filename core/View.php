@@ -349,6 +349,34 @@ class View
             $source
         );
 
+        // @highlight / @endhighlight
+        $source = preg_replace_callback(
+            '/^[ \t]*@highlight[ \t]*\n?(.*?)@endhighlight/sm',
+            function ($m) {
+                $lines = explode("\n", $m[1]);
+
+                // Remove linhas vazias do início e do fim
+                while ($lines && trim($lines[0]) === '') array_shift($lines);
+                while ($lines && trim(end($lines)) === '') array_pop($lines);
+
+                // Calcula a indentação mínima entre as linhas não-vazias
+                $minIndent = PHP_INT_MAX;
+                foreach ($lines as $line) {
+                    if (trim($line) === '') continue;
+                    preg_match('/^(\s*)/', $line, $ind);
+                    $minIndent = min($minIndent, strlen($ind[1]));
+                }
+                if ($minIndent === PHP_INT_MAX) $minIndent = 0;
+
+                // Remove a indentação comum de todas as linhas
+                $lines = array_map(fn($line) => substr($line, $minIndent), $lines);
+
+                $code = var_export(implode("\n", $lines), true);
+                return "<?php echo Highlight::spark({$code}); ?>";
+            },
+            $source
+        );
+
         // @php / @endphp
         $source = str_replace('@php', '<?php', $source);
         $source = str_replace('@endphp', '?>', $source);

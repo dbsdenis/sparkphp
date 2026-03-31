@@ -155,6 +155,7 @@ class Bootstrap
 
         require_once __DIR__ . '/Response.php';
         require_once __DIR__ . '/View.php';
+        require_once __DIR__ . '/Highlight.php';
 
         $request = $this->container->has(Request::class)
             ? $this->container->make(Request::class)
@@ -227,7 +228,7 @@ class Bootstrap
     public function run(): void
     {
         // Load remaining core components
-        foreach (['Request','Response','Router','Middleware','View','Cache','Database','Schema','Migration','Seeder','Relation','Model','EventEmitter','Validator','Mailer','Queue','Ai','Markdown','PreventRequestForgery','SparkInspectorStorage','SparkInspector'] as $class) {
+        foreach (['Request','Response','Router','Middleware','View','Highlight','Cache','Database','Schema','Migration','Seeder','Relation','Model','EventEmitter','Validator','Mailer','Queue','Ai','Markdown','PreventRequestForgery','SparkInspectorStorage','SparkInspector'] as $class) {
             require_once __DIR__ . "/{$class}.php";
         }
 

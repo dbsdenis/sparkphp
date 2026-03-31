@@ -476,6 +476,61 @@ Cacheia um bloco HTML por tempo determinado (segundos):
 @endcache
 ```
 
+### @highlight / @endhighlight
+
+Aplica destaque de sintaxe automático em blocos de código SparkPHP/PHP. Útil para landing pages, documentação e páginas de exemplos — escreva o código limpo e a diretiva cuida da marcação HTML.
+
+**Uso básico:**
+
+```
+<pre>@highlight
+// app/routes/users.[id].php
+get(fn(User $user) => $user);
+put(fn(User $user) => $user->update(input()));
+delete(fn(User $user) => $user->delete());
+@endhighlight</pre>
+```
+
+**Tokens reconhecidos automaticamente:**
+
+| Token | Classe CSS | Descrição | Exemplos |
+|---|---|---|---|
+| Comentário | `line-comment` | Linhas que começam com `//` | `// esta linha inteira fica cinza` |
+| Verbo HTTP | `line-keyword` | Helpers de rota seguidos de `(` | `get(`, `post(`, `put(`, `patch(`, `delete(`, `any(` |
+| Função / método | `line-fn` | Palavra-chave `fn`, chamadas de função e métodos | `fn`, `input(`, `create(`, `->update(`, `->delete(` |
+| String | `line-string` | Strings com aspas simples ou duplas | `'valor'`, `"texto"` |
+| Variável | `line-var` | Variáveis PHP (prefixo `$`) | `$user`, `$result`, `$stats` |
+
+**Exemplo completo com todos os tokens:**
+
+```
+<pre>@highlight
+// Comentário de linha inteira (line-comment)
+get(fn(User $user) => $user);
+
+// Variáveis e chamadas de método
+$result = $user->update(input());
+
+// Strings e funções auxiliares
+post(fn() => cache_flexible('key', [30, 120], function () {
+    $stats = Dashboard::calculate('monthly');
+    return ['data' => $stats];
+}));
+@endhighlight</pre>
+```
+
+**Como funciona:**
+
+1. O compilador de views captura o conteúdo entre `@highlight` e `@endhighlight`
+2. Em runtime, `Highlight::spark()` escapa o conteúdo com `htmlspecialchars()` e aplica tokenização caractere a caractere
+3. Cada token é envolvido em `<span class="line-*">` correspondente à classe CSS
+
+**Notas:**
+
+- O bloco deve ficar dentro de `<pre>` para manter formatação
+- Se precisar exibir `@highlight` como texto literal (ex: em documentação), use `&#64;highlight` para evitar que o compilador interprete como diretiva
+- O escape HTML é automático — não é necessário chamar `htmlspecialchars()` no conteúdo
+
 ### @once
 
 Renderiza o bloco apenas uma vez, mesmo que a view seja incluida multiplas vezes:

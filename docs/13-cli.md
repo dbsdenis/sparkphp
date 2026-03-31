@@ -8,9 +8,25 @@ O SparkPHP inclui uma CLI completa via o comando `php spark`. Sem dependencias â
 php spark <comando> [opcoes]
 ```
 
+Para abrir a tela detalhada de qualquer comando:
+
+```bash
+php spark help benchmark
+php spark benchmark --help
+php spark benchmark --info
+```
+
 ---
 
 ## Comandos disponiveis
+
+### Ajuda
+
+| Comando                        | Descricao                                              |
+|--------------------------------|--------------------------------------------------------|
+| `php spark help`               | Mostra o indice global de comandos do CLI              |
+| `php spark help benchmark`     | Mostra descricao, opcoes, exemplos e guia do comando   |
+| `php spark benchmark --help`   | Mesmo modo informativo diretamente no comando          |
 
 ### Projeto
 
@@ -70,11 +86,15 @@ php spark <comando> [opcoes]
 |--------------------------|------------------------------------------|
 | `php spark queue:work`   | Inicia worker que processa jobs          |
 | `php spark queue:work --queue=emails` | Worker para fila especifica   |
+| `php spark queue:work --queue=emails --tries=5` | Worker com retry default customizado |
 | `php spark queue:list`   | Lista filas com `ready`, `delayed` e `total` |
 | `php spark queue:inspect <id>` | Inspeciona um job pendente ou com falha |
+| `php spark queue:inspect <id> --json` | Emite a inspecao em JSON          |
 | `php spark queue:retry <id>` | Reenvia um job da fila `failed`        |
+| `php spark queue:retry <id> --from=failed` | Escolhe a fila de origem do retry |
 | `php spark queue:retry --all` | Reenvia todos os jobs da fila `failed` |
 | `php spark queue:clear`  | Remove todos os jobs da fila             |
+| `php spark queue:clear --failed` | Limpa diretamente a fila `failed`   |
 | `php spark queue:clear default --job=SendMailJob` | Remove jobs filtrando por classe |
 | `php spark queue:clear default --id=job_...` | Remove um job especifico por ID |
 
@@ -316,6 +336,9 @@ php spark benchmark --iterations=20 --warmup=3
 
 # Emitir JSON no stdout sem salvar
 php spark benchmark --json --no-save
+
+# Salvar o relatorio em um caminho customizado
+php spark benchmark --save=storage/benchmarks/release.json
 ```
 
 Os cenarios `http.request_html` e `http.request_json` usam uma fixture file-based real
@@ -347,14 +370,25 @@ php spark queue:work --queue=emails --sleep=1
 # Processar N jobs e sair (bom para supervisores/smoke test)
 php spark queue:work --queue=default --max-jobs=10
 
+# Aumentar o retry default do worker
+php spark queue:work --queue=emails --tries=5
+
 # Inspecionar o payload de um job com falha
 php spark queue:inspect job_67f2a... --queue=failed
+php spark queue:inspect job_67f2a... --queue=failed --json
 
 # Recolocar um job com falha na fila original
 php spark queue:retry job_67f2a...
+php spark queue:retry job_67f2a... --from=failed
+
+# Recolocar todos os jobs da fila failed
+php spark queue:retry --all --from=failed
 
 # Limpar apenas uma classe especifica da fila default
 php spark queue:clear default --job=SendWelcomeEmail
+
+# Limpar a fila failed inteira
+php spark queue:clear --failed
 ```
 
 O worker respeita os metadados persistidos do job (`tries`, `backoff`, `timeout`

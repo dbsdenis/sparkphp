@@ -366,6 +366,67 @@ ENV
         $this->assertContains('http.request_json', array_column($payload['scenarios'], 'name'));
     }
 
+    public function testGlobalHelpIndexIsRenderedFromCatalog(): void
+    {
+        $result = $this->runSpark([]);
+
+        $this->assertSame(0, $result['exit_code'], $result['output']);
+        $this->assertStringContainsString('php spark <command> [options]', $result['output']);
+        $this->assertStringContainsString('php spark help [command]', $result['output']);
+        $this->assertStringContainsString('Help', $result['output']);
+        $this->assertStringContainsString('help', $result['output']);
+        $this->assertStringContainsString('benchmark', $result['output']);
+        $this->assertStringContainsString('queue:work', $result['output']);
+    }
+
+    public function testBenchmarkInfoModeDoesNotExecuteTheCommand(): void
+    {
+        $reportPath = $this->basePath . '/storage/benchmarks/latest.json';
+        @unlink($reportPath);
+
+        $result = $this->runSpark(['benchmark', '-i']);
+
+        $this->assertSame(0, $result['exit_code'], $result['output']);
+        $this->assertFileDoesNotExist($reportPath);
+        $this->assertStringContainsString('command help', $result['output']);
+        $this->assertStringContainsString('php spark benchmark', $result['output']);
+        $this->assertStringContainsString('--save=', $result['output']);
+        $this->assertStringContainsString('--no-save', $result['output']);
+        $this->assertStringContainsString('docs/23-benchmarking.md', $result['output']);
+    }
+
+    public function testHelpCommandAndInlineHelpFlagsResolveToTheSameCanonicalScreen(): void
+    {
+        $fromHelpCommand = $this->runSpark(['help', 'benchmark']);
+        $fromAliasFlag = $this->runSpark(['bench', '--help']);
+
+        $this->assertSame(0, $fromHelpCommand['exit_code'], $fromHelpCommand['output']);
+        $this->assertSame(0, $fromAliasFlag['exit_code'], $fromAliasFlag['output']);
+        $this->assertSame($fromHelpCommand['output'], $fromAliasFlag['output']);
+        $this->assertStringContainsString('benchmark [bench]', $fromHelpCommand['output']);
+    }
+
+    public function testCommandInfoScreensExposeAcceptedOptionsThatWereMissingFromGlobalHelp(): void
+    {
+        $new = $this->runSpark(['new', '--help']);
+        $queueWork = $this->runSpark(['queue:work', '--help']);
+        $queueInspect = $this->runSpark(['queue:inspect', '--help']);
+        $queueRetry = $this->runSpark(['queue:retry', '--help']);
+        $queueClear = $this->runSpark(['queue:clear', '--help']);
+
+        $this->assertSame(0, $new['exit_code'], $new['output']);
+        $this->assertSame(0, $queueWork['exit_code'], $queueWork['output']);
+        $this->assertSame(0, $queueInspect['exit_code'], $queueInspect['output']);
+        $this->assertSame(0, $queueRetry['exit_code'], $queueRetry['output']);
+        $this->assertSame(0, $queueClear['exit_code'], $queueClear['output']);
+
+        $this->assertStringContainsString('--json', $new['output']);
+        $this->assertStringContainsString('--tries=', $queueWork['output']);
+        $this->assertStringContainsString('--json', $queueInspect['output']);
+        $this->assertStringContainsString('--from=', $queueRetry['output']);
+        $this->assertStringContainsString('--failed', $queueClear['output']);
+    }
+
     public function testAiCommandsExposeDiagnosticsAndSmokeTests(): void
     {
         $status = $this->runSpark(['ai:status', '--json']);

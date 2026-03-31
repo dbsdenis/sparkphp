@@ -48,15 +48,17 @@
                 <span class="terminal__label">exemplos.php</span>
             </div>
 
-            <pre><?php echo <<<'HTML'
-<span class="line-comment">// app/routes/hello.php</span>
-<span class="line-keyword">get</span>(<span class="line-fn">fn</span>() => [<span class="line-string">'message'</span> => <span class="line-string">'Hello, SparkPHP!'</span>]);
+            <pre>
+                @highlight
+                // app/routes/hello.php
+                get(fn() => ['message' => 'Hello, SparkPHP!']);
 
-<span class="line-comment">// app/routes/users.[id].php</span>
-<span class="line-keyword">get</span>(<span class="line-fn">fn</span>(<span class="line-var">User $user</span>) => <span class="line-var">$user</span>);
-<span class="line-keyword">put</span>(<span class="line-fn">fn</span>(<span class="line-var">User $user</span>) => <span class="line-var">$user</span>-><span class="line-fn">update</span>(<span class="line-fn">input</span>()));
-<span class="line-keyword">delete</span>(<span class="line-fn">fn</span>(<span class="line-var">User $user</span>) => <span class="line-var">$user</span>-><span class="line-fn">delete</span>());
-HTML; ?></pre>
+                // app/routes/users.[id].php
+                get(fn(User $user) => $user);
+                put(fn(User $user) => $user->update(input()));
+                delete(fn(User $user) => $user->delete());
+                @endhighlight
+            </pre>
         </div>
     </section>
 
@@ -174,17 +176,17 @@ HTML; ?></pre>
                     <span class="code-window__file">users.[id].php</span>
                 </div>
 
-                <pre><?php echo <<<'HTML'
-<span class="line-comment">// app/routes/users.[id].php</span>
-<span class="line-keyword">get</span>(<span class="line-fn">fn</span>(<span class="line-var">User $user</span>) => <span class="line-var">$user</span>);
+                <pre>@highlight
+// app/routes/users.[id].php
+get(fn(User $user) => $user);
 
-<span class="line-comment">// O sistema de arquivos faz parte da API</span>
-<span class="line-comment">// Sem rotas extras para definir: file = rota</span>
+// O sistema de arquivos faz parte da API
+// Sem rotas extras para definir: file = rota
 
-<span class="line-comment">// Retorno IS para quêrir browser o API</span>
-<span class="line-comment">// Uma rota atende JSON, HTML ou Spark View</span>
-<span class="line-comment">// com base no accept header automaticamente</span>
-HTML; ?></pre>
+// Retorno IS para quêrir browser o API
+// Uma rota atende JSON, HTML ou Spark View
+// com base no accept header automaticamente
+@endhighlight</pre>
             </div>
         </div>
     </section>
