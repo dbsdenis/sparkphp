@@ -18,7 +18,9 @@
             </p>
 
             <div class="hero__actions">
-                <a href="{{ route('docs.show', ['slug' => '01-installation']) }}" class="site-button site-button--primary">Começar agora &rarr;</a>
+                @if(is_dir(base_path('docs')))
+                    <a href="{{ route('docs.show', ['slug' => '01-installation']) }}" class="site-button site-button--primary">Começar agora &rarr;</a>
+                @endif
                 <a href="https://github.com/dbsdenis/sparkphp" class="site-link" target="_blank" rel="noreferrer">GitHub</a>
             </div>
 
@@ -241,7 +243,9 @@
                 Se o que você quer é previsibilidade, performance real e menos
                 dependências — SparkPHP é a escolha certa.
             </p>
-            <a href="{{ route('docs.show', ['slug' => '01-installation']) }}" class="site-button site-button--primary">Começar agora &rarr;</a>
+            @if(is_dir(base_path('docs')))
+                <a href="{{ route('docs.show', ['slug' => '01-installation']) }}" class="site-button site-button--primary">Começar agora &rarr;</a>
+            @endif
         </div>
     </section>
 
