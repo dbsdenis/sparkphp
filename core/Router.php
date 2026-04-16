@@ -384,18 +384,19 @@ class Router
      */
     private function extractRouteMetadata(string $file): void
     {
-        self::$_collected = [];
-        self::$_meta = [];
+        $content = file_get_contents($file);
         self::$_path = null;
         self::$_routeName = null;
 
-        (static function () use ($file) {
-            require $file;
-        })();
+        // Extract path('...') — supports single and double quotes
+        if (preg_match("/\\bpath\\s*\\(\\s*['\"]([^'\"]+)['\"]/", $content, $m)) {
+            self::$_path = $m[1];
+        }
 
-        // Keep only $_path and $_routeName; discard handlers
-        self::$_collected = [];
-        self::$_meta = [];
+        // Extract name('...') — works for both name('x') and path('y')->name('x')
+        if (preg_match("/\\bname\\s*\\(\\s*['\"]([^'\"]+)['\"]/", $content, $m)) {
+            self::$_routeName = $m[1];
+        }
     }
 
     /**

@@ -228,7 +228,7 @@ class Bootstrap
     public function run(): void
     {
         // Load remaining core components
-        foreach (['Request','Response','Router','Middleware','View','Highlight','Cache','Database','Schema','Migration','Seeder','Relation','Model','EventEmitter','Validator','Mailer','Queue','Ai','Markdown','PreventRequestForgery','SparkInspectorStorage','SparkInspector'] as $class) {
+        foreach (['Request','Response','Router','Middleware','View','Highlight','Cache','Database','Schema','Migration','Seeder','Relation','Model','EventEmitter','ValidationException','Validator','Mailer','Queue','Ai','Markdown','PreventRequestForgery','SparkInspectorStorage','SparkInspector'] as $class) {
             require_once __DIR__ . "/{$class}.php";
         }
 

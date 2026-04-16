@@ -21,14 +21,18 @@ class Validator
     // Run validation
     // ─────────────────────────────────────────────
 
-    public function validate(): array
+    /**
+     * Run validation and return validated data.
+     * Throws ValidationException on failure — no exit, no HTTP response.
+     * Safe for CLI, jobs, tests, and any non-HTTP context.
+     */
+    public function validated(): array
     {
         foreach ($this->rules as $field => $ruleString) {
             $ruleList = explode('|', $ruleString);
             $value    = $this->data[$field] ?? null;
             $optional = in_array('optional', $ruleList, true);
 
-            // Skip optional empty fields
             if ($optional && ($value === null || $value === '')) {
                 continue;
             }
@@ -42,22 +46,35 @@ class Validator
         }
 
         if (!empty($this->errors)) {
+            throw new ValidationException($this->errors);
+        }
+
+        return array_intersect_key($this->data, $this->rules);
+    }
+
+    /**
+     * Run validation with automatic HTTP error handling.
+     * On failure: sends JSON error or redirects back with flashed errors, then exits.
+     * For non-HTTP contexts, use validated() instead.
+     */
+    public function validate(): array
+    {
+        try {
+            return $this->validated();
+        } catch (ValidationException $e) {
             $request = new Request();
             if ($request->wantsJson()) {
-                Response::validationError($this->errors)->send();
+                Response::validationError($e->errors())->send();
                 exit;
             }
             // Flash errors + old input and redirect back
             $session = app()->getContainer()->make(Session::class);
-            $session->flashErrors($this->errors);
+            $session->flashErrors($e->errors());
             $session->flashOld($this->data);
             $back = $_SERVER['HTTP_REFERER'] ?? '/';
             header("Location: {$back}");
             exit;
         }
-
-        // Return only fields defined in rules
-        return array_intersect_key($this->data, $this->rules);
     }
 
     public function fails(): bool
@@ -123,7 +140,7 @@ class Validator
             'between' => $this->between($value, $param),
             'in'      => in_array($value, explode(',', $param ?? ''), false),
 
-            'unique'  => $this->isUnique($value, $param),
+            'unique'  => $this->isUnique($field, $value, $param),
             'exists'  => $this->existsInTable($value, $param),
 
             'before'  => strtotime($value) < strtotime($param),
@@ -157,7 +174,7 @@ class Validator
         return $v >= (float) $min && $v <= (float) $max;
     }
 
-    private function isUnique(mixed $value, ?string $param): bool
+    private function isUnique(string $field, mixed $value, ?string $param): bool
     {
         if (!$param) {
             return true;
@@ -166,8 +183,8 @@ class Validator
             ? explode(',', $param, 2)
             : [$param, null];
 
-        // Determine column from field name if not specified
-        return !db($table)->where($column ?? 'id', $value)->exists();
+        // Use the field name as the column when not explicitly specified
+        return !db($table)->where($column ?? $field, $value)->exists();
     }
 
     private function existsInTable(mixed $value, ?string $param): bool
@@ -196,8 +213,18 @@ class Validator
         if (!isset($_FILES[$field])) {
             return false;
         }
+
+        $tmpFile = $_FILES[$field]['tmp_name'] ?? '';
+        if (!is_uploaded_file($tmpFile)) {
+            return false;
+        }
+
+        // Validate by actual file content, not client-supplied MIME
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($tmpFile);
+
         $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        return in_array($_FILES[$field]['type'] ?? '', $allowed, true);
+        return in_array($mime, $allowed, true);
     }
 
     private function isUnderMaxSize(string $field, ?string $param): bool

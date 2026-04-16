@@ -289,10 +289,23 @@ class Response
 
     private function routeToViewName(string $route): string
     {
-        // /users/:id → users/show (not ideal, but a sensible default)
-        // /users     → users/index
+        // /users/:id         → users/show
+        // /users             → users/index
+        // /admin/posts/:id   → admin/posts/show
         $path = trim($route, '/');
-        return $path ?: 'index';
+        if ($path === '') {
+            return 'index';
+        }
+
+        $segments = explode('/', $path);
+        $lastIndex = count($segments) - 1;
+
+        // If the last segment is a dynamic param (:id, :slug, etc.), replace with "show"
+        if (str_starts_with($segments[$lastIndex], ':')) {
+            $segments[$lastIndex] = 'show';
+        }
+
+        return implode('/', $segments);
     }
 
     private function viewVariables(mixed $result): array

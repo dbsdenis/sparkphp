@@ -33,7 +33,11 @@ trait SparkQueryBuilderReads
 
     public function find(int|string $id): mixed
     {
-        return $this->where('id', $id)->first();
+        $pk = 'id';
+        if ($this->modelClass && class_exists($this->modelClass)) {
+            $pk = (new $this->modelClass())->getPrimaryKey();
+        }
+        return $this->where($pk, $id)->first();
     }
 
     public function all(): array
