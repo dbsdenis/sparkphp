@@ -122,7 +122,9 @@ Baseline atual do framework:
 │   ├── Router.php
 │   ├── Request.php
 │   ├── Response.php
-│   ├── Database.php
+│   ├── Cli/                                   → runtime, dispatcher e catálogo do `spark`
+│   ├── Database.php                           → fachada pública de banco
+│   ├── Database/                              → conexão, paginação e QueryBuilder modularizado
 │   ├── Model.php
 │   ├── View.php
 │   ├── Middleware.php
@@ -134,12 +136,17 @@ Baseline atual do framework:
 │   ├── Version.php
 │   └── helpers.php                            → funções globais (app, env, db, etc.)
 │
+├── .github/
+│   └── workflows/
+│       └── ci.yml                             → pipeline básico de lint, PHPStan e PHPUnit
+├── tools/                                     → utilitários internos (lint, PHPStan, extensão VS Code)
 ├── .env                                       → configuração obrigatória do projeto
 ├── .env.example                               → template de configuração
 ├── VERSION                                    → fonte oficial da versão publicada
 ├── CHANGELOG.md                               → histórico oficial de releases públicas
-├── spark                                      → CLI de entrada
+├── spark                                      → entrypoint fino da CLI
 ├── composer.json
+├── phpstan.neon.dist
 └── README.md
 ```
 
@@ -397,6 +404,10 @@ env('CUSTOM_VAR', 'default'); // com fallback
 ---
 
 ## CLI — Comandos `spark`
+
+O arquivo `spark` virou um entrypoint fino. O runtime, o catálogo e os handlers
+de comando vivem em `core/Cli/`, mas a interface pública continua sendo
+`php spark ...`.
 
 | Comando | Descrição |
 |---|---|

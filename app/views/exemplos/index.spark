@@ -7,7 +7,7 @@
     <section class="exemplos-hero">
         <span class="section-tag">Exemplos</span>
         <h1>Veja na prática</h1>
-        <p>Exemplos interativos de código SparkPHP com rotas, auth, cache, filas, e-mail, busca e AI. Clique para explorar, copie e adapte no projeto.</p>
+        <p>Exemplos interativos de código SparkPHP com rotas, auth, cache, realtime, filas, e-mail, busca e AI. Clique para explorar, copie e adapte no projeto.</p>
     </section>
 
     <div class="exemplos-layout">
@@ -79,6 +79,16 @@
                 <span class="exemplos-tab__info">
                     <span class="exemplos-tab__title">Jobs & queues</span>
                     <span class="exemplos-tab__tag">Async</span>
+                </span>
+            </button>
+
+            <button type="button" class="exemplos-tab" data-tab="realtime" id="tab-realtime" role="tab" aria-selected="false" aria-controls="panel-realtime" tabindex="-1">
+                <span class="exemplos-tab__chevron" aria-hidden="true">
+                    @partial('icon-chevron')
+                </span>
+                <span class="exemplos-tab__info">
+                    <span class="exemplos-tab__title">Realtime</span>
+                    <span class="exemplos-tab__tag">SSE / WS</span>
                 </span>
             </button>
 
@@ -476,6 +486,66 @@ HTTP/1.1 200 OK
 <span class="output-status">// Worker</span>
 php spark queue:work
 → com QUEUE=file, o worker consome storage/queue/*.json e processa o thumbnail</div>
+            </div>
+
+            <!-- Realtime -->
+            <div class="exemplo-panel" id="panel-realtime" data-panel="realtime" role="tabpanel" aria-labelledby="tab-realtime" hidden>
+                <h2>Realtime</h2>
+                <p>Canais file-based com SSE por padrão e WebSocket opcional para chat, notificações e fan-out em tempo real.</p>
+
+                <div class="code-window code-window--spaced">
+                    <div class="code-window__bar">
+                        <div class="code-window__dots"><span></span><span></span><span></span></div>
+                        <span class="code-window__label">código</span>
+                        <button class="code-window__copy" onclick="copyCode(this)">&#128203; Copiar</button>
+                    </div>
+                    <pre><?php echo <<<'HTML'
+<span class="line-comment">// app/channels/[auth]/chat.[roomId].php</span>
+
+<span class="line-fn">channel</span>()
+    -><span class="line-fn">join</span>(<span class="line-fn">function</span> (<span class="line-var">$roomId</span>) {
+        <span class="line-keyword">return</span> [
+            <span class="line-string">'user_id'</span> => <span class="line-fn">auth</span>()->id,
+            <span class="line-string">'room_id'</span> => <span class="line-var">$roomId</span>,
+        ];
+    })
+    -><span class="line-fn">onMessage</span>(<span class="line-string">'message.send'</span>, <span class="line-fn">function</span> (<span class="line-var">$payload</span>, <span class="line-var">$roomId</span>) {
+        <span class="line-fn">realtime</span>()-><span class="line-fn">broadcast</span>(<span class="line-string">"chat.{$roomId}"</span>, <span class="line-string">'message.sent'</span>, [
+            <span class="line-string">'body'</span> => <span class="line-var">$payload</span>[<span class="line-string">'body'</span>],
+            <span class="line-string">'user'</span> => <span class="line-fn">auth</span>()->name,
+        ]);
+
+        <span class="line-keyword">return</span> [<span class="line-string">'ok'</span> => <span class="line-keyword">true</span>];
+    });
+
+<span class="line-comment">// public/js/chat.js</span>
+
+<span class="line-keyword">const</span> <span class="line-var">feed</span> = <span class="line-fn">SparkRealtime</span>(<span class="line-string">'/_realtime/stream?channel=chat.42'</span>);
+
+<span class="line-var">feed</span>.<span class="line-fn">on</span>(<span class="line-string">'message.sent'</span>, <span class="line-fn">event</span> => {
+    console.<span class="line-fn">log</span>(<span class="line-string">'Nova mensagem:'</span>, <span class="line-var">event</span>.payload.body);
+});
+
+<span class="line-var">feed</span>.<span class="line-fn">connect</span>();
+HTML; ?></pre>
+                </div>
+
+                <button class="ex-output-btn" onclick="toggleOutput(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Ver output
+                </button>
+
+                <div class="ex-output">
+<span class="output-status">// SSE</span>
+GET /_realtime/stream?channel=chat.42
+event: message.sent
+id: 1713275400-000001
+data: {"channel":"chat.42","event":"message.sent","payload":{"body":"Olá time","user":"Ana"}}
+
+<span class="output-status">// WebSocket opcional</span>
+php spark realtime:serve
+→ autentica via token curto em POST /_realtime/auth
+→ distribui o mesmo envelope para clientes conectados</div>
             </div>
 
             <!-- Mail -->

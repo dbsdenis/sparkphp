@@ -1,6 +1,8 @@
 # CLI (Spark Commands)
 
-O SparkPHP inclui uma CLI completa via o comando `php spark`. Sem dependencias — e um unico arquivo PHP.
+O SparkPHP inclui uma CLI completa via o comando `php spark`. A entrada continua
+sendo um unico comando simples, mas o runtime foi modularizado internamente em
+`core/Cli/` para facilitar manutencao e evolucao.
 
 ## Uso geral
 

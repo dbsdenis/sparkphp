@@ -49,6 +49,7 @@ function sparkDispatch(array $args): int
             $command === 'queue:list' => sparkQueueList(),
             $command === 'queue:inspect' => sparkQueueInspect($rest),
             $command === 'queue:retry' => sparkQueueRetry($rest),
+            $command === 'realtime:serve' => sparkRealtimeServe($rest),
             $command === 'cache:clear' => sparkCacheClear(),
             $command === 'views:cache' => sparkViewsCache(),
             $command === 'views:clear' => sparkViewsClear(),

@@ -256,6 +256,10 @@ class Bootstrap
             return;
         }
 
+        if ($this->handleRealtimeRequest($request)) {
+            return;
+        }
+
         $router  = new Router($this->basePath);
         $match   = $router->resolve($request->path(), $request->method());
 
@@ -360,5 +364,35 @@ class Bootstrap
         }
 
         return '<h1>405 - Method Not Allowed</h1>';
+    }
+
+    private function handleRealtimeRequest(Request $request): bool
+    {
+        $prefix = rtrim($_ENV['REALTIME_PREFIX'] ?? '/_realtime', '/');
+
+        if ($prefix === '') {
+            $prefix = '/_realtime';
+        }
+
+        $path = $request->path();
+
+        if ($path !== $prefix && !str_starts_with($path, $prefix . '/')) {
+            return false;
+        }
+
+        require_once __DIR__ . '/Realtime.php';
+
+        $manager = $this->getRealtimeManager();
+        return $manager->handleHttp($request);
+    }
+
+    private function getRealtimeManager(): RealtimeManager
+    {
+        if (!$this->container->has(RealtimeManager::class)) {
+            $basePath = $this->basePath;
+            $this->container->singleton(RealtimeManager::class, fn(Container $container) => new RealtimeManager($basePath, $container));
+        }
+
+        return $this->container->make(RealtimeManager::class);
     }
 }

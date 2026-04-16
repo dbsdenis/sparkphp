@@ -15,7 +15,9 @@ core/
 ├── Router.php             → resolve URL → arquivo de rota
 ├── Request.php            → encapsula a request HTTP
 ├── Response.php           → monta e envia a response HTTP
-├── Database.php           → conexão e query builder
+├── Cli/                   → runtime e handlers internos do `spark`
+├── Database.php           → fachada pública de acesso ao banco
+├── Database/              → conexão, paginação e QueryBuilder modularizado
 ├── Model.php              → base class para models
 ├── View.php               → compila e renderiza .spark
 ├── Middleware.php          → carrega e executa middlewares
@@ -215,6 +217,17 @@ download('path/file.pdf')  // response de download
 ### 6. Database
 
 Camada de acesso ao banco. Conexão configurada automaticamente via `.env`.
+
+`Database.php` continua sendo a fachada pública do banco, mas a implementação foi
+organizada em módulos internos:
+
+- `core/Database/Connection.php` concentra conexão e transações
+- `core/Database/Pagination.php` concentra paginação e metadados
+- `core/Database/QueryBuilder.php` mantém a fachada fluente do builder
+- `core/Database/Query/*` concentra SQL, clauses, relações e vector search
+
+Essa separação é interna. O contrato público do framework continua sendo `db()`,
+`Model::query()` e a API fluente já documentada.
 
 **Query builder:**
 
@@ -554,7 +567,7 @@ O SparkPHP usa cache agressivo em produção para minimizar trabalho repetitivo:
 
 ```
 1. php spark serve (ou Nginx/Apache apontando pro public/index.php)
-2. spark → require vendor/autoload.php → core/Bootstrap.php
+2. spark → core/Version.php → core/Bootstrap.php → core/Cli/runtime.php
 3. Bootstrap:
    a. Parseia .env
    b. Registra Autoloader (scan /app ou usa cache)

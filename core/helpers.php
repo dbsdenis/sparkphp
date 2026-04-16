@@ -78,6 +78,13 @@ function any(callable $handler): SparkRouteRegistration    {
     return sparkRouteRegister(['get','post','put','patch','delete'], $handler);
 }
 
+function channel(): SparkChannelRegistration
+{
+    require_once __DIR__ . '/Realtime.php';
+
+    return new SparkChannelRegistration();
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Application
 // ─────────────────────────────────────────────────────────────────────────────
@@ -85,6 +92,27 @@ function any(callable $handler): SparkRouteRegistration    {
 function app(): Bootstrap
 {
     return Bootstrap::getInstance();
+}
+
+function realtime(): RealtimeManager
+{
+    require_once __DIR__ . '/Realtime.php';
+
+    try {
+        $container = app()->getContainer();
+
+        if ($container instanceof Container) {
+            if (!$container->has(RealtimeManager::class)) {
+                $basePath = app()->getBasePath();
+                $container->singleton(RealtimeManager::class, fn(Container $container) => new RealtimeManager($basePath, $container));
+            }
+
+            return $container->make(RealtimeManager::class);
+        }
+    } catch (\Throwable) {
+    }
+
+    return new RealtimeManager(base_path());
 }
 
 function base_path(string $path = ''): string
@@ -346,18 +374,16 @@ function request(): Request
 
 function input(?string $key = null, mixed $default = null): mixed
 {
-    static $request = null;
-    if (!$request) {
-        try {
-            $request = app()->getContainer()->make(Request::class);
-        } catch (\Throwable) {
-            // During boot, Container may not have Request yet
-            if ($key === null) {
-                return array_merge($_GET ?? [], $_POST ?? []);
-            }
-            return $_POST[$key] ?? $_GET[$key] ?? $default;
+    try {
+        $request = app()->getContainer()->make(Request::class);
+    } catch (\Throwable) {
+        // During boot, Container may not have Request yet
+        if ($key === null) {
+            return array_merge($_GET ?? [], $_POST ?? []);
         }
+        return $_POST[$key] ?? $_GET[$key] ?? $default;
     }
+
     return $key === null ? $request->input() : $request->input($key, $default);
 }
 
@@ -676,6 +702,10 @@ function cache_flush_tags(string|array $tags): int
 
 function auth(): mixed
 {
+    if (class_exists('SparkRealtimeContext', false) && SparkRealtimeContext::actor() !== null) {
+        return SparkRealtimeContext::actor();
+    }
+
     $userId = session('_auth_user_id');
     if (!$userId) {
         return null;

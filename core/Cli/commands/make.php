@@ -44,6 +44,10 @@ function sparkMake(string $command, array $args): void
             'path'    => "app/events/{$name}.php",
             'content' => "<?php\n\n// Event: {$name}\n// \$data contains the dispatched payload.\n",
         ],
+        'channel'   => [
+            'path'    => "app/channels/{$name}.php",
+            'content' => "<?php\n\nchannel()\n    ->join(function () {\n        return auth() ? ['id' => auth()->id] : false;\n    });\n",
+        ],
     ];
 
     if (!isset($templates[$type])) {
@@ -69,4 +73,3 @@ function sparkMake(string $command, array $args): void
 }
 
 // ─── Queue commands ───────────────────────────────────────────────────────────
-

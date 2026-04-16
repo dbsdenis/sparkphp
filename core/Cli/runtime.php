@@ -11,4 +11,5 @@ require_once __DIR__ . '/commands/cache.php';
 require_once __DIR__ . '/commands/ai.php';
 require_once __DIR__ . '/commands/make.php';
 require_once __DIR__ . '/commands/queue.php';
+require_once __DIR__ . '/commands/realtime.php';
 require_once __DIR__ . '/dispatch.php';

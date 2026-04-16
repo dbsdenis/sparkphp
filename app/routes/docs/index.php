@@ -306,6 +306,13 @@ get(function () {
         ],
         [
             'number' => '20',
+            'slug' => '20-realtime',
+            'title' => 'Realtime',
+            'description' => 'SSE, WebSocket opcional, app/channels e broker append-only',
+            'icon' => $siteIcons['bolt'],
+        ],
+        [
+            'number' => '21',
             'slug' => '23-benchmarking',
             'title' => 'Benchmarks',
             'description' => 'Como medir Spark com honestidade e usar o CLI de benchmarks',

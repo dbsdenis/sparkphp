@@ -27,6 +27,7 @@ A fronteira existe para honrar a promessa central do framework: **caber na cabe√
 | SparkInspector | First-party opcional | Beta |
 | Queue | First-party opcional | Beta |
 | Mailer | First-party opcional | Beta |
+| Realtime | First-party opcional | Experimental |
 | EventEmitter | First-party opcional | Beta |
 | Schema / Migrations | First-party opcional | Beta |
 | Benchmarking | First-party opcional | Experimental |

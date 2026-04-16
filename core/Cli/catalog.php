@@ -422,6 +422,21 @@ function sparkCommandCatalog(): array
                 'This command deletes queued payloads from disk immediately.',
             ]
         ),
+        'realtime:serve' => sparkCommandSpec(
+            group: 'Realtime',
+            summary: 'Start the experimental WebSocket worker',
+            description: 'Run the native PHP WebSocket worker used by SparkPHP Realtime for bidirectional channel messaging.',
+            usage: 'php spark realtime:serve [--host=0.0.0.0] [--port=8081]',
+            indexArgs: '[--host=] [--port=]',
+            options: [
+                ['--host=', 'Host interface bound by the worker.'],
+                ['--port=', 'Port used by the WebSocket worker.'],
+            ],
+            examples: [
+                'php spark realtime:serve',
+                'php spark realtime:serve --host=127.0.0.1 --port=8082',
+            ]
+        ),
         'cache:clear' => sparkCommandSpec(
             group: 'Cache & Optimize',
             summary: 'Clear the application cache',
@@ -659,6 +674,19 @@ function sparkCommandCatalog(): array
                 'php spark make:event OrderPlaced',
             ]
         ),
+        'make:channel' => sparkCommandSpec(
+            group: 'Scaffolding',
+            summary: 'Create a new realtime channel file',
+            description: 'Generate a channel stub in app/channels with the file-based realtime registration API.',
+            usage: 'php spark make:channel <Name>',
+            indexArgs: '<Name>',
+            arguments: [
+                ['<Name>', 'Channel file name to generate.'],
+            ],
+            examples: [
+                'php spark make:channel chat.[roomId]',
+            ]
+        ),
     ];
 
     return $catalog;
@@ -725,4 +753,3 @@ function sparkResolveHelpTarget(array $args): ?string
 
     return null;
 }
-

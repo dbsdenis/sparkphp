@@ -69,6 +69,14 @@ Se a resposta for não para todos os quatro, a mudança não pertence ao core.
   - Inferência de view desativável por handler
   - Serialização automática desativável por response
 
+- [ ] Realtime Experimental ([spec](docs/realtime-spec.md))
+  - SSE como transporte padrão, WebSocket como worker opcional
+  - `ChannelRouter` para descoberta de `app/channels/`
+  - Broker append-only em `storage/realtime/`
+  - Auth por token curto para WebSocket, sessão para SSE
+  - Cliente mínimo em `public/js/spark-realtime.js`
+  - Pré-requisito: itens `Now` concluídos, core estável
+
 ---
 
 ## Icebox — adiado indefinidamente
@@ -89,6 +97,7 @@ Se a resposta for não para todos os quatro, a mudança não pertence ao core.
 | Política de masking de dados no Inspector (staging) | Pendente | Segurança operacional |
 | Quais pipes de template pertencem ao core | Pendente | Superfície da DSL |
 | Separação de `Queue` e `Mailer` como opcionais | Em avaliação | Core mais enxuto |
+| Realtime: scope da v1 e promoção para Beta | Spec pronta | Caso-guia: chat privado |
 
 ---
 

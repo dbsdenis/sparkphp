@@ -155,6 +155,7 @@ Cada subsistema do SparkPHP tem um nível de maturidade que define as garantias 
 | SparkInspector | First-party opcional | Beta | 0.1.0 |
 | Queue | First-party opcional | Beta | 0.2.0 |
 | Mailer | First-party opcional | Beta | 0.1.0 |
+| Realtime | First-party opcional | Experimental | 0.10.0 |
 | EventEmitter | First-party opcional | Beta | 0.1.0 |
 | Schema / Migrations | First-party opcional | Beta | 0.1.0 |
 | OpenAPI Generator | First-party opcional | Experimental | 0.2.0 |

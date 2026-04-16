@@ -152,6 +152,7 @@ DX e operacao de forma repetivel.
 | SparkInspector | First-party opcional | Beta |
 | Queue | First-party opcional | Beta |
 | Mailer | First-party opcional | Beta |
+| Realtime | First-party opcional | Experimental |
 | AI SDK | Experimental | Experimental |
 | Vector Search | Experimental | Experimental |
 | OpenAPI Generator | First-party opcional | Experimental |
